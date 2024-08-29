@@ -12,9 +12,8 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rcl REQUIRED)
-find_package(Lua REQUIRED)
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+find_package(Lua REQUIRED)  # >= 5.3
+find_package(rcllua_cmake REQUIRED)
 
 set(LIB_NAME rclbind)
 add_library(${LIB_NAME} SHARED
@@ -28,6 +27,25 @@ ament_target_dependencies(${LIB_NAME}
 set_target_properties(${LIB_NAME} PROPERTIES 
   PREFIX ""
 )
+
+#install(
+#  DIRECTORY rcllua
+#  DESTINATION lib
+#)
+
+
+#include(${CMAKE_CURRENT_LIST_DIR}/cmake/rcllua_environment.cmake)
+#ament_install_lua_lib(${PROJECT_NAME})
+
+ament_install_lua_lib(${PROJECT_NAME})
+
+install(
+  TARGETS ${LIB_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

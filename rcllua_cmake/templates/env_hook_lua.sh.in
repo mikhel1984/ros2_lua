@@ -45,5 +45,9 @@ ament_append_unique_value() {
   unset _listname
 }
 
-ament_append_unique_value LUA_PATH "$COLCON_CURRENT_PREFIX/lib/?.lua"
+if [ -z "$LUA_PATH" ]; then
+  export LUA_PATH="$COLCON_CURRENT_PREFIX/lib/?.lua"
+else
+  ament_append_unique_value LUA_PATH "$COLCON_CURRENT_PREFIX/lib/?.lua"
+fi
 

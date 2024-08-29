@@ -16,10 +16,12 @@ find_package(Lua REQUIRED)  # >= 5.3
 find_package(rcllua_cmake REQUIRED)
 
 set(LIB_NAME rclbind)
+
 add_library(${LIB_NAME} SHARED
   src/rclbind.c
   src/context.c
 )
+
 ament_target_dependencies(${LIB_NAME}
   rcl
 )
@@ -28,24 +30,11 @@ set_target_properties(${LIB_NAME} PROPERTIES
   PREFIX ""
 )
 
-#install(
-#  DIRECTORY rcllua
-#  DESTINATION lib
-#)
-
-
-#include(${CMAKE_CURRENT_LIST_DIR}/cmake/rcllua_environment.cmake)
-#ament_install_lua_lib(${PROJECT_NAME})
-
+# Lua scripts
 ament_install_lua_lib(${PROJECT_NAME})
 
-install(
-  TARGETS ${LIB_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
+# C library
+ament_install_lua_clib(${LIB_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

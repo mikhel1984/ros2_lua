@@ -1,17 +1,22 @@
 
 local rclbind = require("rclbind")
+
 rcllua = {}
 
-rcllua.init = function (args)
-  print("init")
+function rcllua.init (args)
+  rclbind.context_init(args)
 end
 
-rcllua.spin = function (node)
+function rcllua.spin (node)
   print("spin")
 end
 
-rcllua.shutdown = function (node)
-  print("node")
+function rcllua.ok ()
+  return rclbind.context_ok()
+end
+
+function rcllua.shutdown ()
+  rclbind.context_shutdown()
 end
 
 return rcllua

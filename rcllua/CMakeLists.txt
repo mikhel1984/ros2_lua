@@ -20,6 +20,7 @@ set(LIB_NAME rclbind)
 add_library(${LIB_NAME} SHARED
   src/rclbind.c
   src/context.c
+  src/node.c
 )
 
 ament_target_dependencies(${LIB_NAME}

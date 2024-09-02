@@ -1,9 +1,8 @@
 
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <lauxlib.h>
 
 #include <rcl/allocator.h>
-#include <rcl/context.h>
 #include <rcl/init.h>
 #include <rcl/init_options.h>
 
@@ -95,4 +94,9 @@ static const struct luaL_Reg context_lib [] =
 void rcl_lua_add_context_methods (lua_State* L)
 {
   luaL_setfuncs(L, context_lib, 0);
+}
+
+rcl_context_t* rcl_lua_context_ref()
+{
+  return context_init_ ? &context_ : NULL;
 }

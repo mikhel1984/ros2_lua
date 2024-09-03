@@ -29,8 +29,9 @@ static int rcl_lua_node_init (lua_State* L)
   }
 
   rcl_node_t* node = lua_newuserdata(L, sizeof(rcl_node_t));
-  rcl_ret_t ret = rcl_node_init(node, name, namespace, context, &options);
+  *node = rcl_get_zero_initialized_node();
 
+  rcl_ret_t ret = rcl_node_init(node, name, namespace, context, &options);
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_BAD_ALLOC: 
@@ -43,7 +44,7 @@ static int rcl_lua_node_init (lua_State* L)
       luaL_error(L, "error creating node");
   }
 
-  // add metatable
+  // set metatable
   luaL_getmetatable(L, MT_NODE);
   lua_setmetatable(L, -2);
 

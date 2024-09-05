@@ -6,6 +6,7 @@
 
 #include "node.h"
 #include "context.h"
+#include "utils.h"
 
 const char* MT_NODE = ".ROS2.Node";
 
@@ -91,17 +92,11 @@ static const struct luaL_Reg node_methods[] = {
 
 void rcl_lua_add_node_methods (lua_State* L)
 {
-  // add method for making node
+  // make node
   lua_pushcfunction(L, rcl_lua_node_init);
   lua_setfield(L, -2, "node_init");
 
-  // metatable
-  luaL_newmetatable(L, MT_NODE);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  // node methods
-  luaL_setfuncs(L, node_methods, 0);
-  // remove methatable from stack
-  lua_pop(L, 1);
+  // metamethods
+  rcl_lua_utils_add_mt(L, MT_NODE, node_methods);
 }
 

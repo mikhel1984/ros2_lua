@@ -68,7 +68,7 @@ void rcl_lua_add_time_methods (lua_State* L)
 {
   // make time
   lua_pushcfunction(L, rcl_lua_time_init);
-  lua_setfield(L, -2, "time_init");
+  lua_setfield(L, -2, "new_time");
 
   // metamethods
   rcl_lua_utils_add_mt(L, MT_TIME, time_methods);

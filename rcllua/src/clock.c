@@ -53,7 +53,7 @@ static int rcl_lua_clock_get_now (lua_State* L)
   rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   rcl_time_point_value_t time_ns;
-  rcl_ret_t = ret = rcl_clock_get_now(clock, &time_ns);
+  rcl_ret_t ret = rcl_clock_get_now(clock, &time_ns);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to get clock value");
   }
@@ -79,7 +79,7 @@ static int rcl_lua_clock_new_timer (lua_State* L)
   rcl_time_point_value_t nsec = sec * 1E9;
 
   /* arg3 - callback */
-  luaL_argcheck(L, lua_type(L, 3) == LUA_TFUNCTION, "wrong timer callback");
+  luaL_argcheck(L, lua_type(L, 3) == LUA_TFUNCTION, 3, "wrong timer callback");
 
   /* init */
   rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -110,7 +110,7 @@ static const rcl_lua_enum enum_clock_types[] = {
   {"ROS_TIME", RCL_ROS_TIME},
   {"SYSTEM_TIME", RCL_SYSTEM_TIME},
   {"STEADY_TIME", RCL_STEADY_TIME},
-  {NULL, NULL}
+  {NULL, -1}
 };
 
 static const struct luaL_Reg clock_methods[] = {
@@ -122,13 +122,13 @@ static const struct luaL_Reg clock_methods[] = {
 
 void rcl_lua_add_clock_methods (lua_State* L)
 {
-  // make clock
+  /* make clock */
   lua_pushcfunction(L, rcl_lua_clock_init);
   lua_setfield(L, -2, "new_clock");
 
-  // metamethods
+  /* metamethods */
   rcl_lua_utils_add_mt(L, MT_CLOCK, clock_methods);
 
-  // enum types
+  /* enum types */
   rcl_lua_utils_add_enum(L, "ClockType", enum_clock_types);
 }

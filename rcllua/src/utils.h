@@ -3,7 +3,7 @@
 
 #include <lua.h>
 
-typedef struct rcl_lua_enum_v
+typedef struct rcl_lua_enum
 {
   const char* name;
   int value;

@@ -30,8 +30,8 @@ static int rcl_lua_time_init (lua_State* L)
   val += sec * NSEC_IN_SEC;
 
   rcl_time_point_t* time = lua_newuserdata(L, sizeof(rcl_time_point_t));
-  time.nanoseconds = nsec;
-  time.clock_type = tp;
+  time->nanoseconds = nsec;
+  time->clock_type = tp;
 
   // set metatable
   luaL_getmetatable(L, MT_TIME);
@@ -45,7 +45,7 @@ static int rcl_lua_time_get (lua_State* L)
   rcl_time_point_t* time = luaL_checkudata(L, 1, MT_TIME);
 
   lua_pushinteger(L, time->nanoseconds / NSEC_IN_SEC);
-  lua_pushinteger(L, time->nanosecond % NSEC_IN_SEC);
+  lua_pushinteger(L, time->nanoseconds % NSEC_IN_SEC);
 
   return 2;
 }

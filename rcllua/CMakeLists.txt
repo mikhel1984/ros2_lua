@@ -12,6 +12,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rcl REQUIRED)
+find_package(rcutils REQUIRED)
 find_package(Lua REQUIRED)  # >= 5.3
 find_package(rcllua_cmake REQUIRED)
 
@@ -19,12 +20,18 @@ set(LIB_NAME rclbind)
 
 add_library(${LIB_NAME} SHARED
   src/rclbind.c
+  src/utils.c
   src/context.c
+  src/logger.c
+  src/time.c
+  src/timer.c
+  src/clock.c
   src/node.c
 )
 
 ament_target_dependencies(${LIB_NAME}
   rcl
+  rcutils
 )
 
 set_target_properties(${LIB_NAME} PROPERTIES 

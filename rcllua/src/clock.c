@@ -17,10 +17,12 @@ const char* MT_CLOCK = ".ROS2.Clock";
 
 static int rcl_lua_clock_init (lua_State* L)
 {
+  /* arg1 - clock type */
   int tp = luaL_optinteger(L, 1, RCL_SYSTEM_TIME);
   luaL_argcheck(
     L, RCL_CLOCK_UNINITIALIZED <= tp && tp <= RCL_STEADY_TIME, 1, "wrong clock type");
 
+  /* make */
   rcl_clock_t *clock = lua_newuserdata(L, sizeof(rcl_clock_t));
 
   rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -29,7 +31,7 @@ static int rcl_lua_clock_init (lua_State* L)
     luaL_error(L, "failed to initialize clock");
   }
 
-  // set metatable
+  /* set metatable */
   luaL_getmetatable(L, MT_CLOCK);
   lua_setmetatable(L, -2);
 

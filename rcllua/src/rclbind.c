@@ -5,6 +5,9 @@
 #include "logger.h"
 #include "node.h"
 #include "time.h"
+#include "timer.h"
+#include "clock.h"
+#include "wait_set.h"
 
 int luaopen_rclbind (lua_State* L)
 {
@@ -18,6 +21,7 @@ int luaopen_rclbind (lua_State* L)
   rcl_lua_add_clock_methods(L);
 
   rcl_lua_add_node_methods(L);
+  rcl_lua_add_wait_set_methods(L);
 
   return 1;
 }

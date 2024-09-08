@@ -8,6 +8,7 @@
 #include "wait_set.h"
 #include "context.h"
 #include "timer.h"
+#include "utils.h"
 
 
 const char* MT_WAIT_SET = ".ROS2.WaitSet";
@@ -132,6 +133,7 @@ static const struct luaL_Reg wait_set_methods[] = {
   {"add_timer", rcl_lua_wait_set_add_timer},
   {"ready_timers", rcl_lua_wait_set_ready_timers},
   {"clear", rcl_lua_wait_set_clear},
+  {"wait", rcl_lua_wait_set_wait},
   {"__gc", rcl_lua_wait_set_free},
   {NULL, NULL}
 };

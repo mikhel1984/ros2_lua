@@ -27,6 +27,7 @@ add_library(${LIB_NAME} SHARED
   src/timer.c
   src/clock.c
   src/node.c
+  src/wait_set.c
 )
 
 ament_target_dependencies(${LIB_NAME}

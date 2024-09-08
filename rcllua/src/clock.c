@@ -77,7 +77,7 @@ static int rcl_lua_clock_new_timer (lua_State* L)
 
   /* arg2 - period */
   lua_Number sec = luaL_checknumber(L, 2);
-  luaL_argcheck(L, sec > 0, 2, "negative period");
+  luaL_argcheck(L, sec >= 0, 2, "negative period");
   rcl_time_point_value_t nsec = sec * 1E9;
 
   /* arg3 - callback */

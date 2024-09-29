@@ -81,7 +81,7 @@ static int rcl_lua_clock_new_timer (lua_State* L)
   rcl_time_point_value_t nsec = sec * 1E9;
 
   /* arg3 - callback */
-  luaL_argcheck(L, lua_type(L, 3) == LUA_TFUNCTION, 3, "wrong timer callback");
+  luaL_checktype(L, 3, LUA_TFUNCTION);
 
   /* init */
   rcl_allocator_t allocator = rcl_get_default_allocator();

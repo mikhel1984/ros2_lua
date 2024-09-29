@@ -11,7 +11,7 @@
 
 #include "publisher.h"
 
-const char* MT_PUBLISHER = ".ROS2.Publisher";
+const char* MT_PUBLISHER = "ROS2.Publisher";
 
 void rcl_lua_publisher_new (lua_State* L)
 {

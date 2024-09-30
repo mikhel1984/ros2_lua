@@ -116,35 +116,35 @@ static int float_seq_copy (lua_State* L)
   idl_lua_msg_t* ptr1 = luaL_checkudata(L, 1, MT_SEQ_FLOAT);
   // src
   idl_lua_msg_t* ptr2 = luaL_checkudata(L, 2, MT_SEQ_FLOAT);
-  bool done = true;
+  bool done = false;
   
-  if (ptr1->value > 0 && ptr2->value > 0) {
-    if (ptr1->value == ptr2->value) {
-      float *a = ptr1->obj, *b = ptr2->obj;
+  if (ptr1->value == IDL_LUA_SEQ) {
+    if (ptr2->value == IDL_LUA_SEQ) {
+      done = rosidl_runtime_c__float__Sequence__copy(ptr2->obj, ptr1->obj);
+    } else if (ptr2->value > 0) {
+      rosidl_runtime_c__float__Sequence tmp;
+      tmp.data = ptr2->obj;
+      tmp.size = tmp.capacity = (size_t) ptr2->obj;
+      done = rosidl_runtime_c__float__Sequence__copy(&tmp, ptr1->obj);
+    }    
+  } else if (ptr1->value > 0) {
+    float *a = ptr1->obj, *b = NULL;
+    if (ptr2->value > 0 && ptr1->value == ptr2->value) {
+      b = ptr2->obj;
+    } else if (ptr2->value == IDL_LUA_SEQ) {
+      rosidl_runtime_c__float__Sequence* seq = ptr2->obj;
+      if (seq->size == ptr1->value) {
+        b = seq->data;
+      }
+    }
+    if (b != NULL) {
       for (int i = 0; i < ptr1->value; i++) {
         *a++ = *b++;        
-      }
-    } else {
-      done = false;
-    }
-  } else if (ptr1->value == IDL_LUA_SEQ && ptr2->value == IDL_LUA_SEQ) {
-    done = rosidl_runtime_c__float__Sequence__copy(ptr2->obj, ptr1->obj);
-  } else if (ptr2->value == IDL_LUA_SEQ && ptr1->value > 0) {
-    rosidl_runtime_c__float__Sequence* seq = ptr2->obj;
-    if (seq->size == ptr1->value) {
-      float *a = ptr1->obj, *b = seq->data;
-      for (int i = 0; i < ptr1->value; i++) {
-        *a++ = *b++;
-      }
-    } else {
-      done = false;
-    }    
-  } else if (ptr1->value == IDL_LUA_SEQ && ptr2->value > 0) {
-    rosidl_runtime_c__float__Sequence tmp;
-    tmp.data = ptr2->obj;
-    tmp.size = tmp.capacity = (size_t) ptr2->value;
-    done = rosidl_runtime_c__float__Sequence__copy(&tmp, ptr1->obj);
-  }
+      }   
+      done = true; 
+    } 
+  }  
+  
   lua_pushboolean(L, done);
   
   return 1;

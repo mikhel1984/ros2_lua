@@ -1,6 +1,8 @@
 
-#include <limits.h>
-#include <rosidl_runtime_c/primitive_sequences.h>
+#include <float.h>
+
+#include <rosidl_runtime_c/primitives_sequence.h>
+#include <rosidl_runtime_c/primitives_sequence_functions.h>
 
 #include "rosidl_luacommon/definition.h"
 
@@ -19,7 +21,7 @@ static int float_seq_set (lua_State* L)
     lst = ptr->obj;
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__float__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ind <= seq->size, 2, "out of range");
+    luaL_argcheck(L, 0 < ind && ind <= (lua_Integer) seq->size, 2, "out of range");
     lst = seq->data;
   } else {
     luaL_error(L, "unexpected object");
@@ -41,7 +43,7 @@ static int float_seq_get (lua_State* L)
     lst = ptr->obj;
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__float__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ind <= seq->size, 2, "out of range");
+    luaL_argcheck(L, 0 < ind && ind <= (lua_Integer) seq->size, 2, "out of range");
     lst = seq->data;
   } else {
     luaL_error(L, "unexpected object");
@@ -59,7 +61,7 @@ static int float_seq_eq (lua_State* L)
   
   rosidl_runtime_c__float__Sequence s1, s2;
   if (ptr1->value == IDL_LUA_SEQ) {
-    s1 = *ptr1;
+    s1 = *((rosidl_runtime_c__float__Sequence*) ptr1->obj);
   } else if (ptr1->value > 0) {
     s1.data = ptr1->obj;
     s1.size = s1.capacity = ptr1->value;
@@ -67,7 +69,7 @@ static int float_seq_eq (lua_State* L)
     luaL_error(L, "unexpected object");
   }
   if (ptr2->value == IDL_LUA_SEQ) {
-    s2 = *ptr2;
+    s2 = *((rosidl_runtime_c__float__Sequence*) ptr2);
   } else if (ptr2->value > 0) {
     s2.data = ptr2->obj;
     s2.size = s2.capacity = ptr2->value;
@@ -124,7 +126,7 @@ static int float_seq_copy (lua_State* L)
     } else if (ptr2->value > 0) {
       rosidl_runtime_c__float__Sequence tmp;
       tmp.data = ptr2->obj;
-      tmp.size = tmp.capacity = (size_t) ptr2->obj;
+      tmp.size = tmp.capacity = (size_t) ptr2->value;
       done = rosidl_runtime_c__float__Sequence__copy(&tmp, ptr1->obj);
     }    
   } else if (ptr1->value > 0) {
@@ -133,7 +135,7 @@ static int float_seq_copy (lua_State* L)
       b = ptr2->obj;
     } else if (ptr2->value == IDL_LUA_SEQ) {
       rosidl_runtime_c__float__Sequence* seq = ptr2->obj;
-      if (seq->size == ptr1->value) {
+      if (seq->size == (size_t) ptr1->value) {
         b = seq->data;
       }
     }
@@ -163,12 +165,12 @@ static int float_seq_resize (lua_State* L)
   
   rosidl_runtime_c__float__Sequence* seq = ptr->obj;  
   bool done = true;
-  if (seq->size >= len) {
+  if (seq->size >= (size_t) len) {
     seq->size = (size_t) len;
   } else {
     rosidl_runtime_c__float__Sequence newseq;
     if (rosidl_runtime_c__float__Sequence__init(&newseq, len) && 
-        rosidl_runtime_c__float__Sequence__copy(seq, &newsec)) 
+        rosidl_runtime_c__float__Sequence__copy(seq, &newseq)) 
     {
       rosidl_runtime_c__float__Sequence tmp = *seq;  // initial sequence
       *seq = newseq;  // save new values
@@ -194,7 +196,7 @@ static const struct luaL_Reg float_seq_methods[] = {
   {NULL, NULL}  
 };
 
-void rosidl_luacommon_float (lua_State* L)
+void rosidl_luacommon_add_float (lua_State* L)
 {
   luaL_newmetatable(L, MT_SEQ_FLOAT);
   luaL_setfuncs(L, float_seq_methods, 0);

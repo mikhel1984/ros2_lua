@@ -13,6 +13,24 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_runtime_c REQUIRED)
 find_package(Lua REQUIRED)  # >= 5.3
+find_package(rcllua_cmake REQUIRED)
+
+include_directories(include)
+
+set(LIB_NAME rosidl_luacommon)
+
+add_library(${LIB_NAME} SHARED
+  src/luacommon.c
+  src/float_sequence.c
+)
+
+ament_target_dependencies(${LIB_NAME}
+  rosidl_runtime_c
+)
+
+set_target_properties(${LIB_NAME} PROPERTIES 
+  PREFIX ""
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

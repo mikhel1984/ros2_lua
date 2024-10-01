@@ -21,7 +21,7 @@ static int float_seq_set (lua_State* L)
     lst = ptr->obj;
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__float__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ind <= (lua_Integer) seq->size, 2, "out of range");
+    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range");
     lst = seq->data;
   } else {
     luaL_error(L, "unexpected object");
@@ -43,7 +43,7 @@ static int float_seq_get (lua_State* L)
     lst = ptr->obj;
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__float__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ind <= (lua_Integer) seq->size, 2, "out of range");
+    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range");
     lst = seq->data;
   } else {
     luaL_error(L, "unexpected object");
@@ -114,13 +114,12 @@ static int float_seq_str (lua_State* L)
 
 static int float_seq_copy (lua_State* L)
 {
-  // dst
-  idl_lua_msg_t* ptr1 = luaL_checkudata(L, 1, MT_SEQ_FLOAT);
-  // src
-  idl_lua_msg_t* ptr2 = luaL_checkudata(L, 2, MT_SEQ_FLOAT);
+  idl_lua_msg_t* ptr1 = luaL_checkudata(L, 1, MT_SEQ_FLOAT);  // dst
+  idl_lua_msg_t* ptr2 = luaL_checkudata(L, 2, MT_SEQ_FLOAT);  // src
   bool done = false;
   
   if (ptr1->value == IDL_LUA_SEQ) {
+    /* sequence - resize */
     if (ptr2->value == IDL_LUA_SEQ) {
       done = rosidl_runtime_c__float__Sequence__copy(ptr2->obj, ptr1->obj);
     } else if (ptr2->value > 0) {
@@ -130,6 +129,7 @@ static int float_seq_copy (lua_State* L)
       done = rosidl_runtime_c__float__Sequence__copy(&tmp, ptr1->obj);
     }    
   } else if (ptr1->value > 0) {
+    /* array - keep size */
     float *a = ptr1->obj, *b = NULL;
     if (ptr2->value > 0 && ptr1->value == ptr2->value) {
       b = ptr2->obj;
@@ -158,22 +158,26 @@ static int float_seq_resize (lua_State* L)
   if (ptr->value != IDL_LUA_SEQ) {
     lua_pushboolean(L, false);
     return 1;
-  }
-  
+  }  
   lua_Integer len = luaL_checkinteger(L, 2);
   luaL_argcheck(L, len >= 0, 2, "wrong length");
   
   rosidl_runtime_c__float__Sequence* seq = ptr->obj;  
   bool done = true;
-  if (seq->size >= (size_t) len) {
+  if (seq->capacity == 0) {
+    done = rosidl_runtime_c__float__Sequence__init(seq, len);
+  } else if (seq->capacity >= (size_t) len) {
     seq->size = (size_t) len;
   } else {
     rosidl_runtime_c__float__Sequence newseq;
     if (rosidl_runtime_c__float__Sequence__init(&newseq, len) && 
         rosidl_runtime_c__float__Sequence__copy(seq, &newseq)) 
     {
-      rosidl_runtime_c__float__Sequence tmp = *seq;  // initial sequence
-      *seq = newseq;  // save new values
+      /* previous sequence */
+      rosidl_runtime_c__float__Sequence tmp = *seq;
+      /* save new */
+      *seq = newseq;
+      /* clear */
       rosidl_runtime_c__float__Sequence__fini(&tmp);    
     } else {
       done = false;

@@ -22,6 +22,8 @@ set(LIB_NAME rosidl_luacommon)
 add_library(${LIB_NAME} SHARED
   src/luacommon.c
   src/float_sequence.c
+  src/int_sequence.c
+  src/boolean_sequence.c
 )
 
 ament_target_dependencies(${LIB_NAME}

@@ -29,7 +29,7 @@ static int boolean_seq_set (lua_State* L)
     luaL_error(L, "unexpected object");
   }
   lst[ind-1] = val;
-  
+
   return 0;
 }
 
@@ -37,7 +37,7 @@ static int boolean_seq_get (lua_State* L)
 {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
   lua_Integer ind = luaL_checkinteger(L, 2);
-  
+
   bool* lst = NULL;
   if (ptr->value > 0) {
     luaL_argcheck(L, 0 < ind && ind <= ptr->value, 2, "out of range");
@@ -50,7 +50,7 @@ static int boolean_seq_get (lua_State* L)
     luaL_error(L, "unexpected object");
   }
   lua_pushboolean(L, lst[ind-1]);
-  
+
   return 1;
 }
 

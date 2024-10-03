@@ -24,6 +24,7 @@ add_library(${LIB_NAME} SHARED
   src/float_sequence.c
   src/int_sequence.c
   src/boolean_sequence.c
+  src/string_sequence.c
 )
 
 ament_target_dependencies(${LIB_NAME}
@@ -33,6 +34,13 @@ ament_target_dependencies(${LIB_NAME}
 set_target_properties(${LIB_NAME} PROPERTIES 
   PREFIX ""
 )
+
+install(
+  DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
+
+ament_install_lua_clib(${LIB_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

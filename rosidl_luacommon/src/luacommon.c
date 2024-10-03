@@ -17,6 +17,7 @@ void rosidl_luacommon_add_int64 (lua_State* L);
 void rosidl_luacommon_add_uint64 (lua_State* L);
 
 void rosidl_luacommon_add_boolean (lua_State* L);
+void rosidl_luacommon_add_String (lua_State* L);
 
 
 /* library */
@@ -41,6 +42,7 @@ int luaopen_rosidl_luacommon (lua_State* L)
   rosidl_luacommon_add_uint64(L);  
   
   rosidl_luacommon_add_boolean(L);
+  rosidl_luacommon_add_String(L);
   
   return 1;  
 }

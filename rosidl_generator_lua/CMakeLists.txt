@@ -28,4 +28,17 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
+install(
+  PROGRAMS bin/rosidl_generator_lua
+  DESTINATION lib/rosidl_generator_lua
+)
+
+install(
+  DIRECTORY cmake resource
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_package(
+  CONFIG_EXTRAS "cmake/rosidl_generator_lua_get_typesupports.cmake"
+    "cmake/register_lua.cmake"
+)

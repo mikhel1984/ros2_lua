@@ -12,8 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#macro(rosidl_generator_lua_extras BIN GENERATOR_FILES TEMPLATE_DIR)
+#  find_package(ament_cmake_core QUIET REQUIRED)
+#  find_package(rosidl_generator_c QUIET REQUIRED)
+#  find_package(rosidl_typesupport_c QUIET REQUIRED)
+
+#  ament_register_extension(
+#    "rosidl_generate_idl_interfaces"
+#    "rosidl_generator_lua"
+#    "rosidl_generator_lua_generate_interfaces.cmake")
+
+#  normalize_path(BIN "${BIN}")
+#  set(rosidl_generator_lua_BIN "${BIN}")
+
+#  normalize_path(GENERATOR_FILES "${GENERATOR_FILES}")
+#  set(rosidl_generator_lua_GENERATOR_FILES "${GENERATOR_FILES}")
+
+#  normalize_path(TEMPLATE_DIR "${TEMPLATE_DIR}")
+#  set(rosidl_generator_lua_TEMPLATE_DIR "${TEMPLATE_DIR}")
+#endmacro()
+
 macro(rosidl_generator_lua_extras BIN GENERATOR_FILES TEMPLATE_DIR)
   find_package(ament_cmake_core QUIET REQUIRED)
+  # Make sure extension points are registered in order
   find_package(rosidl_generator_c QUIET REQUIRED)
   find_package(rosidl_typesupport_c QUIET REQUIRED)
 
@@ -25,8 +46,11 @@ macro(rosidl_generator_lua_extras BIN GENERATOR_FILES TEMPLATE_DIR)
   normalize_path(BIN "${BIN}")
   set(rosidl_generator_lua_BIN "${BIN}")
 
-  normalize_path(GENERATOR_FILES "${GENERATOR_FILES}")
-  set(rosidl_generator_lua_GENERATOR_FILES "${GENERATOR_FILES}")
+  set(rosidl_generator_lua_GENERATOR_FILES "")
+  foreach(_generator_file ${GENERATOR_FILES})
+    normalize_path(_generator_file "${_generator_file}")
+    list(APPEND rosidl_generator_lua_GENERATOR_FILES "${_generator_file}")
+  endforeach()
 
   normalize_path(TEMPLATE_DIR "${TEMPLATE_DIR}")
   set(rosidl_generator_lua_TEMPLATE_DIR "${TEMPLATE_DIR}")

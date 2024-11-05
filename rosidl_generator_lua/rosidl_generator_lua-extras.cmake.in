@@ -1,6 +1,6 @@
 include("${CMAKE_CURRENT_LIST_DIR}/register_lua.cmake")
 rosidl_generator_lua_extras(
   "${rosidl_generator_lua_DIR}/../../../lib/rosidl_generator_lua/rosidl_generator_lua"
-  "${rosidl_generator_lua_DIR}/../../../@PYTHON_INSTALL_DIR@/rosidl_generator_lua/__init__.py;${rosidl_generator_lua_DIR}/../../../@PYTHON_INSTALL_DIR@/rosidl_generator_lua/generate_lua_impl.py"
+  "${rosidl_generator_lua_DIR}/../../../@PYTHON_INSTALL_DIR@/rosidl_generator_lua/__init__.py"
   "${rosidl_generator_lua_DIR}/../resource"
 )

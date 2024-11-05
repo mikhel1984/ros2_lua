@@ -63,7 +63,6 @@ def sequence_metatable(type_):
 
 
 def generate_lua(generator_arguments_file, typesupport_impls):
-    print("CALL LUA!!!", file=sys.stderr)
     mapping = {
         'idl.lua.em': '%s.lua',
         'idl.c.em': '%s.c',

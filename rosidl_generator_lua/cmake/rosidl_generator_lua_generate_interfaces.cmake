@@ -46,9 +46,9 @@ foreach(_abs_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   get_filename_component(_idl_name "${_abs_idl_file}" NAME_WE)
   string_camel_case_to_lower_case_underscore("${_idl_name}" _module_name)
   list(APPEND _generated_lua_files
-    "${_output_path}/${_parent_folder}/_${_module_name}.lua")
+    "${_output_path}/${_parent_folder}/${_module_name}.lua")
   list(APPEND _generated_c_files
-    "${_output_path}/${_parent_folder}/_${_module_name}_s.c")
+    "${_output_path}/${_parent_folder}/${_module_name}.c")
 endforeach()
 
 file(MAKE_DIRECTORY "${_output_path}")
@@ -140,6 +140,30 @@ set_property(
   ${_generated_extension_files} ${_generated_lua_files} ${_generated_c_files}
   PROPERTY GENERATED 1)
 
+
+add_custom_command(
+  OUTPUT ${_generated_lua_files} ${_generated_c_files}
+  COMMAND Python3::Interpreter
+  ARGS ${rosidl_generator_lua_BIN}
+  --generator-arguments-file "${generator_arguments_file}"
+  --typesupport-impls "${_typesupport_impls}"
+  DEPENDS ${target_dependencies}
+  COMMENT "Generating Lua code for ROS interfaces"
+  VERBATIM
+)
+
+if(TARGET ${rosidl_generate_interfaces_TARGET}${_target_suffix})
+  message(WARNING "Custom target ${rosidl_generate_interfaces_TARGET}${_target_suffix} already exists")
+else()
+  add_custom_target(
+    ${rosidl_generate_interfaces_TARGET}${_target_suffix}
+    DEPENDS
+    ${_generated_lua_files} ${_generated_c_files}
+  )
+endif()
+
+
+
 macro(set_properties _build_type)
   set_target_properties(${_target_name} PROPERTIES
     COMPILE_OPTIONS "${_extension_compile_flags}"
@@ -161,7 +185,7 @@ endmacro()
 set(rosidl_generator_lua_suffix "__rosidl_generator_lua")
 
 set(_target_name_lib "${rosidl_generate_interfaces_TARGET}${rosidl_generator_lua_suffix}")
-#add_library(${_target_name_lib} SHARED ${_generated_c_files})
+add_library(${_target_name_lib} SHARED ${_generated_c_files})
 #target_link_libraries(${_target_name_lib}
 #  ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
 #add_dependencies(

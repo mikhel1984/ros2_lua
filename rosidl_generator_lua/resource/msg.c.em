@@ -16,14 +16,15 @@ include_parts = [package_name] + list(interface_path.parents[0].parts) + [
 include_base = '/'.join(include_parts)
 
 header_files = [
-    'lua.h',
-    'lauxlib.h',
+    #'lua.h',
+    #'lauxlib.h',
     'limits.h',
     'stdint.h',
     'stdbool.h',
     'rosidl_runtime_c/visibility_control.h',
     include_base + '__struct.h',
-    include_base + '__functions.h']
+    include_base + '__functions.h',
+    'rosidl_luacommon/definition.h']
 }@
 
 @[for header_file in header_files]@
@@ -107,7 +108,6 @@ nested_header += '__functions.h'
 // end nested array functions include
 @[end if]@
 
-#include "msg.h" // rename
 @{
 msg_typename = '__'.join(message.structure.namespaced_type.namespaced_name())
 msg_prefix = '__'.join(message.structure.namespaced_type.namespaces + [convert_camel_case_to_lower_case_underscore(message.structure.namespaced_type.name)])
@@ -117,17 +117,22 @@ msg_setters = []
 
 @#  constructor
 static int @(msg_prefix)__lnew (lua_State* L) {
+  // object wrapper
   idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));
   ptr->value = IDL_LUA_OBJECT;
 
+  // fill
   @(msg_typename)* msg = @(msg_typename)__create();
   if (NULL == msg) {
     luaL_error(L, "failed to create message");
   }
-  @(msg_typename)__init(msg);
+  if (!@(msg_typename)__init(msg)) {
+    luaL_error(L, "failed to init message");
+  }
   ptr->obj = msg;
 
-  luaL_getmetatable(L, "@(msg_typename)_mt");
+  // to object
+  luaL_getmetatable(L, "@(msg_typename)__mt");
   lua_setmetatable(L, -2);
 
   return 1;
@@ -139,6 +144,7 @@ static int @(msg_prefix)__lgc (lua_State* L) {
   if (IDL_LUA_OBJECT == ptr->value) {
     @(msg_typename)__fini(ptr->obj);
     @(msg_typename)__destroy(ptr->obj);
+    ptr->obj = NULL;
   }
 
   return 0;
@@ -153,7 +159,7 @@ static int @(msg_prefix)__leq (lua_State* L) {
     lua_pushboolean(L, false);
     return 1;
   }
-  lua_pop(L, 2);
+  lua_pop(L, 2);  // remove metatables
 
   // data
   idl_lua_msg_t* p1 = lua_touserdata(L, 1);
@@ -161,23 +167,25 @@ static int @(msg_prefix)__leq (lua_State* L) {
 
   if (p1->value < IDL_LUA_SEQ && p2->value < IDL_LUA_SEQ) {
     // objects
-    lua_pushboolean(@(msg_typename)__are_equal(p1->obj, p2->obj));
+    lua_pushboolean(L, @(msg_typename)__are_equal(p1->obj, p2->obj));
   } else if (p1->value >= IDL_LUA_SEQ && p2->value >= IDL_LUA_SEQ) {
     // lists
     @(msg_typename)__Sequence s1, s2;
     if (p1->value == IDL_LUA_SEQ) {
       s1 = *(@(msg_typename)__Sequence*) p1->obj;
     } else {
+      // to Sequence object
       s1.data = p1->obj;
       s1.size = s1.capacity = p1->value;
     }
     if (p2->value == IDL_LUA_SEQ) {
       s2 = *(@(msg_typename)__Sequence*) p2->obj;
     } else {
+      // to Sequence object
       s2.data = p2->obj;
       s2.size = s2.capacity = p2->value;
     }
-    lua_pushboolean(@(msg_typename)__Sequence__are_equal(&s1, &s2));
+    lua_pushboolean(L, @(msg_typename)__Sequence__are_equal(&s1, &s2));
   } else {
     lua_pushboolean(L, false);
   }
@@ -194,7 +202,7 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
     // TODO(Mikhel) check type exactly
     lua_pushboolean(L, false);
   }
-  lua_pop(L, 2);
+  lua_pop(L, 2);  // remove metatables
 
   // data
   idl_lua_msg_t* dst = lua_touserdata(L, 1);
@@ -204,32 +212,34 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
   if (dst->value < IDL_LUA_SEQ && src->value < IDL_LUA_SEQ) {
     // objects
     done = @(msg_typename)__copy(src->obj, dst->obj);
-  } else if (dst->value == IDL_LUA_SEQ) {
+  } else if (IDL_LUA_SEQ == dst->value) {
     // list
-    if (src->value == IDL_LUA_SEQ) {
+    if (IDL_LUA_SEQ == src->value) {
       done = @(msg_typename)__Sequence__copy(src->obj, dst->obj);
-    } else if (src->value > 0) {
+    } else if (src->value > IDL_LUA_SEQ) {
+      // from array
       @(msg_typename)__Sequence tmp;
       tmp.data = src->obj;
       tmp.size = tmp.capacity = (size_t) src->value;
       done = @(msg_typename)__Sequence__copy(&tmp, dst->obj);
     }
-  } else if (dst->value > 0) {
+  } else if (dst->value > IDL_LUA_SEQ) {
     // array
     @(msg_typename)__Sequence *a = dst->obj, *b = NULL;
-    if (src->value > 0 && dst->value == src->value) {
+    if (src->value > IDL_LUA_SEQ && dst->value == src->value) {
       b = src->obj;
     } else if (src->value == IDL_LUA_SEQ) {
+      // from list
       @(msg_typename)__Sequence* seq = src->obj;
       if (seq->size == (size_t) dst->value) {
         b = seq->data;
       }
     }
     if (b != NULL) {
-      for (int i = 0; i < dst->value; i++) {
-        @(msg_typename)__copy(b, a);
-      }
       done = true;
+      for (int i = 0; i < dst->value; i++) {
+        done = @(msg_typename)__copy(b, a) && done;
+      }
     }
   }
   lua_pushboolean(L, done);
@@ -241,12 +251,15 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
 static int @(msg_prefix)__llen (lua_State* L)
 {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
-  if (ptr->value > 0) {
+  if (ptr->value > IDL_LUA_SEQ) {
+    // array
     lua_pushnumber(L, ptr->value);
   } else if (ptr->value == IDL_LUA_SEQ) {
+    // list
     @(msg_typename)__Sequence* seq = ptr->obj;
     lua_pushnumber(L, seq->size);
   } else {
+    // scalar value
     lua_pushnil(L);
   }
 
@@ -272,28 +285,35 @@ static int @(msg_prefix)__lstr (lua_State* L)
 @# resize sequence
 static int @(msg_prefix)__lresize (lua_State* L)
 {
-  idl_lua_msg_t* ptr = luaL_checkudata(L, 1, "@(msg_typename)_mt");
+  idl_lua_msg_t* ptr = luaL_checkudata(L, 1, "@(msg_typename)__mt");
   if (ptr->value != IDL_LUA_SEQ) {
+    // only list can be resized
     lua_pushboolean(L, false);
     return 1;
   }
 
+  // new length
   lua_Integer len = luaL_checkinteger(L, 2);
   luaL_argcheck(L, len >= 0, 2, "wrong length");
   @(msg_typename)__Sequence* seq = ptr->obj;
   bool done = true;
 
   if (seq->capacity == 0) {
+    // empty object, make new
     done = @(msg_typename)__Sequence__init(seq, len);
   } else if (seq->capacity >= (size_t) len) {
+    // memory is enough
     seq->size = (size_t) len;
   } else {
+    // allocate new memory and copy data
     @(msg_typename)__Sequence newseq;
     if (@(msg_typename)__Sequence__init(&newseq, len) &&
        @(msg_typename)__Sequence__copy(seq, &newseq))
     {
+      // swap
       @(msg_typename)__Sequence tmp = *seq;
       *seq = newseq;
+      // remove old
       @(msg_typename)__Sequence__fini(&tmp);
     } else {
       done = false;
@@ -304,20 +324,20 @@ static int @(msg_prefix)__lresize (lua_State* L)
   return 1;
 }
 
-
 @#  setters
 @[for member in message.structure.members]@
 @[  if len(message.structure.members) == 1 and member.name == EMPTY_STRUCTURE_REQUIRED_MEMBER_NAME]@
 @[    continue]@
 @[  end if]@
 @{
-setter_ = '_'.join((msg_typename, member.name, 'set'))
+setter_ = '_'.join((msg_prefix, '_set', member.name))
 }@
 
-// @(member.name)
+// set @(member.name)
 static int @(setter_) (lua_State* L) {
+  // stack: object, field name, new value
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
-  msg_typename* ros_msg = ptr->obj;
+  @(msg_typename)* ros_msg = ptr->obj;
 @{
 type_ = member.type
 if isinstance(type_, AbstractNestedType):
@@ -327,25 +347,33 @@ if isinstance(type_, AbstractNestedType):
 @{
 nested_type = '__'.join(type_.namespaced_name())
 }@
-
-  lua_getmetatable(L, "@(msg_typename)_mt");
-  lua_getfield(L, -1, "copy");  // get function
-  idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // new object
+  
+  // current object
+  lua_getmetatable(L, "@(msg_typename)__mt");  // push metatable
+  lua_getfield(L, -1, "copy");  // push function
+  // create object to call metamethod
+  idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
   dst->obj = &(ros_message->@(member.name));
   dst->value = IDL_LUA_PTR;
-  lua_setmetatable(L, -3);  // src
-  lua_pushvalue(L, 3);
+  lua_pushvalue(L, -3);  // push metatable (duplicate)
+  lua_setmetatable(L, -2);  // pop metatable
+  // stack: ... function, dst
+  lua_pushvalue(L, 3);  // push argument (duplicate)
   lua_call(L, 2, 1);  // copy(L-2, L-1)
 
 @[  elif isinstance(member.type, AbstractNestedType)]@
 
-  luaL_getmetatable(L, @(sequence_metatable(member.type.value_type)));
-  lua_getfield(L, -1, "copy");  // get function
-  idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // new object
+  // primitive type sequence
+  luaL_getmetatable(L, "@(sequence_metatable(member.type.value_type))");  // push mt
+  lua_getfield(L, -1, "copy");  // push function
+  // create object to call metamethod
+  idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));   // push object
   dst->obj = &(ros_message->@(member.name));
   dst->value = IDL_LUA_PTR;
-  lua_setmetatable(L, -3);  // src
-  lua_pushvalue(L, 3);
+  lua_pushvalue(L, -3);  // push metatable (duplicate)
+  lua_setmetatable(L, -2);  // pop metatable
+  // stack: ... function, dst
+  lua_pushvalue(L, 3);  // push argument (duplicate)
   lua_call(L, 2, 1);  // copy(L-2, L-1)
 
 @[  elif isinstance(member.type, BasicType) and member.type.typename in ('char', 'octet')]@
@@ -374,21 +402,19 @@ type_dict = NUMERIC_LUA_TYPES[member.type.typename]
 @[  elif isinstance(member.type, AbstractString)]@
 
   const char* value = luaL_checkstring(L, 3);
-  rosidl_runtime_c__String__assign(&ros_message->@(member.name), value);
+  rosidl_runtime_c__String__assign(&ros_msg->@(member.name), value);
 
 @[  else]@
 @{
 assert False, ("unknown type " + member.type.typename)
 }@
 @[  end if]@
-
   return 0;
 }
 
 @{
 msg_setters.append((member.name, setter_))
 }@
-
 @[end for]@
 
 @#  getters
@@ -397,28 +423,27 @@ msg_setters.append((member.name, setter_))
 @[    continue]@
 @[  end if]@
 @{
-getter_ = '_'.join((msg_typename, member.name, 'get'))
+getter_ = '_'.join((msg_prefix, '_get', member.name))
 }@
-
-// @(member.name)
+// get @(member.name)
 static int @(getter_) (lua_State* L) {
-  idl_lua_msg_t* ptr = luaL_checkudata(L, 1, '@(msg_typename)_mt');
-  msg_typename* ros_msg = ptr->obj;
+  // stack: object, field name
+  idl_lua_msg_t* src = lua_touserdata(L, 1);
+  @(msg_typename)* ros_msg = src->obj;
 
 @{
 type_ = member.type
 if isinstance(type_, AbstractNestedType):
     type_ = type_.value_type
 }@
-
 @[  if isinstance(type_, NamespacedType)]@
 @{
 nested_type = '__'.join(type_.namespaced_name())
-mtbl = '__'.join(type_.namespaces + [convert_camel_case_to_lower_case_underscore(type_.name)]) + '_mt'
+mtbl = '__'.join(type_.namespaces + [convert_camel_case_to_lower_case_underscore(type_.name)]) + '__mt'
 }@
-
+  // return new object
   // @(mtbl)
-  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));
+  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
 
 @[    if isinstance(member.type, AbstractNestedType)]@
 @[      if isinstance(member.type, AbstractSequence)]@
@@ -429,7 +454,7 @@ mtbl = '__'.join(type_.namespaces + [convert_camel_case_to_lower_case_underscore
 @[      else]@
 
   ptr->obj = ros_msg->@(member.name);
-  ptr->value = // set size!!!
+  ptr->value = @(member.type.size);
 
 @[      end if]@
 @[    else]@
@@ -439,12 +464,12 @@ mtbl = '__'.join(type_.namespaces + [convert_camel_case_to_lower_case_underscore
 
 @[    end if]@
 
-  luaL_getmetatable(L, "@(mtbl)");
-  lua_setmetatable(L, -2);
+  luaL_getmetatable(L, "@(mtbl)");  // push metatable
+  lua_setmetatable(L, -2);  // pop metatable
 
 @[  elif isinstance(member.type, AbstractNestedType)]@
 
-  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));
+  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
 
 @[    if isinstance(member.type, AbstractSequence)]@
 
@@ -454,14 +479,12 @@ mtbl = '__'.join(type_.namespaces + [convert_camel_case_to_lower_case_underscore
 @[    else]@
 
   ptr->obj = ros_msg->@(member.name);
-  ptr->value = // set size !!!
+  ptr->value = @(member.type.size);
 
 @[    end if]@
-@[    if isinstance(member.type.value_type, BasicType) and member.type.value_type.typename in ('char', 'octet')]@
 
-  luaL_getmetatable(L, @(sequence_metatable(member.type.value_type)));
-  lua_setmetatable(L, -2);
-@[    end if]@
+  luaL_getmetatable(L, "@(sequence_metatable(member.type.value_type))");  // push mt
+  lua_setmetatable(L, -2);  // pop metatable
 
 @[  elif isinstance(member.type, BasicType) and member.type.typename in ('char', 'octet')]@
 
@@ -487,84 +510,131 @@ type_dict = NUMERIC_LUA_TYPES[member.type.typename]
 assert False, ("unknown type " + member.type.typename)
 }@
 @[  end if]@
-
   return 1;
 }
+
 @{
 msg_getters.append((member.name, getter_))
 }@
 @[end for]@
 
-
 static int @(msg_prefix)__lindex (lua_State* L) {
-  lua_getmetatable(L, 1);
   idl_lua_msg_t* msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
-    // by index
-    some_obj* lst = NULL;
+    // object list, same metatable, get by index
+    @(msg_prefix)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
     if (msg->value > IDL_LUA_SEQ) {
       luaL_argcheck(L, 0 < n && n <= msg->value, 2, "out of range");
       lst = msg->obj;
     } else {
-      some_obj_type_Sequence *seq = msg->obj;
+      @(msg_prefix)__Sequence *seq = msg->obj;
       luaL_argcheck(L, 0 < n && ((size_t) n) <= seq->size, 2, "out_of_range");
-      lst = msg->data;
+      lst = seq->data;
     }
-    idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));
-    res->obj = &(lst[n-1]);
+    idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
+    res->obj = &(lst[n-1]);  // index from 1
     res->value = IDL_LUA_PTR;
+    lua_getmetatable(L, 1);  // push metatable
+    lua_setmetatable(L, -2);  // pop metatable, copy to new object
   } else {
-    // by name
-    lua_getfield(L, -1, "_get");
-    lua_pushvalue(L, 2);  // duplicate key
-    lua_gettable(L, -2);  // find field
+    // nested object, other metatable, get by name
+    lua_getmetatable(L, 1);  // push metatable
+    lua_getfield(L, -1, "getters");  // push table
+    lua_pushvalue(L, 2);  // push key (duplicate) 
+    lua_gettable(L, -2);  // pop key, push function
     lua_CFunction fn = lua_tocfunction(L, -1);
     if (NULL == fn) {
       luaL_error(L, "unknown field");
     }
-    lua_settop(L, 2);
-    fn(L);
+    lua_settop(L, 2);  // stack: object, key
+    fn(L);  // push result
   }
 
   return 1;
 }
 
-
 static int @(msg_prefix)__lnewindex (lua_State* L) {
-  lua_getmetatable(L, 1);
   idl_lua_msg_t* msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
-    // by index
-    some_obj* lst = NULL;
+    // object list, same metatable, by index
+    @(msg_prefix)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
     if (msg->value > IDL_LUA_SEQ) {
       luaL_argcheck(L, 0 < n && n <= msg->value, 2, "out of range");
       lst = msg->obj;
     } else {
-      some_obj_type_Sequence *seq = msg->obj;
+      @(msg_prefix)__Sequence *seq = msg->obj;
       luaL_argcheck(L, 0 < n && ((size_t) n) <= seq->size, 2, "out_of_range");
-      lst = msg->data;
+      lst = seq->data;
     }
-    idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));
-    res->obj = &(lst[n-1]);
-    res->value = IDL_LUA_PTR;
+    // right part
+    idl_lua_msg_t* src = luaL_checkudata(L, 3, "@(msg_typename)__mt");
+    if (src->value >= IDL_LUA_SEQ) {
+      luaL_error(L, "different types");
+    }
+    @(msg_typename)__copy(src->obj, &(lst[n-1]));
   } else {
-    // by name
-    lua_getfield(L, -1, "_set");
-    lua_pushvalue(L, 2);  // duplicate key
-    lua_gettable(L, -2);  // find field
+    // nested object, other metatable, get by name
+    lua_getmetatable(L, 1);  // push metatable
+    lua_getfield(L, -1, "setters");  // push table
+    lua_pushvalue(L, 2);  // push key (duplicate)
+    lua_gettable(L, -2);  // pop key, push function
     lua_CFunction fn = lua_tocfunction(L, -1);
     if (NULL == fn) {
       luaL_error(L, "unknown field");
     }
-    lua_settop(L, 2);
     fn(L);
   }
 
   return 0;
 }
 
+// get values
+static const struct luaL_Reg @(msg_prefix)__getters = {
+@[for name, fn in msg_getters]@
+  {"@(name)", @(fn)},
+@[end for]@
+  {NULL, NULL}
+};
 
+// set values
+static const struct luaL_Reg @(msg_prefix)__setters = {
+@[for name, fn in msg_setters]@
+  {"@(name)", @(fn)},
+@[end for]@
+  {NULL, NULL}
+};
+
+static const struct luaL_Reg @(msg_prefix)__common = {
+  {"__gc", @(msg_prefix)__lgc},
+  {"__eq", @(msg_prefix)__leq},
+  {"__len", @(msg_prefix)__llen},
+  {"__tostring", @(msg_prefix)__lstr},
+  {"new", @(msg_prefix)__lnew},
+  {"resize", @(msg_prefix)__lresize},
+  {"copy", @(msg_prefix)__lcopy},
+  {NULL, NULL}
+};
+
+void @(msg_prefix)__add_methods (lua_State* L) {
+  // metatable
+  luaL_newmetatable(L, "@(msg_typename)__mt");  // push metatable
+
+  // getters
+  lua_createtable(L, 0, @(len(msg_getters)));  // push table
+  luaL_setfuncs(L, @(msg_prefix)__getters, 0);
+  lua_setfield(L, -2, "getters");  // pop table
+
+  // setters
+  lua_createtable(L, 0, @(len(msg_setters)));  // push table
+  luaL_setfuncs(L, @(msg_prefix)__setters, 0);
+  lua_setfield(L, -2, "setters");  // pop table
+
+  // common methods
+  luaL_setfuncs(L, @(msg_prefix)__common);
+
+  lua_pop(L, 1);  // pop metatable
+}

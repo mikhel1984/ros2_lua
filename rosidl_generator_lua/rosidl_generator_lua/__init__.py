@@ -59,7 +59,7 @@ def sequence_metatable(type_):
         return "ROS2.rosidl_sequence.int8"
     if isinstance(type_, AbstractGenericString):
         return "ROS2.rosidl_sequence.String"
-    return "ROS2.rosidl_sequence" + type_.typename
+    return "ROS2.rosidl_sequence." + type_.typename
 
 
 def generate_lua(generator_arguments_file, typesupport_impls):

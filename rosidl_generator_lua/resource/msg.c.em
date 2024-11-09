@@ -19,9 +19,10 @@ header_files = [
     #'lua.h',
     #'lauxlib.h',
     'limits.h',
+    'float.h',
     'stdint.h',
     'stdbool.h',
-    'rosidl_runtime_c/visibility_control.h',
+    #'rosidl_runtime_c/visibility_control.h',
     include_base + '__struct.h',
     include_base + '__functions.h',
     'rosidl_luacommon/definition.h']
@@ -427,7 +428,12 @@ type_dict = NUMERIC_LUA_TYPES[member.type.typename]
 }@
 
   @(type_dict['var']) value = @(type_dict['fn'])(L, 3);
+@#  check for unsigned value
+@[    if member.type.typename.startswith('u') ]@
+  if (value < 0 || ((size_t) value) > @(type_dict['max'])) {
+@[    else]@
   if (value < @(type_dict['min']) || value > @(type_dict['max'])) {
+@[    end if]@
     luaL_error(L, "value out of range");
   }
   ros_msg->@(member.name) = value;
@@ -521,11 +527,12 @@ mtbl = nested_type + '__mt'
 
 @[  elif isinstance(member.type, BasicType) and member.type.typename in ('char', 'octet')]@
 
-  lua_pushinteger(L, &(ros_msg->@(member.name)));
+  lua_pushinteger(L, ros_msg->@(member.name));
 
 @[  elif isinstance(member.type, AbstractString)]@
 
-  lua_pushstring(L, ros_msg->@(member.name));
+  rosidl_runtime_c__String str = ros_msg->@(member.name);
+  lua_pushlstring(L, str.data, str.size+1);
 
 @[  elif isinstance(member.type, BasicType) and member.type.typename == 'boolean']@
 
@@ -556,13 +563,13 @@ static int @(msg_prefix)__lindex (lua_State* L) {
 
   if (msg->value >= IDL_LUA_SEQ) {
     // object list, same metatable, get by index
-    @(msg_prefix)* lst = NULL;
+    @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
     if (msg->value > IDL_LUA_SEQ) {
       luaL_argcheck(L, 0 < n && n <= msg->value, 2, "out of range");
       lst = msg->obj;
     } else {
-      @(msg_prefix)__Sequence *seq = msg->obj;
+      @(msg_typename)__Sequence *seq = msg->obj;
       luaL_argcheck(L, 0 < n && ((size_t) n) <= seq->size, 2, "out_of_range");
       lst = seq->data;
     }
@@ -593,13 +600,13 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
 
   if (msg->value >= IDL_LUA_SEQ) {
     // object list, same metatable, by index
-    @(msg_prefix)* lst = NULL;
+    @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
     if (msg->value > IDL_LUA_SEQ) {
       luaL_argcheck(L, 0 < n && n <= msg->value, 2, "out of range");
       lst = msg->obj;
     } else {
-      @(msg_prefix)__Sequence *seq = msg->obj;
+      @(msg_typename)__Sequence *seq = msg->obj;
       luaL_argcheck(L, 0 < n && ((size_t) n) <= seq->size, 2, "out_of_range");
       lst = seq->data;
     }
@@ -626,7 +633,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
 }
 
 // get values
-static const struct luaL_Reg @(msg_prefix)__getters = {
+static const struct luaL_Reg @(msg_prefix)__getters[] = {
 @[for name, fn in msg_getters]@
   {"@(name)", @(fn)},
 @[end for]@
@@ -634,18 +641,20 @@ static const struct luaL_Reg @(msg_prefix)__getters = {
 };
 
 // set values
-static const struct luaL_Reg @(msg_prefix)__setters = {
+static const struct luaL_Reg @(msg_prefix)__setters[] = {
 @[for name, fn in msg_setters]@
   {"@(name)", @(fn)},
 @[end for]@
   {NULL, NULL}
 };
 
-static const struct luaL_Reg @(msg_prefix)__common = {
+static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"__gc", @(msg_prefix)__lgc},
   {"__eq", @(msg_prefix)__leq},
   {"__len", @(msg_prefix)__llen},
   {"__tostring", @(msg_prefix)__lstr},
+  {"__index", @(msg_prefix)__lindex},
+  {"__newindex", @(msg_prefix)__lnewindex},
   {"new", @(msg_prefix)__lnew},
   {"resize", @(msg_prefix)__lresize},
   {"copy", @(msg_prefix)__lcopy},
@@ -667,7 +676,7 @@ void @(msg_prefix)__add_methods (lua_State* L) {
   lua_setfield(L, -2, "setters");  // pop table
 
   // common methods
-  luaL_setfuncs(L, @(msg_prefix)__common);
+  luaL_setfuncs(L, @(msg_prefix)__common, 0);
 
   lua_pop(L, 1);  // pop metatable
 }

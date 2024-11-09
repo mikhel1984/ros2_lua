@@ -37,7 +37,7 @@ set_target_properties(${LIB_NAME} PROPERTIES
 
 install(
   DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME}
+  DESTINATION include
 )
 
 ament_install_lua_clib(${LIB_NAME})

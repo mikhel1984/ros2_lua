@@ -22,6 +22,8 @@ find_package(PythonInterp 3.6 REQUIRED)
 find_package(python_cmake_module REQUIRED)
 find_package(PythonExtra MODULE REQUIRED)
 
+find_package(rosidl_luacommon REQUIRED)
+
 # Get a list of typesupport implementations from valid rmw implementations.
 rosidl_generator_lua_get_typesupports(_typesupport_impls)
 
@@ -185,25 +187,28 @@ endmacro()
 set(rosidl_generator_lua_suffix "__rosidl_generator_lua")
 
 set(_target_name_lib "${rosidl_generate_interfaces_TARGET}${rosidl_generator_lua_suffix}")
+
 add_library(${_target_name_lib} SHARED ${_generated_c_files})
-#target_link_libraries(${_target_name_lib}
-#  ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
-#add_dependencies(
-#  ${_target_name_lib}
-#  ${rosidl_generate_interfaces_TARGET}${_target_suffix}
-#  ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
-#)
+target_link_libraries(${_target_name_lib}
+  ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
+add_dependencies(
+  ${_target_name_lib}
+  ${rosidl_generate_interfaces_TARGET}${_target_suffix}
+  ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
+)
 
 #target_link_libraries(
 #  ${_target_name_lib}
 #  ${PythonExtra_LIBRARIES}
 #)
-#target_include_directories(${_target_name_lib}
-#  PRIVATE
-#  ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
-#  ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_lua
-#  ${PythonExtra_INCLUDE_DIRS}
-#)
+message(WARNING "${rosidl_luacommon_DIR}")
+target_include_directories(${_target_name_lib}
+  PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
+  ${rosidl_luacommon_DIR}/../../../include
+  #${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_lua
+#  #${PythonExtra_INCLUDE_DIRS}
+)
 
 rosidl_get_typesupport_target(c_typesupport_target "${rosidl_generate_interfaces_TARGET}" "rosidl_typesupport_c")
 #target_link_libraries(${_target_name_lib} ${c_typesupport_target})

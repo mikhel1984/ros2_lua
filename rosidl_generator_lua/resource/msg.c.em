@@ -6,7 +6,6 @@ from rosidl_parser.definition import AbstractNestedType
 from rosidl_parser.definition import AbstractSequence
 from rosidl_parser.definition import AbstractString
 from rosidl_parser.definition import AbstractWString
-from rosidl_parser.definition import Array
 from rosidl_parser.definition import BasicType
 from rosidl_parser.definition import EMPTY_STRUCTURE_REQUIRED_MEMBER_NAME
 from rosidl_parser.definition import NamespacedType
@@ -16,8 +15,6 @@ include_parts = [package_name] + list(interface_path.parents[0].parts) + [
 include_base = '/'.join(include_parts)
 
 header_files = [
-    #'lua.h',
-    #'lauxlib.h',
     'limits.h',
     'float.h',
     'stdint.h',
@@ -51,7 +48,6 @@ have_not_included_string = True
 have_not_included_wstring = True
 nested_types = set()
 }@
-
 @[for member in message.structure.members]@
 @{
 type_ = member.type
@@ -110,12 +106,15 @@ nested_header += '__functions.h'
 @[end if]@
 
 @{
-msg_typename = '__'.join(message.structure.namespaced_type.namespaced_name())
+msg_components = message.structure.namespaced_type.namespaced_name()
+msg_typename = '__'.join(msg_components)
 msg_prefix = '__'.join(message.structure.namespaced_type.namespaces + [convert_camel_case_to_lower_case_underscore(message.structure.namespaced_type.name)])
 msg_getters = []
 msg_setters = []
 msg_metatable = msg_typename + '__mt'
 }@
+
+// @(str(msg_components))
 
 @#  constructor
 static int @(msg_prefix)__lnew (lua_State* L) {

@@ -42,16 +42,31 @@ foreach(_typesupport_impl ${_typesupport_impls})
   set(_generated_extension_${_typesupport_impl}_files "")
 endforeach()
 
+set(_msg_list "")
+set(_srv_list "")
+set(_action_list "")
+
 foreach(_abs_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   get_filename_component(_parent_folder "${_abs_idl_file}" DIRECTORY)
   get_filename_component(_parent_folder "${_parent_folder}" NAME)
   get_filename_component(_idl_name "${_abs_idl_file}" NAME_WE)
   string_camel_case_to_lower_case_underscore("${_idl_name}" _module_name)
+  set(_src_c "${_output_path}/${_parent_folder}/${_module_name}.c")
   list(APPEND _generated_lua_files
     "${_output_path}/${_parent_folder}/${_module_name}.lua")
-  list(APPEND _generated_c_files
-    "${_output_path}/${_parent_folder}/${_module_name}.c")
+  list(APPEND _generated_c_files ${_src_c})
+  
+  # separate msg/srv/action
+  if(${_parent_folder} STREQUAL "msg")
+    list(APPEND _msg_list ${_src_c})  
+  elseif(${_parent_folder} STREQUAL "srv")
+    list(APPEND _srv_list ${_src_c})
+  else()
+    list(APPEND _action_list ${_src_c})
+  endif()    
 endforeach()
+
+message(WARNING ${_msg_list})
 
 file(MAKE_DIRECTORY "${_output_path}")
 # file(WRITE "${_output_path}/__init__.lua" "")
@@ -98,6 +113,7 @@ set(target_dependencies
   "${rosidl_generator_lua_TEMPLATE_DIR}/idl.c.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/idl.lua.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/msg.c.em"
+  "${rosidl_generator_lua_TEMPLATE_DIR}/msg_lib.c.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/msg.lua.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/srv.c.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/srv.lua.em"

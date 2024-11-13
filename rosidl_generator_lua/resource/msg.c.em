@@ -647,6 +647,18 @@ static const struct luaL_Reg @(msg_prefix)__setters[] = {
   {NULL, NULL}
 };
 
+@{
+#fn_name = ''
+#ns_name = ''
+fn_name = msg_components[2]
+ns_name = ''
+#if msg_components[1] == 'msg':
+#    fn_name = msg_components[2]
+#else:
+#    tmp = msg_components[2].split('_')
+#    ns_name, fn_name = msg_components[2].split('_')
+}@
+
 static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"__gc", @(msg_prefix)__lgc},
   {"__eq", @(msg_prefix)__leq},
@@ -654,7 +666,6 @@ static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"__tostring", @(msg_prefix)__lstr},
   {"__index", @(msg_prefix)__lindex},
   {"__newindex", @(msg_prefix)__lnewindex},
-  {"new", @(msg_prefix)__lnew},
   {"resize", @(msg_prefix)__lresize},
   {"copy", @(msg_prefix)__lcopy},
   {NULL, NULL}
@@ -678,4 +689,12 @@ void @(msg_prefix)__add_methods (lua_State* L) {
   luaL_setfuncs(L, @(msg_prefix)__common, 0);
 
   lua_pop(L, 1);  // pop metatable
+
+  // add constructor
+  lua_pushcfunction(L, @(msg_prefix)__lnew);
+  lua_setfield(L, -2, "@(fn_name)");
 }
+
+@{
+function_list.append((msg_prefix + '__add_methods', ns_name, fn_name))
+}@

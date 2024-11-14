@@ -72,6 +72,7 @@ def generate_lua(generator_arguments_file, typesupport_impls):
     
     args = read_generator_arguments(generator_arguments_file)
     template_dir = args['template_dir']
+        
     
     modules = {}
     idl_content = IdlContent()
@@ -87,17 +88,37 @@ def generate_lua(generator_arguments_file, typesupport_impls):
         idl_file = parse_idl_file(locator)
         idl_content.elements += idl_file.content.elements
     
+    obj_list = [
+        ('msg', idl_content.get_elements_of_type(Message)),
+        ('srv', idl_content.get_elements_of_type(Service)),
+        ('action', idl_content.get_elements_of_type(Action)),
+    ]
+    
+    
+#    for message in idl_content.get_elements_of_type(Message):
+#        msg_types.append('msg')
+#        break
+#        print(message.structure.namespaced_type.name, file=sys.stderr)
+#        for member in message.structure.members:
+#            print(member.name, member.type, file=sys.stderr)    
+
+
+    
     lib_templates = [('msg_lib.c.em', 'msg', 'msg_lib.txt')]
     latest_target_timestamp = get_newest_modification_time(args['target_dependencies'])
-    for template_file, interface, out_name in lib_templates:
+    for msg_type, idl_group in obj_list:
+        if not idl_group:
+            continue  
+    #for template_file, interface, out_name in lib_templates:
+        template_file = msg_type + '_lib.c.em'
+        out_name = msg_type + '_lib.txt'
         package_name = args['package_name']
         data = {
             'package_name': args['package_name'],
-            'content': idl_content,
-            'typesupport_impl': '',
+            'content': idl_group, # idl_content,
         }
         generated_file = os.path.join(
-            args['output_dir'], interface, out_name)
+            args['output_dir'], msg_type, out_name)
         template = os.path.join(template_dir, template_file)
         expand_template(
             template, data, generated_file,

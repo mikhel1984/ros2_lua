@@ -631,6 +631,33 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
   return 0;
 }
 
+static void @(msg_prefix)__lconstructor (lua_State* L) {
+@{
+name_parts = msg_components[2].rsplit()
+fn_name = name_parts[-1]
+}
+  // access via table
+  lua_newtable(L);                       // push table
+  
+  // add metatable
+  lua_createtable(L, 0, @(len(message.constants) + 2));  // push table
+  lua_pushcfunction(L, @(msg_prefix)__lnew);  // push function
+  lua_setfield(L, -2, "__call");         // pop function, add to table
+@[for constant in message.constants]@
+@{
+type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
+}@  
+  @(type_dict['ifn'])(L, @(constant.value));  // push value
+  lua_setfield(L, -2, "@(constant.name)");   // pop value, add to table
+@[end for]@
+
+  lua_pushvalue(L, -1);                  // push table
+  lua_setfield(L, -2, "__index");        // pop table
+  
+  lua_setmetatable(L, -2);               // pop table, save as metatable  
+  lua_setfield(L, -2, "@(fn_name)");  // pop table, save to main table
+}
+
 // get values
 static const struct luaL_Reg @(msg_prefix)__getters[] = {
 @[for name, fn in msg_getters]@
@@ -659,10 +686,7 @@ static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"copy", @(msg_prefix)__lcopy},
   {NULL, NULL}
 };
-@{
-name_parts = msg_components[2].rsplit()
-fn_name = name_parts[-1]
-}
+
 
 void @(msg_prefix)__add_methods (lua_State* L) {
   // metatable
@@ -683,8 +707,7 @@ void @(msg_prefix)__add_methods (lua_State* L) {
 
   lua_pop(L, 1);  // pop metatable
 
-  // add constructor
-  lua_pushcfunction(L, @(msg_prefix)__lnew);
-  lua_setfield(L, -2, "@(fn_name)");
+  // add constructor and constants
+  @(msg_prefix)__lconstructor(L);
 }
 

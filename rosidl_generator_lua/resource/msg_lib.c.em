@@ -6,7 +6,7 @@ from rosidl_cmake import convert_camel_case_to_lower_case_underscore
 from rosidl_parser.definition import AbstractNestedType, NamespacedType
 import sys
 }@
-@# generate function names
+@# collect function names
 @{
 function_list = []
 for message in content:
@@ -40,7 +40,7 @@ void @(function) (lua_State* L);
 
 int luaopen_msg (lua_State* L)
 {
-  lua_createtable(L, 0, 0);
+  lua_createtable(L, 0, @(len(function_list)));
 
 @[for function in function_list]@
   @(function)(L);

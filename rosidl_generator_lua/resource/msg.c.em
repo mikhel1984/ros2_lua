@@ -659,6 +659,10 @@ static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"copy", @(msg_prefix)__lcopy},
   {NULL, NULL}
 };
+@{
+name_parts = msg_components[2].rsplit()
+fn_name = name_parts[-1]
+}
 
 void @(msg_prefix)__add_methods (lua_State* L) {
   // metatable
@@ -681,6 +685,6 @@ void @(msg_prefix)__add_methods (lua_State* L) {
 
   // add constructor
   lua_pushcfunction(L, @(msg_prefix)__lnew);
-  lua_setfield(L, -2, "@(msg_components[2])");
+  lua_setfield(L, -2, "@(fn_name)");
 }
 

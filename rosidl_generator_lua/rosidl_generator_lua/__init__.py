@@ -104,12 +104,10 @@ def generate_lua(generator_arguments_file, typesupport_impls):
 
 
     
-    lib_templates = [('msg_lib.c.em', 'msg', 'msg_lib.txt')]
     latest_target_timestamp = get_newest_modification_time(args['target_dependencies'])
     for msg_type, idl_group in obj_list:
         if not idl_group:
             continue  
-    #for template_file, interface, out_name in lib_templates:
         template_file = msg_type + '_lib.c.em'
         out_name = msg_type + '_lib.txt'
         package_name = args['package_name']

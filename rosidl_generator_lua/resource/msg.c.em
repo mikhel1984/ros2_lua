@@ -1,6 +1,6 @@
 
 @{
-from rosidl_generator_lua import NUMERIC_LUA_TYPES, sequence_metatable
+from rosidl_generator_lua import NUMERIC_LUA_TYPES, sequence_metatable, make_prefix
 from rosidl_cmake import convert_camel_case_to_lower_case_underscore
 from rosidl_parser.definition import AbstractNestedType
 from rosidl_parser.definition import AbstractSequence
@@ -108,7 +108,7 @@ nested_header += '__functions.h'
 @{
 msg_components = message.structure.namespaced_type.namespaced_name()
 msg_typename = '__'.join(msg_components)
-msg_prefix = '__'.join(message.structure.namespaced_type.namespaces + [convert_camel_case_to_lower_case_underscore(message.structure.namespaced_type.name)])
+msg_prefix = make_prefix(message)
 msg_getters = []
 msg_setters = []
 msg_metatable = msg_typename + '__mt'
@@ -477,7 +477,6 @@ if isinstance(type_, AbstractNestedType):
 @[  if isinstance(type_, NamespacedType)]@
 @{
 nested_type = '__'.join(type_.namespaced_name())
-# mtbl = '__'.join(type_.namespaces + [convert_camel_case_to_lower_case_underscore(type_.name)]) + '__mt'
 mtbl = nested_type + '__mt'
 }@
   // return new object

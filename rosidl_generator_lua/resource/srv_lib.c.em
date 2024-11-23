@@ -15,9 +15,9 @@ void @(make_prefix(srv.response_message))__add_methods (lua_State* L);
 
 // library
 
-int luaopen_msg (lua_State* L)
+int luaopen_srv (lua_State* L)
 {
-  lua_createtable(L, 0, @(len(content)));   // push table
+  lua_createtable(L, 0, @(len(content)));   // push table "srv"
 @[for message in content]@
 @{
 req_name = srv.request_message.structure.namespaced_type.name.rsplit('_', 1)

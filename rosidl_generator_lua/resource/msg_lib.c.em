@@ -2,16 +2,9 @@
 #include <lua.h>
 #include <lauxlib.h>
 @{
-from rosidl_cmake import convert_camel_case_to_lower_case_underscore
+from rosidl_generator_lua import make_prefix
 from rosidl_parser.definition import AbstractNestedType, NamespacedType
 import sys
-}@
-@# collect function names
-@{
-function_list = []
-for message in content:
-    msg_prefix = '__'.join(message.structure.namespaced_type.namespaces + [convert_camel_case_to_lower_case_underscore(message.structure.namespaced_type.name)])
-    function_list.append(msg_prefix + '__add_methods')    
 }@
 @# nested types
 @{
@@ -32,19 +25,19 @@ for message in content:
 
 // prototypes
 
-@[for function in function_list]@
-void @(function) (lua_State* L);
+@[for message in content]@
+void @(make_prefix(message)) (lua_State* L);
 @[end for]@
 
 // library
 
 int luaopen_msg (lua_State* L)
 {
-  lua_createtable(L, 0, @(len(function_list)));
-
-@[for function in function_list]@
-  @(function)(L);
-@[end for]@
+  lua_createtable(L, 0, @(len(content)));    // push table "msg"
+  
+@[for message in content]@
+  @(make_prefix(message))(L);
+@[end for]@  
 
   return 1;
 }

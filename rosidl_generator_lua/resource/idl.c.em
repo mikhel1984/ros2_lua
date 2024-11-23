@@ -15,7 +15,6 @@
 from rosidl_parser.definition import Message
 
 include_directives = set()
-function_list = []
 }@
 @[for message in content.get_elements_of_type(Message)]@
 @{
@@ -23,8 +22,7 @@ function_list = []
 TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
-    message=message, include_directives=include_directives,
-    function_list=function_list)
+    message=message, include_directives=include_directives)
 }@
 @[end for]@
 @
@@ -33,7 +31,6 @@ TEMPLATE(
 @#######################################################################
 @{
 from rosidl_parser.definition import Service
-function_list = []
 }@
 @[for service in content.get_elements_of_type(Service)]@
 @{
@@ -41,16 +38,14 @@ function_list = []
 TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
-    message=service.request_message, include_directives=include_directives,
-    function_list=function_list)
+    message=service.request_message, include_directives=include_directives)
 }@
 
 @{
 TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
-    message=service.response_message, include_directives=include_directives,
-    function_list=function_list)
+    message=service.response_message, include_directives=include_directives)
 }@
 @[end for]@
 @
@@ -59,7 +54,6 @@ TEMPLATE(
 @#######################################################################
 @{
 from rosidl_parser.definition import Action
-function_list = []
 }@
 @[for action in content.get_elements_of_type(Action)]@
 @{
@@ -67,24 +61,21 @@ function_list = []
 TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
-    message=action.goal, include_directives=include_directives,
-    function_list=function_list)
+    message=action.goal, include_directives=include_directives)
 }@
 
 @{
 TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
-    message=action.result, include_directives=include_directives,
-    function_list=function_list)
+    message=action.result, include_directives=include_directives)
 }@
 
 @{
 TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
-    message=action.feedback, include_directives=include_directives,
-    function_list=function_list)
+    message=action.feedback, include_directives=include_directives)
 }@
 
 @{
@@ -92,8 +83,7 @@ TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
     message=action.send_goal_service.request_message,
-    include_directives=include_directives,
-    function_list=function_list)
+    include_directives=include_directives)
 }@
 
 @{
@@ -101,8 +91,7 @@ TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
     message=action.send_goal_service.response_message,
-    include_directives=include_directives,
-    function_list=function_list)
+    include_directives=include_directives)
 }@
 
 @{
@@ -110,8 +99,7 @@ TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
     message=action.get_result_service.request_message,
-    include_directives=include_directives,
-    function_list=function_list)
+    include_directives=include_directives)
 }@
 
 @{
@@ -119,15 +107,13 @@ TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
     message=action.get_result_service.response_message,
-    include_directives=include_directives,
-    function_list=function_list)
+    include_directives=include_directives)
 }@
 
 @{
 TEMPLATE(
     'msg.c.em',
     package_name=package_name, interface_path=interface_path,
-    message=action.feedback_message, include_directives=include_directives,
-    function_list=function_list)
+    message=action.feedback_message, include_directives=include_directives)
 }@
 @[end for]@

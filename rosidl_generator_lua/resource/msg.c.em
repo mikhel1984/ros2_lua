@@ -633,7 +633,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
 
 static void @(msg_prefix)__lconstructor (lua_State* L) {
 @{
-name_parts = msg_components[2].rsplit()
+name_parts = msg_components[2].rsplit('_', 1)
 fn_name = name_parts[-1]
 }
   // access via table

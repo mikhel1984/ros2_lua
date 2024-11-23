@@ -109,7 +109,7 @@ def generate_lua(generator_arguments_file, typesupport_impls):
         if not idl_group:
             continue  
         template_file = msg_type + '_lib.c.em'
-        out_name = msg_type + '_lib.txt'
+        out_name = msg_type + '_lib.c'
         package_name = args['package_name']
         data = {
             'package_name': args['package_name'],
@@ -127,3 +127,5 @@ def generate_lua(generator_arguments_file, typesupport_impls):
     
     return generated_files
 
+def make_prefix(tp):
+    return '__'.join(tp.structure.namespaced_type.namespaces + [convert_camel_case_to_lower_case_underscore(tp.structure.namespaced_type.name)])

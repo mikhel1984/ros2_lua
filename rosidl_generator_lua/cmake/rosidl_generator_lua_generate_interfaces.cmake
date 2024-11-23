@@ -66,7 +66,18 @@ foreach(_abs_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   endif()    
 endforeach()
 
-message(WARNING ${_msg_list})
+if(_msg_list)
+  list(APPEND _msg_list "${_output_path}/msg/msg_lib.c")
+  list(APPEND _generated_c_files "${_output_path}/msg/msg_lib.c")
+endif()
+if(_srv_list)
+  list(APPEND _srv_list "${_output_path}/srv/srv_lib.c")
+  list(APPEND _generated_c_files "${_output_path}/srv/srv_lib.c")
+endif()
+if(_action_list)
+  list(APPEND _action_list "${_output_path}/action/action_lib.c")
+  list(APPEND _generated_c_files "${_output_path}/action/action_lib.c")
+endif()
 
 file(MAKE_DIRECTORY "${_output_path}")
 # file(WRITE "${_output_path}/__init__.lua" "")
@@ -160,7 +171,7 @@ set_property(
 
 
 add_custom_command(
-  OUTPUT ${_generated_lua_files} ${_generated_c_files}
+  OUTPUT ${_generated_lua_files} ${_generated_c_files} # ${_msg_list} ${_srv_list} ${_action_list}
   COMMAND Python3::Interpreter
   ARGS ${rosidl_generator_lua_BIN}
   --generator-arguments-file "${generator_arguments_file}"
@@ -177,27 +188,28 @@ else()
     ${rosidl_generate_interfaces_TARGET}${_target_suffix}
     DEPENDS
     ${_generated_lua_files} ${_generated_c_files}
+    #${_msg_list} ${_srv_list} ${_action_list}
   )
 endif()
 
 
 
-macro(set_properties _build_type)
-  set_target_properties(${_target_name} PROPERTIES
-    COMPILE_OPTIONS "${_extension_compile_flags}"
-    PREFIX ""
-    LIBRARY_OUTPUT_DIRECTORY${_build_type} ${_output_path}
-    RUNTIME_OUTPUT_DIRECTORY${_build_type} ${_output_path}
-    OUTPUT_NAME "${PROJECT_NAME}_s__${_typesupport_impl}${PythonExtra_EXTENSION_SUFFIX}"
-    SUFFIX "${PythonExtra_EXTENSION_EXTENSION}")
-endmacro()
+#macro(set_properties _build_type)
+#  set_target_properties(${_target_name} PROPERTIES
+#    COMPILE_OPTIONS "${_extension_compile_flags}"
+#    PREFIX ""
+#    LIBRARY_OUTPUT_DIRECTORY${_build_type} ${_output_path}
+#    RUNTIME_OUTPUT_DIRECTORY${_build_type} ${_output_path}
+#    OUTPUT_NAME "${PROJECT_NAME}_s__${_typesupport_impl}${PythonExtra_EXTENSION_SUFFIX}"
+#    SUFFIX "${PythonExtra_EXTENSION_EXTENSION}")
+#endmacro()
 
-macro(set_lib_properties _build_type)
-  set_target_properties(${_target_name_lib} PROPERTIES
-    COMPILE_OPTIONS "${_extension_compile_flags}"
-    LIBRARY_OUTPUT_DIRECTORY${_build_type} ${_output_path}
-    RUNTIME_OUTPUT_DIRECTORY${_build_type} ${_output_path})
-endmacro()
+#macro(set_lib_properties _build_type)
+#  set_target_properties(${_target_name_lib} PROPERTIES
+#    COMPILE_OPTIONS "${_extension_compile_flags}"
+#    LIBRARY_OUTPUT_DIRECTORY${_build_type} ${_output_path}
+#    RUNTIME_OUTPUT_DIRECTORY${_build_type} ${_output_path})
+#endmacro()
 
 # Export target so downstream interface packages can link to it
 set(rosidl_generator_lua_suffix "__rosidl_generator_lua")
@@ -217,19 +229,48 @@ add_dependencies(
 #  ${_target_name_lib}
 #  ${PythonExtra_LIBRARIES}
 #)
-message(WARNING "${rosidl_luacommon_DIR}")
+set(_luacommon_dir "${rosidl_luacommon_DIR}/../../../include")
+normalize_path(_luacommon_dir "${_luacommon_dir}")
+
+message(WARNING "${_luacommon_dir}")
 target_include_directories(${_target_name_lib}
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
-  ${rosidl_luacommon_DIR}/../../../include
+  ${_luacommon_dir}
   #${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_lua
 #  #${PythonExtra_INCLUDE_DIRS}
 )
 
-rosidl_get_typesupport_target(c_typesupport_target "${rosidl_generate_interfaces_TARGET}" "rosidl_typesupport_c")
+macro(make_lualib _lib_name _lib_files)
+  add_library(${_lib_name} SHARED
+    ${_lib_files}  
+  )
+  set_target_properties(${_lib_name} PROPERTIES 
+    PREFIX ""
+    LIBRARY_OUTPUT_DIRECTORY ${_output_path}
+  )
+  target_link_libraries(${_lib_name}
+    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
+  target_include_directories(${_lib_name} PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
+    ${_luacommon_dir})
+endmacro()
+
+if(_msg_list)
+  make_lualib(msg ${_msg_list})  
+endif()
+if(_srv_list)
+  make_lualib(srv ${_srv_list})
+endif()
+if(_action_list)
+  make_lualib(action ${_action_list})
+endif()
+
+
+#rosidl_get_typesupport_target(c_typesupport_target "${rosidl_generate_interfaces_TARGET}" "rosidl_typesupport_c")
 #target_link_libraries(${_target_name_lib} ${c_typesupport_target})
 
-foreach(_typesupport_impl ${_typesupport_impls})
+#foreach(_typesupport_impl ${_typesupport_impls})
 #  find_package(${_typesupport_impl} REQUIRED)
 #  # a typesupport package might not be able to generated a target anymore
 #  # (e.g. if an underlying vendor package isn't available in an overlay)
@@ -237,8 +278,8 @@ foreach(_typesupport_impl ${_typesupport_impls})
 #    continue()
 #  endif()
 
-  set(_luaext_suffix "__luaext")
-  set(_target_name "${PROJECT_NAME}__${_typesupport_impl}${_luaext_suffix}")
+#  set(_luaext_suffix "__luaext")
+#  set(_target_name "${PROJECT_NAME}__${_typesupport_impl}${_luaext_suffix}")
 
 #  add_library(${_target_name} SHARED
 #    ${_generated_extension_${_typesupport_impl}_files}
@@ -249,7 +290,7 @@ foreach(_typesupport_impl ${_typesupport_impls})
 #    ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
 #  )
 
-  set(_extension_compile_flags "")
+#  set(_extension_compile_flags "")
 #  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 #    set(_extension_compile_flags -Wall -Wextra)
 #  endif()
@@ -299,9 +340,9 @@ foreach(_typesupport_impl ${_typesupport_impls})
 #    install(TARGETS ${_target_name}
 #      DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}")
 #  endif()
-endforeach()
+#endforeach()
 
-set(PYTHON_EXECUTABLE ${_PYTHON_EXECUTABLE})
+#set(PYTHON_EXECUTABLE ${_PYTHON_EXECUTABLE})
 
 ## Depend on rosidl_generator_py generated targets from our dependencies
 #foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})

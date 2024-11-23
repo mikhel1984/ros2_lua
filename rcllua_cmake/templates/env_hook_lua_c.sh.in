@@ -46,7 +46,7 @@ ament_append_unique_value() {
 }
 
 if [ -z "$LUA_CPATH" ]; then
-  export LUA_CPATH="$COLCON_CURRENT_PREFIX/lib/lua/?.so"
+  export LUA_CPATH=";;$COLCON_CURRENT_PREFIX/lib/lua/?.so"
 else
   ament_append_unique_value LUA_CPATH "$COLCON_CURRENT_PREFIX/lib/lua/?.so"
 fi

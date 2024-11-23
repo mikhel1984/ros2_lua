@@ -22,7 +22,7 @@ void rosidl_luacommon_add_String (lua_State* L);
 
 /* library */
 
-int luaopen_rosidl_luacommon (lua_State* L)
+int luaopen_rosidl_luacommon_sequence (lua_State* L)
 {
   lua_createtable(L, 0, 0);  // TODO remove ?
   

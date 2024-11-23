@@ -16,7 +16,7 @@ for message in content:
         if isinstance(type_, AbstractNestedType):
             type_ = type_.value_type
         if isinstance(type_, NamespacedType):
-            print(type_.namespaced_name(), file=sys.stderr)
+            # print(type_.namespaced_name(), file=sys.stderr)
             nested_type = str(type_.namespaced_name()[0])
             if nested_type not in nested_list:
                 nested_list.append(nested_type)

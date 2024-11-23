@@ -17,7 +17,7 @@ find_package(rcllua_cmake REQUIRED)
 
 include_directories(include)
 
-set(LIB_NAME rosidl_luacommon)
+set(LIB_NAME sequence)
 
 add_library(${LIB_NAME} SHARED
   src/luacommon.c
@@ -40,7 +40,7 @@ install(
   DESTINATION include
 )
 
-rcllua_cmake_install_clib(${LIB_NAME})
+rcllua_cmake_install_clib(${PROJECT_NAME} ${LIB_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

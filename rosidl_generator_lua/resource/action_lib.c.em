@@ -21,7 +21,7 @@ void @(make_prefix(act.feedback_message))__add_methods (lua_State* L);
 @[end for]@
 // library
 
-int luaopen_action (lua_State* L)
+int luaopen_@(package_name)_action (lua_State* L)
 {
   lua_createtable(L, 0, @(len(content)));    // push table "action"
 @[for act in content]@

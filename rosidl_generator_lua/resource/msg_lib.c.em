@@ -26,17 +26,17 @@ for message in content:
 // prototypes
 
 @[for message in content]@
-void @(make_prefix(message)) (lua_State* L);
+void @(make_prefix(message))__add_methods (lua_State* L);
 @[end for]@
 
 // library
 
-int luaopen_msg (lua_State* L)
+int luaopen_@(package_name)_msg (lua_State* L)
 {
   lua_createtable(L, 0, @(len(content)));    // push table "msg"
   
 @[for message in content]@
-  @(make_prefix(message))(L);
+  @(make_prefix(message))__add_methods(L);
 @[end for]@  
 
   return 1;

@@ -66,16 +66,16 @@ foreach(_abs_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   endif()    
 endforeach()
 
-if(_msg_list)
-  list(APPEND _msg_list "${_output_path}/msg/msg_lib.c")
+if(NOT _msg_list STREQUAL "")
+  list(INSERT _msg_list 0 "${_output_path}/msg/msg_lib.c")
   list(APPEND _generated_c_files "${_output_path}/msg/msg_lib.c")
 endif()
-if(_srv_list)
-  list(APPEND _srv_list "${_output_path}/srv/srv_lib.c")
+if(NOT _srv_list STREQUAL "")
+  list(INSERT _srv_list 0 "${_output_path}/srv/srv_lib.c")
   list(APPEND _generated_c_files "${_output_path}/srv/srv_lib.c")
 endif()
-if(_action_list)
-  list(APPEND _action_list "${_output_path}/action/action_lib.c")
+if(NOT _action_list STREQUAL "")
+  list(INSERT _action_list 0 "${_output_path}/action/action_lib.c")
   list(APPEND _generated_c_files "${_output_path}/action/action_lib.c")
 endif()
 
@@ -232,7 +232,6 @@ add_dependencies(
 set(_luacommon_dir "${rosidl_luacommon_DIR}/../../../include")
 normalize_path(_luacommon_dir "${_luacommon_dir}")
 
-message(WARNING "${_luacommon_dir}")
 target_include_directories(${_target_name_lib}
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
@@ -241,9 +240,11 @@ target_include_directories(${_target_name_lib}
 #  #${PythonExtra_INCLUDE_DIRS}
 )
 
+message(WARNING ${_msg_list})
+
 macro(make_lualib _lib_name _lib_files)
   add_library(${_lib_name} SHARED
-    ${_lib_files}  
+    "${_lib_files}"
   )
   set_target_properties(${_lib_name} PROPERTIES 
     PREFIX ""
@@ -256,27 +257,68 @@ macro(make_lualib _lib_name _lib_files)
     ${_luacommon_dir})
 endmacro()
 
-if(_msg_list)
-  make_lualib(msg ${_msg_list})  
+#set(_lib_name msg)
+#add_library(${_lib_name} SHARED
+#    ${_msg_list}
+#  )
+#  set_target_properties(${_lib_name} PROPERTIES 
+#    PREFIX ""
+#    LIBRARY_OUTPUT_DIRECTORY ${_output_path}
+#  )
+#  target_link_libraries(${_lib_name}
+#    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
+#  target_include_directories(${_lib_name} PRIVATE
+#    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
+#    ${_luacommon_dir})
+
+if(NOT _msg_list STREQUAL "")
+  add_library(msg SHARED ${_msg_list})
+  set_target_properties(msg PROPERTIES 
+    PREFIX ""
+    LIBRARY_OUTPUT_DIRECTORY ${_output_path}
+  )
+  target_link_libraries(msg
+    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
+  target_include_directories(msg PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
+    ${_luacommon_dir})
 endif()
-if(_srv_list)
-  make_lualib(srv ${_srv_list})
+if(NOT _srv_list STREQUAL "")
+  add_library(srv SHARED ${_srv_list})
+  set_target_properties(srv PROPERTIES 
+    PREFIX ""
+    LIBRARY_OUTPUT_DIRECTORY ${_output_path}
+  )
+  target_link_libraries(srv
+    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
+  target_include_directories(srv PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
+    ${_luacommon_dir})
 endif()
-if(_action_list)
-  make_lualib(action ${_action_list})
+if(NOT _action_list STREQUAL "")
+  add_library(action SHARED ${_action_list})
+  set_target_properties(action PROPERTIES 
+    PREFIX ""
+    LIBRARY_OUTPUT_DIRECTORY ${_output_path}
+  )
+  target_link_libraries(action
+    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
+  target_include_directories(action PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
+    ${_luacommon_dir})
 endif()
 
 if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
   message(WARNING "INSTALL")
   find_package(rcllua_cmake REQUIRED)
-  if(_msg_list)
-    rcllua_cmake_install_clib(msg)
+  if(NOT _msg_list STREQUAL "")
+    rcllua_cmake_install_clib(${PROJECT_NAME} msg)
   endif()
-  if(_srv_list)
-    rcllua_cmake_install_clib(srv)  
+  if(NOT _srv_list STREQUAL "")
+    rcllua_cmake_install_clib(${PROJECT_NAME} srv)  
   endif()
-  if(_action_list)
-    rcllua_cmake_install_clib(action)  
+  if(NOT _action_list STREQUAL "")
+    rcllua_cmake_install_clib(${PROJECT_NAME} action)  
   endif()
 endif()
 

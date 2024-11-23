@@ -40,10 +40,10 @@ set_target_properties(${LIB_NAME} PROPERTIES
 )
 
 # Lua scripts
-ament_install_lua_lib(${PROJECT_NAME})
+rcllua_cmake_install_lib(${PROJECT_NAME})
 
 # C library
-ament_install_lua_clib(${LIB_NAME})
+rcllua_cmake_install_clib(${LIB_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

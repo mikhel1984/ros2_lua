@@ -12,7 +12,7 @@ install(
 
 # custom commands
 list(APPEND ${PROJECT_NAME}_CONFIG_EXTRAS
-  ${CMAKE_CURRENT_LIST_DIR}/cmake/ament_cmake_lua_lib.cmake
+  ${CMAKE_CURRENT_LIST_DIR}/cmake/rcllua_cmake_macro.cmake
 )
 
 ament_package()

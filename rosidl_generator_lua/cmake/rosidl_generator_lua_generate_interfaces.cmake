@@ -266,6 +266,12 @@ if(_action_list)
   make_lualib(action ${_action_list})
 endif()
 
+#if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
+#  find_package(rcllua_cmake REQUIRED)
+#  if(_msg_list)
+#  endif()
+#endif()
+
 
 #rosidl_get_typesupport_target(c_typesupport_target "${rosidl_generate_interfaces_TARGET}" "rosidl_typesupport_c")
 #target_link_libraries(${_target_name_lib} ${c_typesupport_target})

@@ -1,7 +1,7 @@
 
 # Copy lua files, add environment hook
 # src_name - name of the directory with scripts
-macro(ament_install_lua_lib src_name)
+macro(rcllua_cmake_install_lib src_name)
   install(
     DIRECTORY ${src_name}
     DESTINATION lib
@@ -19,7 +19,7 @@ endmacro()
 
 # Copy dynamic library, add environment hook
 # src_name - name of the dynamic library file
-macro(ament_install_lua_clib src_name)
+macro(rcllua_cmake_install_clib src_name)
   install(
     TARGETS ${src_name}
     ARCHIVE DESTINATION lib

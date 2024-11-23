@@ -10,7 +10,7 @@ import sys
 @{
 nested_list = []
 for message in content:
-    print(str(message.structure.namespaced_type.namespaced_name()), file=sys.stderr)
+    # print(str(message.structure.namespaced_type.namespaced_name()), file=sys.stderr)
     for member in message.structure.members:
         type_ = member.type
         if isinstance(type_, AbstractNestedType):

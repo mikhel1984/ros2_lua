@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ast import literal_eval
-import keyword
 import os
 import pathlib
-import sys
 
 from rosidl_cmake import convert_camel_case_to_lower_case_underscore
 from rosidl_cmake import expand_template
@@ -24,19 +21,11 @@ from rosidl_cmake import generate_files
 from rosidl_cmake import get_newest_modification_time
 from rosidl_cmake import read_generator_arguments
 from rosidl_parser.definition import AbstractGenericString
-from rosidl_parser.definition import AbstractNestedType
-from rosidl_parser.definition import AbstractSequence
-from rosidl_parser.definition import Action
-from rosidl_parser.definition import Array
-from rosidl_parser.definition import BasicType
-from rosidl_parser.definition import CHARACTER_TYPES
-from rosidl_parser.definition import FLOATING_POINT_TYPES
 from rosidl_parser.definition import IdlContent
 from rosidl_parser.definition import IdlLocator
-from rosidl_parser.definition import INTEGER_TYPES
 from rosidl_parser.definition import Message
-from rosidl_parser.definition import NamespacedType
 from rosidl_parser.definition import Service
+from rosidl_parser.definition import Action
 from rosidl_parser.parser import parse_idl_file
 
 
@@ -63,17 +52,15 @@ def sequence_metatable(type_):
 
 
 def generate_lua(generator_arguments_file, typesupport_impls):
-    print("CALL LUA!!!", file=sys.stderr)
     mapping = {
-        'idl.lua.em': '%s.lua',
         'idl.c.em': '%s.c',
     }
     generated_files = generate_files(generator_arguments_file, mapping)
     
     args = read_generator_arguments(generator_arguments_file)
-    template_dir = args['template_dir']
-        
+    template_dir = args['template_dir']        
     
+    # add files for lua binding
     modules = {}
     idl_content = IdlContent()
     for idl_tuple in args.get('idl_tuples', []):
@@ -94,16 +81,6 @@ def generate_lua(generator_arguments_file, typesupport_impls):
         ('action', idl_content.get_elements_of_type(Action)),
     ]
     
-    
-#    for message in idl_content.get_elements_of_type(Message):
-#        msg_types.append('msg')
-#        break
-#        print(message.structure.namespaced_type.name, file=sys.stderr)
-#        for member in message.structure.members:
-#            print(member.name, member.type, file=sys.stderr)    
-
-
-    
     latest_target_timestamp = get_newest_modification_time(args['target_dependencies'])
     for msg_type, idl_group in obj_list:
         if not idl_group:
@@ -122,10 +99,9 @@ def generate_lua(generator_arguments_file, typesupport_impls):
             template, data, generated_file,
             minimum_timestamp=latest_target_timestamp)
         generated_files.append(generated_file)
-        print('build file!!!', file=sys.stderr)
-
     
     return generated_files
 
 def make_prefix(tp):
     return '__'.join(tp.structure.namespaced_type.namespaces + [convert_camel_case_to_lower_case_underscore(tp.structure.namespaced_type.name)])
+    

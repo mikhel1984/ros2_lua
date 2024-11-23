@@ -4,7 +4,7 @@
 macro(rcllua_cmake_install_lib src_name)
   install(
     DIRECTORY ${src_name}
-    DESTINATION lib
+    DESTINATION lib/lua
   )
   
   if(NOT DEFINED _AMENT_CMAKE_LUA_ENVIRONMENT_HOOK_REGISTERED)
@@ -19,12 +19,12 @@ endmacro()
 
 # Copy dynamic library, add environment hook
 # src_name - name of the dynamic library file
-macro(rcllua_cmake_install_clib src_name)
+macro(rcllua_cmake_install_clib proj_name src_name)
   install(
     TARGETS ${src_name}
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib/lua/${proj_name}
+    LIBRARY DESTINATION lib/lua/${proj_name}
+    RUNTIME DESTINATION bin/lua/${proj_name}
   )
   
   if(NOT DEFINED _AMENT_CMAKE_LUAC_ENVIRONMENT_HOOK_REGISTERED)
@@ -36,3 +36,5 @@ macro(rcllua_cmake_install_clib src_name)
       "${rcllua_cmake_DIR}/templates/env_hook_lua_c.sh.in")
   endif()  
 endmacro()
+
+

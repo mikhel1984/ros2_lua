@@ -1,5 +1,5 @@
 
-local rclbind = require("rclbind")
+local rclbind = require("rcllua.rclbind")
 
 Node = {}
 

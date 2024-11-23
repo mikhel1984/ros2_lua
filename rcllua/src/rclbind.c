@@ -9,7 +9,7 @@
 #include "clock.h"
 #include "wait_set.h"
 
-int luaopen_rclbind (lua_State* L)
+int luaopen_rcllua_rclbind (lua_State* L)
 {
   lua_createtable(L, 0, 10); // TODO(set number)
 

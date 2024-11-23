@@ -43,7 +43,7 @@ set_target_properties(${LIB_NAME} PROPERTIES
 rcllua_cmake_install_lib(${PROJECT_NAME})
 
 # C library
-rcllua_cmake_install_clib(${LIB_NAME})
+rcllua_cmake_install_clib(${PROJECT_NAME} ${LIB_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

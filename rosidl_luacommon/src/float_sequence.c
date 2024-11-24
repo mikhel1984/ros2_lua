@@ -49,6 +49,55 @@ static int STRUCT_NAME ## _seq_get (lua_State* L) \
   return 1; \
 }
 
+#define FLOAT_SEQ_CALL(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
+static int STRUCT_NAME ## _seq_call (lua_State* L) \
+{ \
+  bool done = false; \
+  int tp = lua_type(L, 2); \
+  if (LUA_TUSERDATA == tp) { \
+    return STRUCT_NAME ## _seq_copy(L); \
+  } else if (LUA_TNUMBER == tp) { \
+    return STRUCT_NAME ## _seq_resize(L); \
+  } else if (LUA_TTABLE == tp) { \
+    lua_len(L, 2); \
+    int len = luaL_checkinteger(L, -1); \
+    idl_lua_msg_t* msg = lua_touserdata(L, 1); \
+    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) { \
+      lua_pop(L, 1); \
+      TYPE_NAME * lst = msg->obj; \
+      if (IDL_LUA_SEQ == msg->value) { \
+        STRUCT_NAME ## _seq_resize(L); \
+        if (lua_toboolean(L, -1)) { \
+          lua_pop(L, 1); \
+        } else { \
+          return 1; \
+        } \
+        rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = msg->obj; \
+        lst = seq->data; \
+      } \
+      bool stop = false; \
+      for (int i = 0; i < len; i++) { \
+        lua_pushinteger(L, i+1); \
+        lua_gettable(L, 2); \
+        if (LUA_TNUMBER != lua_type(L, -1)) { \
+          stop = true; \
+          break; \
+        } \
+        lua_Number val = lua_tonumber(L, -1); \
+        if (!(V_MIN <= val && val <= V_MAX)) { \
+          stop = true; \
+          break; \
+        } \
+        lst[i] = (TYPE_NAME) val; \
+        lua_pop(L, 1); \
+      } \
+      done = !stop; \
+    } \
+  } \
+  lua_pushboolean(L, done); \
+  return 1; \
+}
+
 /* float */
 
 const char* MT_SEQ_FLOAT = "ROS2.rosidl_sequence.float";
@@ -60,6 +109,7 @@ OBJ_SEQ_LEN (float)
 OBJ_SEQ_STR (float)
 OBJ_SEQ_COPY (float, float, MT_SEQ_FLOAT)
 OBJ_SEQ_RESIZE (float, MT_SEQ_FLOAT)
+FLOAT_SEQ_CALL (float, float, FLT_MIN, FLT_MAX)
 
 OBJ_METHODS(float, float_seq_len)
 OBJ_ADD_TABLE (float, MT_SEQ_FLOAT)
@@ -74,6 +124,7 @@ OBJ_SEQ_EQ (double, MT_SEQ_DOUBLE)
 OBJ_SEQ_STR (double)
 OBJ_SEQ_COPY (double, double, MT_SEQ_DOUBLE)
 OBJ_SEQ_RESIZE (double, MT_SEQ_DOUBLE)
+FLOAT_SEQ_CALL (double, double, DBL_MIN, DBL_MAX)
 
 OBJ_METHODS(double, float_seq_len)
 OBJ_ADD_TABLE (double, MT_SEQ_DOUBLE)
@@ -88,8 +139,8 @@ OBJ_SEQ_EQ (long_double, MT_SEQ_LDOUBLE)
 OBJ_SEQ_STR (long_double)
 OBJ_SEQ_COPY (long_double, long double, MT_SEQ_LDOUBLE)
 OBJ_SEQ_RESIZE (long_double, MT_SEQ_LDOUBLE)
+FLOAT_SEQ_CALL (long_double, long double, LDBL_MIN, LDBL_MAX)
 
 OBJ_METHODS(long_double, float_seq_len)
 OBJ_ADD_TABLE (long_double, MT_SEQ_LDOUBLE)
-
 

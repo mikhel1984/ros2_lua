@@ -95,10 +95,64 @@ static int String_seq_copy (lua_State* L)
   return 1;
 }
 
+OBJ_SEQ_RESIZE (String, MT_SEQ_STRING)
+
+static int String_seq_call (lua_State* L)
+{
+  bool done = false;
+  int tp = lua_type(L, 2);
+
+  if (LUA_TUSERDATA == tp) {
+    return String_seq_copy(L);
+
+  } else if (LUA_TNUMBER == tp) {
+    return String_seq_resize(L);
+
+  } else if (LUA_TTABLE == tp) {
+    lua_len(L, 2);     // push len
+    int len = luaL_checkinteger(L, -1);
+    idl_lua_msg_t* msg = lua_touserdata(L, 1);
+    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
+      lua_pop(L, 1);   // pop len
+      rosidl_runtime_c__String* lst = msg->obj;
+      if (IDL_LUA_SEQ == msg->value) {
+        String_seq_resize(L);
+        if (lua_toboolean(L, -1)) {
+          lua_pop(L, 1);  // pop result
+        } else {
+          return 1;
+        }
+        rosidl_runtime_c__String__Sequence* seq = msg->obj;
+        lst = seq->data;
+      }
+      // copy
+      bool stop = false;
+      for (int i = 0; i < len; i++) {
+        lua_pushinteger(L, i+1);  // push index
+        lua_gettable(L, 2);       // pop index, push value
+        if (LUA_TSTRING != lua_type(L, -1)) {
+          stop = true;
+          break;
+        }
+        size_t str_len = 0;
+        const char* str_data = lua_tolstring(L, -1, &str_len);
+        if (!rosidl_runtime_c__String__assignn(lst+i, str_data, str_len)) {
+          stop = true;
+          break;
+        }
+        lua_pop(L, 1);          // pop value
+      }
+      done = !stop;
+    }
+  }
+  lua_pushboolean(L, done);
+
+  return 1;
+}
+
 OBJ_SEQ_EQ (String, MT_SEQ_STRING)
 OBJ_SEQ_LEN (String)
 OBJ_SEQ_STR (String)
-OBJ_SEQ_RESIZE (String, MT_SEQ_STRING)
 
 OBJ_METHODS (String, String_seq_len)
 OBJ_ADD_TABLE (String, MT_SEQ_STRING)

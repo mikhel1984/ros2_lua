@@ -647,10 +647,10 @@ static int @(msg_prefix)__lcall (lua_State* L) {
     lua_len(L, 2);
     int len = luaL_checkinteger(L, -1);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
-    if (len > 0 && msg->value >= IDL_LUA_SEQ) {
+    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
       lua_insert(L, 2);   // stack [userdata, len, input table]
       @(msg_typename)* lst = msg->obj;
-      if (msg->value == IDL_LUA_SEQ) {
+      if (IDL_LUA_SEQ == msg->value) {
         // resize 
         @(msg_prefix)__lresize(L);
         if (lua_toboolean(L, -1)) {
@@ -660,13 +660,11 @@ static int @(msg_prefix)__lcall (lua_State* L) {
         }
         @(msg_typename)__Sequence *seq = msg->obj;
         lst = seq->data;
-      } else if (msg->value != len) {
-        goto lcall_failed;  // exit
       }
       // copy members
       idl_lua_msg_t* src = NULL;
       for (int i = 0; i < len; i++) {
-        lua_pushnumber(L, i+1);   // push index
+        lua_pushinteger(L, i+1);  // push index
         lua_gettable(L, -2);      // pop index, push value
         src = luaL_checkudata(L, -1, "@(msg_metatable)");
         if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, &(lst[i]))) {

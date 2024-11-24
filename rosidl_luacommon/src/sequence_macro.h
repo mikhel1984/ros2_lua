@@ -133,6 +133,7 @@ static const struct luaL_Reg STRUCT_NAME ## _seq_methods[] = {\
   {"__eq", STRUCT_NAME ## _seq_eq}, \
   {"__len", LEN_METHOD}, \
   {"__tostring", STRUCT_NAME ## _seq_str}, \
+  {"__call", STRUCT_NAME ## _seq_call}, \
   {"copy", STRUCT_NAME ## _seq_copy}, \
   {"resize", STRUCT_NAME ## _seq_resize}, \
   {NULL, NULL} \

@@ -337,7 +337,7 @@ setter_ = '_'.join((msg_prefix, '_set', member.name))
 
 // set @(member.name)
 static int @(setter_) (lua_State* L) {
-  // stack: object, field name, new value
+  // stack [object, field name, new value]
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
   @(msg_typename)* ros_msg = ptr->obj;
 @{
@@ -353,7 +353,7 @@ nested_metatable = nested_type + '__mt'
 
   // current object
   // nested type
-  luaL_getmetatable(L, "@(nested_metatable)");  // push metatable
+  luaL_getmetatable(L, "@(nested_metatable)");         // push metatable
   if (lua_isnil(L, -1)) {
     luaL_error(L, "@(nested_type) not found");
   }
@@ -384,7 +384,7 @@ nested_metatable = nested_type + '__mt'
 
   lua_pushvalue(L, -3);                       // push metatable (duplicate)
   lua_setmetatable(L, -2);                    // pop metatable
-  // stack: ... function, dst
+  // stack [..., function, dst]
   lua_pushvalue(L, 3);                        // push argument (duplicate)
   lua_call(L, 2, 1);                          // call copy(L-2, L-1), 2 inputs 1 result
 
@@ -405,7 +405,7 @@ nested_metatable = nested_type + '__mt'
   lua_pushvalue(L, -3);                       // push metatable (duplicate)
   lua_setmetatable(L, -2);                    // pop metatable
 
-  // stack: ... function, dst
+  // stack [..., function, dst]
   lua_pushvalue(L, 3);                        // push argument (duplicate)
   lua_call(L, 2, 1);                          // copy(L-2, L-1)
 
@@ -465,7 +465,7 @@ getter_ = '_'.join((msg_prefix, '_get', member.name))
 }@
 // get @(member.name)
 static int @(getter_) (lua_State* L) {
-  // stack: object, field name
+  // stack [object, field name]
   idl_lua_msg_t* src = lua_touserdata(L, 1);
   @(msg_typename)* ros_msg = src->obj;
 
@@ -584,9 +584,9 @@ static int @(msg_prefix)__lindex (lua_State* L) {
     lua_gettable(L, -2);                      // pop key, push function
     lua_CFunction fn = lua_tocfunction(L, -1);
     if (NULL == fn) {
-      luaL_error(L, "unknown field");
+      luaL_error(L, "unknown field '%s'", lua_tostring(L, 2));
     }
-    lua_settop(L, 2);                         // stack: object, key
+    lua_settop(L, 2);                         // stack [object, key]
     fn(L);                                    // push result
   }
 
@@ -628,6 +628,89 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
   }
 
   return 0;
+}
+
+static int @(msg_prefix)__lcall (lua_State* L) {
+  bool done = true;
+  int tp = lua_type(L, 2);
+
+  if (LUA_TUSERDATA == tp) {
+    // copy values
+    return @(msg_prefix)__lcopy(L);
+
+  } else if (LUA_TNUMBER == tp) {
+    // resize object
+    return @(msg_prefix)__lresize(L);
+
+  } else if (LUA_TTABLE == tp) {
+    // element-wise copy
+    lua_len(L, 2);
+    int len = luaL_checkinteger(L, -1);
+    idl_lua_msg_t* msg = lua_touserdata(L, 1);
+    if (len > 0 && msg->value >= IDL_LUA_SEQ) {
+      lua_insert(L, 2);   // stack [userdata, len, input table]
+      @(msg_typename)* lst = msg->obj;
+      if (msg->value == IDL_LUA_SEQ) {
+        // resize 
+        @(msg_prefix)__lresize(L);
+        if (lua_toboolean(L, -1)) {
+          lua_pop(L, 1);   // success, remove result
+        } else {
+          return 1;        // failed
+        }
+        @(msg_typename)__Sequence *seq = msg->obj;
+        lst = seq->data;
+      } else if (msg->value != len) {
+        goto lcall_failed;  // exit
+      }
+      // copy members
+      idl_lua_msg_t* src = NULL;
+      for (int i = 0; i < len; i++) {
+        lua_pushnumber(L, i+1);   // push index
+        lua_gettable(L, -2);      // pop index, push value
+        src = luaL_checkudata(L, -1, "@(msg_metatable)");
+        if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, &(lst[i]))) {
+          goto lcall_failed;      // exit
+        }
+        lua_pop(L, 1);            // pop value
+      }
+    } else if (len == 0 && msg->value < IDL_LUA_SEQ) {
+      lua_pop(L, 1);  // remove length
+      // get setters
+      if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {
+        goto lcall_failed;       // exit
+      }
+      lua_pushnil(L);
+      lua_pushnil(L);
+      lua_rotate(L, 2, 2);      // stack [userdata, nil, nil, input table, setters]
+      // copy members
+      lua_pushnil(L);            // push initial key
+      while (lua_next(L, 4) != 0) {
+        // stack [userdata, nil, nil, input table, setters, key, value]
+        lua_replace(L, 3);       // pop value, prepare for function call
+        lua_copy(L, -1, 2);      // stack [userdata, key, value, ... ]
+        lua_gettable(L, 5);      // pop key, push value from setters
+        lua_CFunction fn = lua_tocfunction(L, -1);
+        if (NULL == fn) {
+          goto lcall_failed;     // exit
+        }
+        int top = lua_gettop(L);   // save stack size
+        fn(L); 
+        lua_settop(L, top);     // restore stack
+        lua_copy(L, 2, -1);     // set key for next iteration
+        // stack [userdata, key, value, input table, setters, key]
+      }
+    } else {
+      done = false;
+    }
+
+  } else {
+lcall_failed:
+    done = false;
+  }
+  lua_pushboolean(L, done);
+
+  return 1;
 }
 
 static void @(msg_prefix)__lconstructor (lua_State* L) {
@@ -681,6 +764,7 @@ static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"__tostring", @(msg_prefix)__lstr},
   {"__index", @(msg_prefix)__lindex},
   {"__newindex", @(msg_prefix)__lnewindex},
+  {"__call", @(msg_prefix)__lcall},
   {"resize", @(msg_prefix)__lresize},
   {"copy", @(msg_prefix)__lcopy},
   {NULL, NULL}

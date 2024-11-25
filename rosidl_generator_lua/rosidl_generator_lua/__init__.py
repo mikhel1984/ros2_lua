@@ -33,21 +33,21 @@ NUMERIC_LUA_TYPES = {
     'float': {'min': 'FLT_MIN', 'max': 'FLT_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber', 'ifn': 'lua_pushnumber', 'ctype': 'float'},
     'double': {'min': 'DBL_MIN', 'max': 'DBL_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber', 'ifn': 'lua_pushnumber', 'ctype': 'double'},
     'int8': {'min': 'INT8_MIN', 'max': 'INT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int8_t'},
-    'uint8': {'min': '0', 'max': 'UINT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushnumber', 'ctype': 'uint8_t'},
-    'int16': {'min': 'INT16_MIN', 'max': 'INT16_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushnumber', 'ctype': 'int16_t'},
-    'uint16': {'min': '0', 'max': 'UINT16_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushnumber', 'ctype': 'uint16_t'},
-    'int32': {'min': 'INT32_MIN', 'max': 'INT32_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushnumber', 'ctype': 'int32_t'},
-    'uint32': {'min': '0', 'max': 'UINT32_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushnumber', 'ctype': 'uint32_t'},
-    'int64': {'min': 'INT64_MIN', 'max': 'INT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushnumber', 'ctype': 'int64_t'},
-    'uint64': {'min': '0', 'max': 'UINT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushnumber', 'ctype': 'uint64_t'},
+    'uint8': {'min': '0', 'max': 'UINT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint8_t'},
+    'int16': {'min': 'INT16_MIN', 'max': 'INT16_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int16_t'},
+    'uint16': {'min': '0', 'max': 'UINT16_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint16_t'},
+    'int32': {'min': 'INT32_MIN', 'max': 'INT32_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int32_t'},
+    'uint32': {'min': '0', 'max': 'UINT32_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint32_t'},
+    'int64': {'min': 'INT64_MIN', 'max': 'INT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int64_t'},
+    'uint64': {'min': '0', 'max': 'UINT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint64_t'},
 }
 
 
 def sequence_metatable(type_):
-    if type_.typename in ('char', 'octet'):
-        return "ROS2.rosidl_sequence.int8"
     if isinstance(type_, AbstractGenericString):
         return "ROS2.rosidl_sequence.String"
+    if type_.typename in ('char', 'octet'):
+        return "ROS2.rosidl_sequence.int8"    
     return "ROS2.rosidl_sequence." + type_.typename
 
 

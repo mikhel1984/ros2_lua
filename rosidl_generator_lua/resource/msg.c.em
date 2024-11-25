@@ -530,7 +530,7 @@ mtbl = nested_type + '__mt'
 @[  elif isinstance(member.type, AbstractString)]@
 
   rosidl_runtime_c__String str = ros_msg->@(member.name);
-  lua_pushlstring(L, str.data, str.size+1);
+  lua_pushlstring(L, str.data, str.size);
 
 @[  elif isinstance(member.type, BasicType) and member.type.typename == 'boolean']@
 

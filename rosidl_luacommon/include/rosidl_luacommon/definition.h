@@ -18,5 +18,11 @@ typedef struct {
   int value;
 } idl_lua_msg_t;
 
+#define ROSIDL_LUA_REQUIRE(lib) \
+  lua_getglobal(L, "require"); \
+  lua_pushliteral(L, lib); \
+  lua_call(L, 1, 2); \
+  lua_pop(L, 3); 
+
 #endif  // ROSIDL_LUACOMMON_DEFINITION_H
 

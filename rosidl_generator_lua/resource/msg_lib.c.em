@@ -1,6 +1,8 @@
 
 #include <lua.h>
 #include <lauxlib.h>
+
+#include <rosidl_luacommon/definition.h>
 @{
 from rosidl_generator_lua import make_prefix
 from rosidl_parser.definition import AbstractNestedType, NamespacedType
@@ -33,6 +35,8 @@ void @(make_prefix(message))__add_methods (lua_State* L);
 
 int luaopen_@(package_name)_msg (lua_State* L)
 {
+  ROSIDL_LUA_REQUIRE("rosidl_luacommon.sequence");
+  
   lua_createtable(L, 0, @(len(content)));    // push table "msg"
   
 @[for message in content]@

@@ -578,8 +578,9 @@ static int @(msg_prefix)__lindex (lua_State* L) {
     lua_setmetatable(L, -2);                  // pop metatable, copy to new object
   } else {
     // nested object, other metatable, get by name
-    lua_getmetatable(L, 1);                   // push metatable
-    lua_getfield(L, -1, "getters");           // push table
+    if (luaL_getmetafield(L, 1, "getters") != LUA_TTABLE) {  // push table
+      luaL_error(L, "wrong metatable");
+    }
     lua_pushvalue(L, 2);                      // push key (duplicate) 
     lua_gettable(L, -2);                      // pop key, push function
     lua_CFunction fn = lua_tocfunction(L, -1);
@@ -616,13 +617,14 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
     @(msg_typename)__copy(src->obj, &(lst[n-1]));
   } else {
     // nested object, other metatable, get by name
-    lua_getmetatable(L, 1);                   // push metatable
-    lua_getfield(L, -1, "setters");           // push table
+    if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {  // push table
+      luaL_error(L, "wrong metatable");
+    }
     lua_pushvalue(L, 2);                      // push key (duplicate)
     lua_gettable(L, -2);                      // pop key, push function
     lua_CFunction fn = lua_tocfunction(L, -1);
     if (NULL == fn) {
-      luaL_error(L, "unknown field");
+      luaL_error(L, "unknown field '%s", lua_tostring(L, 2));
     }
     fn(L);
   }

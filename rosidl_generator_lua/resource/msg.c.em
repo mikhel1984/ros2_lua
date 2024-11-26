@@ -564,18 +564,24 @@ static int @(msg_prefix)__lindex (lua_State* L) {
     @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
     if (msg->value > IDL_LUA_SEQ) {
-      luaL_argcheck(L, 0 < n && n <= msg->value, 2, "out of range");
-      lst = msg->obj;
+      if (0 < n && n <= msg->value) {
+        lst = msg->obj;
+      }
     } else {
       @(msg_typename)__Sequence *seq = msg->obj;
-      luaL_argcheck(L, 0 < n && ((size_t) n) <= seq->size, 2, "out_of_range");
-      lst = seq->data;
+      if (0 < n && ((size_t) n) <= seq->size) {
+        lst = seq->data;
+      }
     }
-    idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
-    res->obj = &(lst[n-1]);                   // index from 1
-    res->value = IDL_LUA_PTR;
-    lua_getmetatable(L, 1);                   // push metatable
-    lua_setmetatable(L, -2);                  // pop metatable, copy to new object
+    if (lst) {
+      idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
+      res->obj = &(lst[n-1]);                   // index from 1
+      res->value = IDL_LUA_PTR;
+      lua_getmetatable(L, 1);                   // push metatable
+      lua_setmetatable(L, -2);                  // pop metatable, copy to new object
+    } else {
+      lua_pushnil(L);
+    }
   } else {
     // nested object, other metatable, get by name
     if (luaL_getmetafield(L, 1, "getters") != LUA_TTABLE) {  // push table
@@ -602,19 +608,23 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
     @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
     if (msg->value > IDL_LUA_SEQ) {
-      luaL_argcheck(L, 0 < n && n <= msg->value, 2, "out of range");
-      lst = msg->obj;
+      if (0 < n && n <= msg->value) {
+        lst = msg->obj;
+      }
     } else {
       @(msg_typename)__Sequence *seq = msg->obj;
-      luaL_argcheck(L, 0 < n && ((size_t) n) <= seq->size, 2, "out_of_range");
-      lst = seq->data;
+      if (0 < n && ((size_t) n) <= seq->size) {
+        lst = seq->data;
+      }
     }
     // right part
     idl_lua_msg_t* src = luaL_checkudata(L, 3, "@(msg_metatable)");
     if (src->value >= IDL_LUA_SEQ) {
       luaL_error(L, "different types");
     }
-    @(msg_typename)__copy(src->obj, &(lst[n-1]));
+    if (lst) {
+      @(msg_typename)__copy(src->obj, &(lst[n-1]));
+    }
   } else {
     // nested object, other metatable, get by name
     if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {  // push table

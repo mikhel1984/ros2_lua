@@ -10,7 +10,6 @@ const char* MT_SEQ_BOOLEAN = "ROS2.rosidl_sequence.boolean";
 
 static int boolean_seq_set (lua_State* L)
 {
-  bool* lst = NULL;
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
   lua_Integer ind = luaL_checkinteger(L, 2);
   if (!lua_isboolean(L, 3)) {
@@ -18,17 +17,22 @@ static int boolean_seq_set (lua_State* L)
   }
   bool val = lua_toboolean(L, 3);
 
+  bool* lst = NULL;
   if (ptr->value > 0) {
-    luaL_argcheck(L, 0 < ind && ind <= ptr->value, 2, "out of range");
-    lst = ptr->obj;
+    if (0 < ind && ind <= ptr->value) {
+      lst = ptr->obj;
+    }
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__boolean__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range");
-    lst = seq->data;
+    if (0 < ind && ((size_t) ind) <= seq->size) {
+      lst = seq->data;
+    }
   } else {
-    luaL_error(L, "unexpected object");
+    luaL_error(L, "not an array");
   }
-  lst[ind-1] = val;
+  if (lst) {
+    lst[ind-1] = val;
+  }
 
   return 0;
 }
@@ -40,16 +44,22 @@ static int boolean_seq_get (lua_State* L)
 
   bool* lst = NULL;
   if (ptr->value > 0) {
-    luaL_argcheck(L, 0 < ind && ind <= ptr->value, 2, "out of range");
-    lst = ptr->obj;
+    if (0 < ind && ind <= ptr->value) {
+      lst = ptr->obj;
+    }
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__boolean__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range");
-    lst = seq->data;
+    if (0 < ind && ((size_t) ind) <= seq->size) {
+      lst = seq->data;
+    }
   } else {
-    luaL_error(L, "unexpected object");
+    luaL_error(L, "not an array");
   }
-  lua_pushboolean(L, lst[ind-1]);
+  if (lst) {
+    lua_pushboolean(L, lst[ind-1]);
+  } else {
+    lua_pushnil(L);
+  }
 
   return 1;
 }
@@ -73,18 +83,18 @@ static int boolean_seq_call (lua_State* L)
     int len = luaL_checkinteger(L, -1);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
     if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
-      lua_pop(L, 1);   // pop len
       bool* lst = msg->obj;
       if (IDL_LUA_SEQ == msg->value) {
+        lua_insert(L, 2);
         boolean_seq_resize(L);
-        if (lua_toboolean(L, -1)) {
-          lua_pop(L, 1);  // pop result
-        } else {
+        if (!lua_toboolean(L, -1)) {
           return 1;
         }
         rosidl_runtime_c__boolean__Sequence* seq = msg->obj;
         lst = seq->data;
+        lua_remove(L, 2);
       }
+      lua_pop(L, 1);  // pop len or call result
       // copy
       bool stop = false;
       for (int i = 0; i < len; i++) {

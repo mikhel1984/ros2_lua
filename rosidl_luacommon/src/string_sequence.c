@@ -20,18 +20,21 @@ static int String_seq_set (lua_State* L)
   const char* val = lua_tolstring(L, 3, &len);
 
   rosidl_runtime_c__String* lst = NULL;
-
   if (ptr->value > 0) {
-    luaL_argcheck(L, 0 < ind && ind <= ptr->value, 2, "out of range");
-    lst = ptr->obj;
+    if (0 < ind && ind <= ptr->value) {
+      lst = ptr->obj;
+    }
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__String__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range");
-    lst = seq->data;
+    if (0 < ind && ((size_t) ind) <= seq->size) {
+      lst = seq->data;
+    }
   } else {
     luaL_error(L, "unexpected object");
   }
-  rosidl_runtime_c__String__assignn(lst + (ind-1), val, len);
+  if (lst) {
+    rosidl_runtime_c__String__assignn(lst + (ind-1), val, len);
+  }
 
   return 0;
 }
@@ -43,17 +46,23 @@ static int String_seq_get (lua_State* L)
 
   rosidl_runtime_c__String* lst = NULL;
   if (ptr->value > 0) {
-    luaL_argcheck(L, 0 < ind && ind <= ptr->value, 2, "out of range");
-    lst = ptr->obj;
+    if (0 < ind && ind <= ptr->value) {
+      lst = ptr->obj;
+    }
   } else if (ptr->value == IDL_LUA_SEQ) {
     rosidl_runtime_c__String__Sequence* seq = ptr->obj;
-    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range");
-    lst = seq->data;
+    if (0 < ind && ((size_t) ind) <= seq->size) {
+      lst = seq->data;
+    }
   } else {
     luaL_error(L, "unexpected object");
   }
-  rosidl_runtime_c__String* s = lst + (ind-1);
-  lua_pushlstring(L, s->data, s->size+1);
+  if (lst) {
+    rosidl_runtime_c__String* s = lst + (ind-1);
+    lua_pushlstring(L, s->data, s->size+1);
+  } else {
+    lua_pushnil(L);
+  }
 
   return 1;
 }
@@ -112,19 +121,19 @@ static int String_seq_call (lua_State* L)
     lua_len(L, 2);     // push len
     int len = luaL_checkinteger(L, -1);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
-    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
-      lua_pop(L, 1);   // pop len
+    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {      
       rosidl_runtime_c__String* lst = msg->obj;
       if (IDL_LUA_SEQ == msg->value) {
+        lua_insert(L, 2);
         String_seq_resize(L);
-        if (lua_toboolean(L, -1)) {
-          lua_pop(L, 1);  // pop result
-        } else {
+        if (!lua_toboolean(L, -1)) {
           return 1;
         }
         rosidl_runtime_c__String__Sequence* seq = msg->obj;
         lst = seq->data;
+        lua_remove(L, 2);
       }
+      lua_pop(L, 1);   // pop len or call result
       // copy
       bool stop = false;
       for (int i = 0; i < len; i++) {

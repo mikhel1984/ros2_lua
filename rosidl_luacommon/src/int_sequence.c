@@ -11,22 +11,26 @@
 #define INT_SEQ_SET(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
 static int STRUCT_NAME ## _seq_set (lua_State* L) \
 { \
-  TYPE_NAME* lst = NULL;  \
   idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
   lua_Integer ind = luaL_checkinteger(L, 2); \
-  lua_Integer val = luaL_checknumber(L, 3); \
+  lua_Integer val = luaL_checkinteger(L, 3); \
   luaL_argcheck(L, V_MIN <= val && ((TYPE_NAME) val) <= V_MAX, 3, "wrong value");  \
+  TYPE_NAME* lst = NULL;  \
   if (ptr->value > 0) { \
-    luaL_argcheck(L, 0 < ind && ind <= ptr->value, 2, "out of range"); \
-    lst = ptr->obj; \
+    if (0 < ind && ind <= ptr->value) { \
+      lst = ptr->obj; \
+    } \
   } else if (ptr->value == IDL_LUA_SEQ) { \
     rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr->obj; \
-    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range"); \
-    lst = seq->data; \
+    if (0 < ind && ((size_t) ind) <= seq->size) { \
+      lst = seq->data; \
+    } \
   } else { \
-    luaL_error(L, "unexpected object"); \
+    luaL_error(L, "not an array"); \
   } \
-  lst[ind-1] = val; \
+  if (lst) { \
+    lst[ind-1] = val; \
+  } \
   return 0; \
 }
 
@@ -37,16 +41,22 @@ static int STRUCT_NAME ## _seq_get (lua_State* L) \
   lua_Integer ind = luaL_checkinteger(L, 2); \
   TYPE_NAME* lst = NULL; \
   if (ptr->value > 0) { \
-    luaL_argcheck(L, 0 < ind && ind <= ptr->value, 2, "out of range"); \
-    lst = ptr->obj; \
+    if (0 < ind && ind <= ptr->value) { \
+      lst = ptr->obj; \
+    } \
   } else if (ptr->value == IDL_LUA_SEQ) { \
     rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr->obj; \
-    luaL_argcheck(L, 0 < ind && ((size_t) ind) <= seq->size, 2, "out of range"); \
-    lst = seq->data; \
+    if (0 < ind && ((size_t) ind) <= seq->size) { \
+      lst = seq->data; \
+    } \
   } else { \
-    luaL_error(L, "unexpected object"); \
+    luaL_error(L, "not an array"); \
   } \
-  lua_pushinteger(L, lst[ind-1]); \
+  if (lst) { \
+    lua_pushinteger(L, lst[ind-1]); \
+  } else { \
+    lua_pushnil(L); \
+  } \
   return 1; \
 }
 
@@ -64,18 +74,18 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
     int len = luaL_checkinteger(L, -1); \
     idl_lua_msg_t* msg = lua_touserdata(L, 1); \
     if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) { \
-      lua_pop(L, 1); \
       TYPE_NAME * lst = msg->obj; \
       if (IDL_LUA_SEQ == msg->value) { \
+        lua_insert(L, 2); \
         STRUCT_NAME ## _seq_resize(L); \
-        if (lua_toboolean(L, -1)) { \
-          lua_pop(L, 1); \
-        } else { \
+        if (!lua_toboolean(L, -1)) { \
           return 1; \
         } \
         rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = msg->obj; \
         lst = seq->data; \
+        lua_remove(L, 2); \
       } \
+      lua_pop(L, 1); \
       bool stop = false; \
       for (int i = 0; i < len; i++) { \
         lua_pushinteger(L, i+1); \

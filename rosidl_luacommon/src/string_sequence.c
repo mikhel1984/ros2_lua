@@ -59,7 +59,7 @@ static int String_seq_get (lua_State* L)
   }
   if (lst) {
     rosidl_runtime_c__String* s = lst + (ind-1);
-    lua_pushlstring(L, s->data, s->size+1);
+    lua_pushlstring(L, s->data, s->size);
   } else {
     lua_pushnil(L);
   }

@@ -8,7 +8,8 @@ static int STRUCT_NAME ## _seq_eq (lua_State* L) \
   idl_lua_msg_t* ptr2 = luaL_checkudata(L, 2, METATABLE); \
   rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence s1, s2; \
   if (ptr1->value == IDL_LUA_SEQ) { \
-    s1 = *((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence*) ptr1->obj); \
+    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr1->obj; \
+    s1 = *seq; \
   } else if (ptr1->value > 0) { \
     s1.data = ptr1->obj; \
     s1.size = s1.capacity = ptr1->value; \
@@ -16,7 +17,8 @@ static int STRUCT_NAME ## _seq_eq (lua_State* L) \
     luaL_error(L, "unexpected object"); \
   } \
   if (ptr2->value == IDL_LUA_SEQ) { \
-    s2 = *((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence*) ptr2); \
+    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr2->obj; \
+    s2 = *seq; \
   } else if (ptr2->value > 0) { \
     s2.data = ptr2->obj; \
     s2.size = s2.capacity = ptr2->value; \

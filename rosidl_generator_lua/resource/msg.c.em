@@ -400,8 +400,19 @@ nested_metatable = nested_type + '__mt'
   }
   // create object to call metamethod
   idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));   // push object
-  dst->obj = &(ros_msg->@(member.name));
-  dst->value = IDL_LUA_PTR;
+  
+@[    if isinstance(member.type, AbstractSequence)]@
+
+  dst->obj = &(ros_msg->@(member.name));      // sequence
+  dst->value = IDL_LUA_SEQ;
+  
+@[    else]@
+
+  dst->obj = ros_msg->@(member.name);         // array
+  dst->value = @(member.type.size);
+  
+@[    end if]@
+  
   lua_pushvalue(L, -3);                       // push metatable (duplicate)
   lua_setmetatable(L, -2);                    // pop metatable
 

@@ -7,13 +7,13 @@
 #include "rosidl_luacommon/definition.h"
 #include "sequence_macro.h"
 
-#define FLOAT_SEQ_SET(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
+#define FLOAT_SEQ_SET(STRUCT_NAME, TYPE_NAME, V_MAX) \
 static int STRUCT_NAME ## _seq_set (lua_State* L) \
 { \
   idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
   lua_Integer ind = luaL_checkinteger(L, 2); \
   lua_Number val = luaL_checknumber(L, 3); \
-  luaL_argcheck(L, V_MIN <= val && val <= V_MAX, 3, "wrong value");  \
+  luaL_argcheck(L, (-V_MAX) <= val && val <= V_MAX, 3, "wrong value");  \
   TYPE_NAME* lst = NULL;  \
   if (ptr->value > 0) { \
     if (0 < ind && ind <= ptr->value) { \
@@ -59,7 +59,7 @@ static int STRUCT_NAME ## _seq_get (lua_State* L) \
   return 1; \
 }
 
-#define FLOAT_SEQ_CALL(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
+#define FLOAT_SEQ_CALL(STRUCT_NAME, TYPE_NAME, V_MAX) \
 static int STRUCT_NAME ## _seq_call (lua_State* L) \
 { \
   bool done = false; \
@@ -94,7 +94,7 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
           break; \
         } \
         lua_Number val = lua_tonumber(L, -1); \
-        if (!(V_MIN <= val && val <= V_MAX)) { \
+        if (!((-V_MAX) <= val && val <= V_MAX)) { \
           stop = true; \
           break; \
         } \
@@ -112,14 +112,14 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
 
 const char* MT_SEQ_FLOAT = "ROS2.rosidl_sequence.float";
 
-FLOAT_SEQ_SET (float, float, FLT_MIN, FLT_MAX)
+FLOAT_SEQ_SET (float, float, FLT_MAX)
 FLOAT_SEQ_GET (float, float)
 OBJ_SEQ_EQ (float, MT_SEQ_FLOAT)
 OBJ_SEQ_LEN (float)
 OBJ_SEQ_STR (float)
 OBJ_SEQ_COPY (float, float, MT_SEQ_FLOAT)
 OBJ_SEQ_RESIZE (float, MT_SEQ_FLOAT)
-FLOAT_SEQ_CALL (float, float, FLT_MIN, FLT_MAX)
+FLOAT_SEQ_CALL (float, float, FLT_MAX)
 
 OBJ_METHODS(float, float_seq_len)
 OBJ_ADD_TABLE (float, MT_SEQ_FLOAT)
@@ -128,13 +128,13 @@ OBJ_ADD_TABLE (float, MT_SEQ_FLOAT)
 
 const char* MT_SEQ_DOUBLE = "ROS2.rosidl_sequence.double";
 
-FLOAT_SEQ_SET (double, double, DBL_MIN, DBL_MAX)
+FLOAT_SEQ_SET (double, double, DBL_MAX)
 FLOAT_SEQ_GET (double, double)
 OBJ_SEQ_EQ (double, MT_SEQ_DOUBLE)
 OBJ_SEQ_STR (double)
 OBJ_SEQ_COPY (double, double, MT_SEQ_DOUBLE)
 OBJ_SEQ_RESIZE (double, MT_SEQ_DOUBLE)
-FLOAT_SEQ_CALL (double, double, DBL_MIN, DBL_MAX)
+FLOAT_SEQ_CALL (double, double, DBL_MAX)
 
 OBJ_METHODS(double, float_seq_len)
 OBJ_ADD_TABLE (double, MT_SEQ_DOUBLE)
@@ -143,13 +143,13 @@ OBJ_ADD_TABLE (double, MT_SEQ_DOUBLE)
 
 const char* MT_SEQ_LDOUBLE = "ROS2.rosidl_sequence.ldouble";
 
-FLOAT_SEQ_SET (long_double, long double, LDBL_MIN, LDBL_MAX)
+FLOAT_SEQ_SET (long_double, long double, LDBL_MAX)
 FLOAT_SEQ_GET (long_double, long double)
 OBJ_SEQ_EQ (long_double, MT_SEQ_LDOUBLE)
 OBJ_SEQ_STR (long_double)
 OBJ_SEQ_COPY (long_double, long double, MT_SEQ_LDOUBLE)
 OBJ_SEQ_RESIZE (long_double, MT_SEQ_LDOUBLE)
-FLOAT_SEQ_CALL (long_double, long double, LDBL_MIN, LDBL_MAX)
+FLOAT_SEQ_CALL (long_double, long double, LDBL_MAX)
 
 OBJ_METHODS(long_double, float_seq_len)
 OBJ_ADD_TABLE (long_double, MT_SEQ_LDOUBLE)

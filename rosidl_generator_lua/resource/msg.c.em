@@ -255,11 +255,11 @@ static int @(msg_prefix)__llen (lua_State* L)
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
   if (ptr->value > IDL_LUA_SEQ) {
     // array
-    lua_pushnumber(L, ptr->value);
+    lua_pushinteger(L, ptr->value);
   } else if (ptr->value == IDL_LUA_SEQ) {
     // list
     @(msg_typename)__Sequence* seq = ptr->obj;
-    lua_pushnumber(L, seq->size);
+    lua_pushinteger(L, seq->size);
   } else {
     // scalar value
     lua_pushnil(L);
@@ -315,6 +315,7 @@ static int @(msg_prefix)__lresize (lua_State* L)
       // swap
       @(msg_typename)__Sequence tmp = *seq;
       *seq = newseq;
+      seq->size = len;
       // remove old
       @(msg_typename)__Sequence__fini(&tmp);
     } else {

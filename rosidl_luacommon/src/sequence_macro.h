@@ -35,10 +35,10 @@ static int STRUCT_NAME ## _seq_len (lua_State* L) \
 { \
   idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
   if (ptr->value > 0) { \
-    lua_pushnumber(L, ptr->value); \
+    lua_pushinteger(L, ptr->value); \
   } else if (ptr->value == IDL_LUA_SEQ) { \
     rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr->obj; \
-    lua_pushnumber(L, seq->size); \
+    lua_pushinteger(L, seq->size); \
   } else { \
     lua_pushnil(L); \
   } \
@@ -120,6 +120,7 @@ static int STRUCT_NAME ## _seq_resize (lua_State* L) \
       rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence tmp = *seq; \
       *seq = newseq; \
       rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(&tmp);  \
+      seq->size = len; \
     } else { \
       done = false; \
     } \

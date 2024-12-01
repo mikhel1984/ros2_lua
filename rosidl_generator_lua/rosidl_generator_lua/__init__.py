@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Open Source Robotics Foundation, Inc.
+# Copyright 2021 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,16 +30,26 @@ from rosidl_parser.parser import parse_idl_file
 
 
 NUMERIC_LUA_TYPES = {
-    'float': {'min': 'FLT_MIN', 'max': 'FLT_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber', 'ifn': 'lua_pushnumber', 'ctype': 'float'},
-    'double': {'min': 'DBL_MIN', 'max': 'DBL_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber', 'ifn': 'lua_pushnumber', 'ctype': 'double'},
-    'int8': {'min': 'INT8_MIN', 'max': 'INT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int8_t'},
-    'uint8': {'min': '0', 'max': 'UINT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint8_t'},
-    'int16': {'min': 'INT16_MIN', 'max': 'INT16_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int16_t'},
-    'uint16': {'min': '0', 'max': 'UINT16_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint16_t'},
-    'int32': {'min': 'INT32_MIN', 'max': 'INT32_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int32_t'},
-    'uint32': {'min': '0', 'max': 'UINT32_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint32_t'},
-    'int64': {'min': 'INT64_MIN', 'max': 'INT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int64_t'},
-    'uint64': {'min': '0', 'max': 'UINT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'uint64_t'},
+    'float': {'min': 'FLT_MIN', 'max': 'FLT_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber',
+              'ifn': 'lua_pushnumber', 'ctype': 'float'},
+    'double': {'min': 'DBL_MIN', 'max': 'DBL_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber',
+               'ifn': 'lua_pushnumber', 'ctype': 'double'},
+    'int8': {'min': 'INT8_MIN', 'max': 'INT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger',
+             'ifn': 'lua_pushinteger', 'ctype': 'int8_t'},
+    'uint8': {'min': '0', 'max': 'UINT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger',
+              'ifn': 'lua_pushinteger', 'ctype': 'uint8_t'},
+    'int16': {'min': 'INT16_MIN', 'max': 'INT16_MAX', 'var': 'lua_Integer',
+              'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int16_t'},
+    'uint16': {'min': '0', 'max': 'UINT16_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger',
+               'ifn': 'lua_pushinteger', 'ctype': 'uint16_t'},
+    'int32': {'min': 'INT32_MIN', 'max': 'INT32_MAX', 'var': 'lua_Integer',
+              'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int32_t'},
+    'uint32': {'min': '0', 'max': 'UINT32_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger',
+               'ifn': 'lua_pushinteger', 'ctype': 'uint32_t'},
+    'int64': {'min': 'INT64_MIN', 'max': 'INT64_MAX', 'var': 'lua_Integer',
+              'fn': 'luaL_checkinteger', 'ifn': 'lua_pushinteger', 'ctype': 'int64_t'},
+    'uint64': {'min': '0', 'max': 'UINT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger',
+               'ifn': 'lua_pushinteger', 'ctype': 'uint64_t'},
 }
 
 
@@ -47,7 +57,7 @@ def sequence_metatable(type_):
     if isinstance(type_, AbstractGenericString):
         return "ROS2.rosidl_sequence.String"
     if type_.typename in ('char', 'octet'):
-        return "ROS2.rosidl_sequence.int8"    
+        return "ROS2.rosidl_sequence.int8"
     return "ROS2.rosidl_sequence." + type_.typename
 
 
@@ -56,10 +66,10 @@ def generate_lua(generator_arguments_file, typesupport_impls):
         'idl.c.em': '%s.c',
     }
     generated_files = generate_files(generator_arguments_file, mapping)
-    
+
     args = read_generator_arguments(generator_arguments_file)
-    template_dir = args['template_dir']        
-    
+    template_dir = args['template_dir']
+
     # add files for lua binding
     modules = {}
     idl_content = IdlContent()
@@ -74,23 +84,23 @@ def generate_lua(generator_arguments_file, typesupport_impls):
         locator = IdlLocator(*idl_parts)
         idl_file = parse_idl_file(locator)
         idl_content.elements += idl_file.content.elements
-    
+
     obj_list = [
         ('msg', idl_content.get_elements_of_type(Message)),
         ('srv', idl_content.get_elements_of_type(Service)),
         ('action', idl_content.get_elements_of_type(Action)),
     ]
-    
+
     latest_target_timestamp = get_newest_modification_time(args['target_dependencies'])
     for msg_type, idl_group in obj_list:
         if not idl_group:
-            continue  
+            continue
         template_file = msg_type + '_lib.c.em'
         out_name = msg_type + '_lib.c'
         package_name = args['package_name']
         data = {
             'package_name': args['package_name'],
-            'content': idl_group, # idl_content,
+            'content': idl_group,
         }
         generated_file = os.path.join(
             args['output_dir'], msg_type, out_name)
@@ -99,9 +109,10 @@ def generate_lua(generator_arguments_file, typesupport_impls):
             template, data, generated_file,
             minimum_timestamp=latest_target_timestamp)
         generated_files.append(generated_file)
-    
+
     return generated_files
 
 def make_prefix(tp):
-    return '__'.join(tp.structure.namespaced_type.namespaces + [convert_camel_case_to_lower_case_underscore(tp.structure.namespaced_type.name)])
-    
+    return '__'.join(tp.structure.namespaced_type.namespaces + [
+                  convert_camel_case_to_lower_case_underscore(tp.structure.namespaced_type.name)])
+

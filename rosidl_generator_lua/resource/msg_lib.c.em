@@ -20,7 +20,7 @@ for message in content:
             type_ = type_.value_type
         if isinstance(type_, NamespacedType):
             #print(type_.namespaced_name(), file=sys.stderr)
-            nested_type = tuple(map(str, type_.namespaced_name()[:2]))            
+            nested_type = tuple(map(str, type_.namespaced_name()[:2]))
             #nested_type = str(type_.namespaced_name()[0])
             if nested_type[0] != package_name and nested_type not in nested_list:
                 nested_list.append(nested_type)
@@ -40,12 +40,12 @@ int luaopen_@(package_name)_msg (lua_State* L)
 @[for pair in nested_list]@
   ROSIDL_LUA_REQUIRE("@('.'.join(pair))");
 @[end for]@
-  
+
   lua_createtable(L, 0, @(len(content)));    // push table "msg"
-  
+
 @[for message in content]@
   @(make_prefix(message))__add_methods(L);
-@[end for]@  
+@[end for]@
 
   return 1;
 }

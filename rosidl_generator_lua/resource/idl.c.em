@@ -1,13 +1,3 @@
-@
-@#######################################################################
-@# EmPy template for generating <idl>.c files
-@#
-@# Context:
-@#  - package_name (string)
-@#  - interface_path (Path relative to the directory named after the package)
-@#  - content (IdlContent, list of elements, e.g. Messages or Services)
-@#######################################################################
-@
 @#######################################################################
 @# Handle messages
 @#######################################################################

@@ -1,4 +1,5 @@
-
+// Created from rosidl_generator_lua/resource/msg.c
+// Generated code does not contain a copyright notice
 @{
 from rosidl_generator_lua import NUMERIC_LUA_TYPES, sequence_metatable, make_prefix
 from rosidl_cmake import convert_camel_case_to_lower_case_underscore
@@ -19,7 +20,7 @@ header_files = [
     'float.h',
     'stdint.h',
     'stdbool.h',
-    #'rosidl_runtime_c/visibility_control.h',
+    'rosidl_runtime_c/visibility_control.h',
     include_base + '__struct.h',
     include_base + '__functions.h',
     'rosidl_luacommon/definition.h']
@@ -114,10 +115,12 @@ msg_setters = []
 msg_metatable = msg_typename + '__mt'
 }@
 
-// @(str(msg_components))
+static int @(msg_prefix)__lcall (lua_State* L);
 
 @#  constructor
 static int @(msg_prefix)__lnew (lua_State* L) {
+  bool is_table = (lua_type(L, 2) == LUA_TTABLE);
+  
   // message object
   @(msg_typename)* msg = @(msg_typename)__create();
   if (NULL == msg) {
@@ -136,6 +139,13 @@ static int @(msg_prefix)__lnew (lua_State* L) {
   // add metamethods
   luaL_getmetatable(L, "@(msg_metatable)");
   lua_setmetatable(L, -2);
+
+  if (is_table) {
+    // initialize
+    lua_replace(L, 1);      // move userdata to first place
+    @(msg_prefix)__lcall(L);   // call initialization
+    lua_settop(L, 1);       // pop except first element
+  }
 
   return 1;
 }
@@ -401,19 +411,19 @@ nested_metatable = nested_type + '__mt'
   }
   // create object to call metamethod
   idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));   // push object
-  
+
 @[    if isinstance(member.type, AbstractSequence)]@
 
   dst->obj = &(ros_msg->@(member.name));      // sequence
   dst->value = IDL_LUA_SEQ;
-  
+
 @[    else]@
 
   dst->obj = ros_msg->@(member.name);         // array
   dst->value = @(member.type.size);
-  
+
 @[    end if]@
-  
+
   lua_pushvalue(L, -3);                       // push metatable (duplicate)
   lua_setmetatable(L, -2);                    // pop metatable
 
@@ -599,7 +609,7 @@ static int @(msg_prefix)__lindex (lua_State* L) {
     if (luaL_getmetafield(L, 1, "getters") != LUA_TTABLE) {  // push table
       luaL_error(L, "wrong metatable");
     }
-    lua_pushvalue(L, 2);                      // push key (duplicate) 
+    lua_pushvalue(L, 2);                      // push key (duplicate)
     lua_gettable(L, -2);                      // pop key, push function
     lua_CFunction fn = lua_tocfunction(L, -1);
     if (NULL == fn) {
@@ -675,7 +685,7 @@ static int @(msg_prefix)__lcall (lua_State* L) {
       lua_insert(L, 2);   // stack [userdata, len, input table]
       @(msg_typename)* lst = msg->obj;
       if (IDL_LUA_SEQ == msg->value) {
-        // resize 
+        // resize
         @(msg_prefix)__lresize(L);
         if (lua_toboolean(L, -1)) {
           lua_pop(L, 1);   // success, remove result
@@ -717,7 +727,7 @@ static int @(msg_prefix)__lcall (lua_State* L) {
           goto lcall_failed;     // exit
         }
         int top = lua_gettop(L);   // save stack size
-        fn(L); 
+        fn(L);
         lua_settop(L, top);     // restore stack
         lua_copy(L, 2, -1);     // set key for next iteration
         // stack [userdata, key, value, input table, setters, key]
@@ -742,7 +752,7 @@ fn_name = name_parts[-1]
 }
   // access via table
   lua_newtable(L);                       // push table
-  
+
   // add metatable
   lua_createtable(L, 0, @(len(message.constants) + 2));  // push table
   lua_pushcfunction(L, @(msg_prefix)__lnew);  // push function
@@ -750,15 +760,15 @@ fn_name = name_parts[-1]
 @[for constant in message.constants]@
 @{
 type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
-}@  
+}@
   @(type_dict['ifn'])(L, @(constant.value));  // push value
   lua_setfield(L, -2, "@(constant.name)");   // pop value, add to table
 @[end for]@
 
   lua_pushvalue(L, -1);                  // push table
   lua_setfield(L, -2, "__index");        // pop table
-  
-  lua_setmetatable(L, -2);               // pop table, save as metatable  
+
+  lua_setmetatable(L, -2);               // pop table, save as metatable
   lua_setfield(L, -2, "@(fn_name)");  // pop table, save to main table
 }
 

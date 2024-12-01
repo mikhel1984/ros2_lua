@@ -1,6 +1,7 @@
-
 #include <lua.h>
 #include <lauxlib.h>
+
+#include <rosidl_luacommon/definition.h>
 @{
 from rosidl_generator_lua import make_prefix
 from rosidl_parser.definition import AbstractNestedType, NamespacedType
@@ -12,8 +13,8 @@ import sys
 nested_list = []
 nested_list.append(("rosidl_luacommon", "sequence"))  # TODO check if required
 for act in content:
-    for message in (act.goal, act.result, act.feedback, act.send_goal_service.request_message, 
-                    act.send_goal_service.response_message, act.get_result_service.request_message, 
+    for message in (act.goal, act.result, act.feedback, act.send_goal_service.request_message,
+                    act.send_goal_service.response_message, act.get_result_service.request_message,
                     act.feedback_message):
         #print(str(message.structure.namespaced_type.namespaced_name()), file=sys.stderr)
         for member in message.structure.members:
@@ -22,7 +23,7 @@ for act in content:
                 type_ = type_.value_type
             if isinstance(type_, NamespacedType):
                 #print(type_.namespaced_name(), file=sys.stderr)
-                nested_type = tuple(map(str, type_.namespaced_name()[:2]))            
+                nested_type = tuple(map(str, type_.namespaced_name()[:2]))
                 #nested_type = str(type_.namespaced_name()[0])
                 if nested_type[1] != 'action' and nested_type not in nested_list:
                     nested_list.append(nested_type)
@@ -50,7 +51,7 @@ int luaopen_@(package_name)_action (lua_State* L)
 @[for act in content]@
 @{
 send_names = act.send_goal_service.request_message.structure.namespaced_type.name.split('_')
-}@  
+}@
 
   // open "namespace" @(send_names[0])
   lua_createtable(L, 0, 6);              // push table

@@ -27,7 +27,7 @@ for srv in content:
                 #nested_type = str(type_.namespaced_name()[0])
                 if nested_type not in nested_list:
                     nested_list.append(nested_type)
-print(nested_list, file=sys.stderr)
+#print(nested_list, file=sys.stderr)
 }@
 
 // prototypes

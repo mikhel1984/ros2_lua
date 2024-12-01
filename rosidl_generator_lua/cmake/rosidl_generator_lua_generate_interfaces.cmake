@@ -91,10 +91,10 @@ endforeach()
 set(target_dependencies
   "${rosidl_generator_lua_BIN}"
   ${rosidl_generator_lua_GENERATOR_FILES}
-  "${rosidl_generator_lua_TEMPLATE_DIR}/action.c.em"
+  #"${rosidl_generator_lua_TEMPLATE_DIR}/action.c.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/idl.c.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/msg.c.em"
-  "${rosidl_generator_lua_TEMPLATE_DIR}/srv.c.em"
+  #"${rosidl_generator_lua_TEMPLATE_DIR}/srv.c.em"
   ${rosidl_generate_interfaces_ABS_IDL_FILES}
   ${_dependency_files})
 foreach(dep ${target_dependencies})

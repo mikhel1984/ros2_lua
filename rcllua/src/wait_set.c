@@ -11,7 +11,7 @@
 #include "utils.h"
 
 
-const char* MT_WAIT_SET = ".ROS2.WaitSet";
+const char* MT_WAIT_SET = "ROS2.WaitSet";
 
 static int rcl_lua_wait_set_init (lua_State* L)
 {

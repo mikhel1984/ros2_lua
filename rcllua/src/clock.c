@@ -13,7 +13,7 @@
 #include "utils.h"
 
 
-const char* MT_CLOCK = ".ROS2.Clock";
+const char* MT_CLOCK = "ROS2.Clock";
 
 static int rcl_lua_clock_init (lua_State* L)
 {

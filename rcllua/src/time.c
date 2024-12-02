@@ -9,7 +9,7 @@
 
 #define NSEC_IN_SEC 1000000000
 
-const char* MT_TIME = ".ROS2.Time";
+const char* MT_TIME = "ROS2.Time";
 
 static int rcl_lua_time_init (lua_State* L)
 {
@@ -30,7 +30,7 @@ static int rcl_lua_time_init (lua_State* L)
   val += sec * NSEC_IN_SEC;
 
   rcl_time_point_t* time = lua_newuserdata(L, sizeof(rcl_time_point_t));
-  time->nanoseconds = nsec;
+  time->nanoseconds = val;
   time->clock_type = tp;
 
   // set metatable
@@ -42,9 +42,10 @@ static int rcl_lua_time_init (lua_State* L)
 
 static int rcl_lua_time_get (lua_State* L)
 {
-  rcl_time_point_t* time = luaL_checkudata(L, 1, MT_TIME);
-
+  rcl_time_point_t* time = luaL_checkudata(L, 1, MT_TIME);  
+  // sec
   lua_pushinteger(L, time->nanoseconds / NSEC_IN_SEC);
+  // nsec
   lua_pushinteger(L, time->nanoseconds % NSEC_IN_SEC);
 
   return 2;

@@ -8,7 +8,7 @@
 #include "context.h"
 #include "utils.h"
 
-const char* MT_NODE = ".ROS2.Node";
+const char* MT_NODE = "ROS2.Node";
 
 static int rcl_lua_node_init (lua_State* L)
 {

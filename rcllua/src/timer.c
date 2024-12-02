@@ -6,7 +6,7 @@
 
 #include "utils.h"
 
-const char* MT_TIMER = ".ROS2.Timer";
+const char* MT_TIMER = "ROS2.Timer";
 
 static int rcl_lua_timer_free (lua_State* L)
 {

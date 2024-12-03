@@ -21,6 +21,7 @@ header_files = [
     'stdint.h',
     'stdbool.h',
     'rosidl_runtime_c/visibility_control.h',
+    'rosidl_runtime_c/message_type_support_struct.h',
     include_base + '__struct.h',
     include_base + '__functions.h',
     'rosidl_luacommon/definition.h']
@@ -767,6 +768,16 @@ type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
 
   lua_pushvalue(L, -1);                  // push table
   lua_setfield(L, -2, "__index");        // pop table
+
+  // type support reference
+  const rosidl_message_type_support_t *ts = ROSIDL_GET_MSG_TYPE_SUPPORT( 
+    @(', '.join(msg_components)));
+  lua_pushlightuserdata(L, (void*) ts);
+  lua_setfield(L, -2, "_type_support");
+
+  // metatable
+  lua_pushliteral(L, "@(msg_metatable)");
+  lua_setfield(L, -2, "_metatable");
 
   lua_setmetatable(L, -2);               // pop table, save as metatable
   lua_setfield(L, -2, "@(fn_name)");  // pop table, save to main table

@@ -16,8 +16,25 @@ const char* MT_PUBLISHER = "ROS2.Publisher";
 void rcl_lua_publisher_new (lua_State* L)
 {
   rcl_node_t* node = lua_touserdata(L, 1);
-  const char* topic = lua_tostring(L, 2);
   rosidl_message_type_support_t *ts = NULL; // TODO read message type
+
+  bool is_ref = false;
+  /* check table */
+  if (lua_istable(L, 2)) {
+    lua_getfield(L, 2, "_type_support");
+    if (lua_islightuserdata(L, -1)) {
+      ts = lua_touserdata(L, -1);
+      lua_pop(L, 1);
+      is_ref = true;
+    }
+  }
+  if (!is_ref) {
+    luaL_argerror(L, 2, "expected message type");
+  }
+  if (NULL == ts) {
+    luaL_error(L, "message not found");
+  }
+  const char* topic = lua_tostring(L, 3);
   // TODO read qos profile
 
   rcl_publisher_t *publisher = lua_newuserdata(L, sizeof(rcl_publisher_t));
@@ -36,15 +53,15 @@ void rcl_lua_publisher_new (lua_State* L)
       luaL_error(L, "failed to create publisher");
   }
 
-  // set metatable
+  /* set metatable */
   luaL_getmetatable(L, MT_PUBLISHER);
   lua_setmetatable(L, -2);
 
-  // save node reference
+  /* save node reference */
   lua_pushvalue(L, 1);  // duplicate node reference
   lua_rawsetp(L, LUA_REGISTRYINDEX, publisher);  // reg[pub] = node
 
-  // keep publisher object on the stack
+  return 1;
 }
 
 static int rcl_lua_publisher_free (lua_State* L)
@@ -69,7 +86,7 @@ static int rcl_lua_publisher_free (lua_State* L)
 
 static int rcl_lua_publisher_publish (lua_State* L)
 {
-  rcl_publisher_t *publisher = luaL_checkudata(L, 1);
+  rcl_publisher_t *publisher = luaL_checkudata(L, 1, MT_PUBLISHER);
   void* message = NULL;  // get message
 
   rcl_ret_t ret = rcl_publish(publisher, message, NULL);

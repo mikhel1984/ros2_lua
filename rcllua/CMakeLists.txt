@@ -14,7 +14,9 @@ find_package(ament_cmake REQUIRED)
 find_package(rcl REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(Lua REQUIRED)  # >= 5.3
+
 find_package(rcllua_cmake REQUIRED)
+find_package(rosidl_luacommon REQUIRED)
 
 set(LIB_NAME rclbind)
 
@@ -28,11 +30,13 @@ add_library(${LIB_NAME} SHARED
   src/clock.c
   src/node.c
   src/wait_set.c
+  src/publisher.c
 )
 
 ament_target_dependencies(${LIB_NAME}
   rcl
   rcutils
+  rosidl_luacommon
 )
 
 set_target_properties(${LIB_NAME} PROPERTIES 
@@ -56,7 +60,6 @@ if(BUILD_TESTING)
   #set(ament_cmake_cpplint_FOUND TRUE)
   #ament_lint_auto_find_test_dependencies()
   find_package(rcllua_unit REQUIRED)
-  message(WARNING "${LUA_EXEC}")
   rcllua_unit_tests(
     tests/rcl_context.lua
     tests/rcl_logger.lua

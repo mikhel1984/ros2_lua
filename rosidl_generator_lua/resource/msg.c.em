@@ -116,6 +116,8 @@ msg_setters = []
 msg_metatable = msg_typename + '__mt'
 }@
 
+const rosidl_message_type_support_t * ROSIDL_GET_MSG_TYPE_SUPPORT(@(', '.join(msg_components)));
+
 static int @(msg_prefix)__lcall (lua_State* L);
 
 @#  constructor

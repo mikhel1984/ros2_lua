@@ -40,6 +40,8 @@ install(
   DESTINATION include
 )
 
+ament_export_include_directories("include")
+
 rcllua_cmake_install_clib(${PROJECT_NAME} ${LIB_NAME})
 
 if(BUILD_TESTING)

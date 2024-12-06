@@ -781,6 +781,9 @@ type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
   lua_pushliteral(L, "@(msg_metatable)");
   lua_setfield(L, -2, "_metatable");
 
+  lua_pushcfunction(L, @(msg_prefix)__lnew);  // push function
+  lua_setfield(L, -2, "_new");         // pop function, add to table
+
   lua_setmetatable(L, -2);               // pop table, save as metatable
   lua_setfield(L, -2, "@(fn_name)");  // pop table, save to main table
 }

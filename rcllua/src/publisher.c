@@ -5,7 +5,7 @@
 #include <rcl/node.h>
 #include <rcl/error_handling.h>
 
-#include <rmw/types.h>
+//#include <rmw/types.h>
 
 #include <rosidl_runtime_c/message_type_support_struct.h>
 
@@ -20,9 +20,9 @@ const char* MT_PUBLISHER = "ROS2.Publisher";
 static int rcl_lua_publisher_init (lua_State* L)
 {
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
-  rosidl_message_type_support_t *ts = NULL; // TODO read message type
 
   bool is_ref = false;
+  rosidl_message_type_support_t *ts = NULL;
   /* check table */
   if (lua_istable(L, 2)) {
     lua_getfield(L, 2, "_type_support");
@@ -38,21 +38,20 @@ static int rcl_lua_publisher_init (lua_State* L)
   if (NULL == ts) {
     luaL_error(L, "message not found");
   }
-  const char* topic = lua_tostring(L, 3);
+  const char* topic = luaL_checkstring(L, 3);
   // TODO read qos profile
 
   rcl_publisher_t *publisher = lua_newuserdata(L, sizeof(rcl_publisher_t));
   *publisher = rcl_get_zero_initialized_publisher();
 
   rcl_publisher_options_t publisher_opt = rcl_publisher_get_default_options();
-
   // TODO update options with qos
 
   rcl_ret_t ret = rcl_publisher_init(publisher, node, ts, topic, &publisher_opt);
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_TOPIC_NAME_INVALID:
-      luaL_error(L, "invalid topic name %s", topic); break;
+      luaL_error(L, "invalid topic name %s", topic); 
     default:
       luaL_error(L, "failed to create publisher");
   }
@@ -63,11 +62,11 @@ static int rcl_lua_publisher_init (lua_State* L)
 
   /* save node reference and metatable */
   lua_createtable(L, 2, 0);  // push table
-  lua_pushvalue(L, 1);  // push node
+  lua_pushvalue(L, PUB_REG_NODE);  // push node
   lua_seti(L, -2, 1);   // pop node, set t[1] = node
 
   lua_getfield(L, 2, "_metatable");  // push name
-  lua_seti(L, -2, 2);   // pop name, set t[2] = name
+  lua_seti(L, -2, PUB_REG_MT);   // pop name, set t[2] = name
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, publisher);  // pop table, reg[pub] = t
 
@@ -79,7 +78,7 @@ static int rcl_lua_publisher_free (lua_State* L)
   rcl_publisher_t* publisher = lua_touserdata(L, 1);
   // get node
   lua_rawgetp(L, LUA_REGISTRYINDEX, publisher);
-  lua_geti(L, -1, 1);
+  lua_geti(L, -1, PUB_REG_NODE);
   rcl_node_t* node = lua_touserdata(L, -1);
   
   rcl_ret_t ret = rcl_publisher_fini(publisher, node);
@@ -100,7 +99,7 @@ static int rcl_lua_publisher_publish (lua_State* L)
   rcl_publisher_t *publisher = luaL_checkudata(L, 1, MT_PUBLISHER);
   /* check message type */
   lua_rawgetp(L, LUA_REGISTRYINDEX, publisher);
-  lua_geti(L, -1, 2);
+  lua_geti(L, -1, PUB_REG_MT);
   const char* mt = lua_tostring(L, -1);
   idl_lua_msg_t *msg = luaL_checkudata(L, 2, mt);
 

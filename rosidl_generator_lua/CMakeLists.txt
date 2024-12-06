@@ -8,13 +8,13 @@ project(rosidl_generator_lua)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
-#find_package(ament_cmake_export_assemblies REQUIRED)
 
 ament_export_dependencies(rosidl_cmake)
-ament_export_dependencies(rosidl_generator_c)
+ament_export_dependencies(rmw)
+#ament_export_dependencies(rosidl_generator_c)
 
 ament_index_register_resource("rosidl_generator_packages")
-ament_python_install_package(${PROJECT_NAME})
+#ament_python_install_package(${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#find_package(rmw REQUIRED)
-#find_package(rosidl_runtime_c REQUIRED)
-#find_package(rosidl_typesupport_c REQUIRED)
-#find_package(rosidl_typesupport_interface REQUIRED)
+find_package(rmw REQUIRED)
+find_package(rosidl_runtime_c REQUIRED)
+find_package(rosidl_typesupport_c REQUIRED)
+find_package(rosidl_typesupport_interface REQUIRED)
 
 set(Python3_FIND_UNVERSIONED_NAMES FIRST)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -34,9 +34,10 @@ set(_output_path
   "${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_lua/${PROJECT_NAME}")
 set(_generated_c_files "")
 
-foreach(_typesupport_impl ${_typesupport_impls})
-  set(_generated_extension_${_typesupport_impl}_files "")
-endforeach()
+
+#foreach(_typesupport_impl ${_typesupport_impls})
+#  set(_generated_extension_${_typesupport_impl}_files "")
+#endforeach()
 
 # Collect files for each interface type
 set(_msg_list "")
@@ -91,10 +92,8 @@ endforeach()
 set(target_dependencies
   "${rosidl_generator_lua_BIN}"
   ${rosidl_generator_lua_GENERATOR_FILES}
-  #"${rosidl_generator_lua_TEMPLATE_DIR}/action.c.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/idl.c.em"
   "${rosidl_generator_lua_TEMPLATE_DIR}/msg.c.em"
-  #"${rosidl_generator_lua_TEMPLATE_DIR}/srv.c.em"
   ${rosidl_generate_interfaces_ABS_IDL_FILES}
   ${_dependency_files})
 foreach(dep ${target_dependencies})
@@ -117,8 +116,7 @@ rosidl_write_generator_arguments(
 set(_target_suffix "__lua")
 
 set_property(
-  SOURCE
-  ${_generated_c_files}
+  SOURCE ${_generated_c_files}
   PROPERTY GENERATED 1
 )
 
@@ -167,6 +165,8 @@ target_include_directories(${_target_name_lib}
   ${_luacommon_dir}
 )
 
+rosidl_get_typesupport_target(c_typesupport_target "${rosidl_generate_interfaces_TARGET}" "rosidl_typesupport_c")
+
 # Compile lua librariesy
 if(NOT _msg_list STREQUAL "")
   add_library(msg SHARED ${_msg_list})
@@ -175,10 +175,24 @@ if(NOT _msg_list STREQUAL "")
     LIBRARY_OUTPUT_DIRECTORY ${_output_path}
   )
   target_link_libraries(msg
-    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
-  target_include_directories(msg PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
-    ${_luacommon_dir})
+    #${rosidl_generate_interfaces_TARGET}__rosidl_generator_c
+    ${c_typesupport_target}
+    )
+#  add_dependencies(
+#  msg
+#  ${rosidl_generate_interfaces_TARGET}${_target_suffix}
+#  ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
+#)
+  #target_include_directories(msg PRIVATE
+    #${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
+    #${_luacommon_dir}
+    #)
+  ament_target_dependencies(msg
+    "rosidl_runtime_c"
+    #"rosidl_typesupport_c"
+    #"rosidl_typesupport_interface"
+    "rosidl_luacommon"
+  )
 endif()
 if(NOT _srv_list STREQUAL "")
   add_library(srv SHARED ${_srv_list})

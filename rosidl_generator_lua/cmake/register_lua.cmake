@@ -27,7 +27,7 @@ macro(rosidl_generator_lua_extras BIN GENERATOR_FILES TEMPLATE_DIR)
   set(rosidl_generator_lua_BIN "${BIN}")
 
   normalize_path(GENERATOR_FILES "${GENERATOR_FILES}")
-  set(rosidl_generator_cpp_GENERATOR_FILES "${GENERATOR_FILES}")
+  set(rosidl_generator_lua_GENERATOR_FILES "${GENERATOR_FILES}")
 
   normalize_path(TEMPLATE_DIR "${TEMPLATE_DIR}")
   set(rosidl_generator_lua_TEMPLATE_DIR "${TEMPLATE_DIR}")

@@ -17,11 +17,8 @@ static int rcl_lua_node_init (lua_State* L)
     luaL_argerror(L, 1, "expected string");
   }
   const char* name = lua_tostring(L, 1);
-  const char* namespace = "";
-  if (!lua_isnil(L, 2)) {
-    namespace = luaL_checkstring(L, 2);
-  }
-
+  const char* namespace = luaL_optstring(L, 2, "");
+  
   // TODO add options
   rcl_node_options_t options = rcl_node_get_default_options();
   rcl_context_t* context = rcl_lua_context_ref();

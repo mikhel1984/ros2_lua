@@ -21,9 +21,9 @@ header_files = [
     'stdint.h',
     'stdbool.h',
     'rosidl_runtime_c/visibility_control.h',
-    'rosidl_runtime_c/message_type_support_struct.h',
     include_base + '__struct.h',
     include_base + '__functions.h',
+    include_base + '__type_support.h',
     'rosidl_luacommon/definition.h']
 }@
 
@@ -116,7 +116,7 @@ msg_setters = []
 msg_metatable = msg_typename + '__mt'
 }@
 
-const rosidl_message_type_support_t * ROSIDL_GET_MSG_TYPE_SUPPORT(@(', '.join(msg_components)));
+//const rosidl_message_type_support_t * ROSIDL_GET_MSG_TYPE_SUPPORT(@(', '.join(msg_components)));
 
 static int @(msg_prefix)__lcall (lua_State* L);
 

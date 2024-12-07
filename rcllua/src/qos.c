@@ -108,6 +108,8 @@ static int rcl_lua_qos_update (lua_State* L)
   return 0;
 }
 
+// TODO __index, __newindex, remove __call
+
 static const struct luaL_Reg qos_methods[] = {
   {"__call", rcl_lua_qos_update},
   {NULL, NULL}

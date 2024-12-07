@@ -8,6 +8,7 @@
 #include "wait_set.h"
 #include "context.h"
 #include "timer.h"
+#include "subscriber.h"
 #include "utils.h"
 
 
@@ -94,7 +95,23 @@ static int rcl_lua_wait_set_add_timer (lua_State* L)
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to add timer");
   }
+  lua_pushinteger(L, (lua_Integer) index);
 
+  return 1;
+}
+
+static int rcl_lua_wait_set_add_subscription (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  /* arg2 - subsctiption */
+  rcl_subscription_t* sub = luaL_checkudata(L, 2, MT_SUBSCRIPTION);
+
+  size_t index = 0;
+  rcl_ret_t ret = rcl_wait_set_add_subscription(ws, sub, &index);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to add subscription");
+  }
   lua_pushinteger(L, (lua_Integer) index);
 
   return 1;
@@ -117,13 +134,30 @@ static int rcl_lua_wait_set_wait (lua_State* L)
 
 static int rcl_lua_wait_set_ready_timers (lua_State* L)
 {
+  /* arg1 - wait set */
   rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
 
   /* collect functions */
   lua_createtable(L, ws->size_of_timers, 0);
   for (size_t i = 0; i < ws->size_of_timers; i++) {
-    lua_rawgetp(L, LUA_REGISTRYINDEX, ws->timers[i]);
-    lua_rawseti(L, -2, i+1);
+    lua_rawgetp(L, LUA_REGISTRYINDEX, ws->timers[i]);  // push function
+    lua_rawseti(L, -2, i+1);                           // pop function
+  }
+
+  return 1;
+}
+
+static int rcl_lua_wait_set_ready_subscription (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+
+  /* collect functions */
+  lua_createtable(L, ws->size_of_subscriptions, 0);
+  for (size_t i = 0; i < ws->size_of_subscriptions; i++) {
+    /* table {message, function} */
+    rcl_lua_subscription_callback_and_message(L, ws->subscriptions[i]);  // push table
+    lua_rawseti(L, -2, i+1);                           // pop table
   }
 
   return 1;
@@ -131,7 +165,9 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
 
 static const struct luaL_Reg wait_set_methods[] = {
   {"add_timer", rcl_lua_wait_set_add_timer},
+  {"add_subscription", rcl_lua_wait_set_add_subscription},
   {"ready_timers", rcl_lua_wait_set_ready_timers},
+  {"ready_subscriptions", rcl_lua_wait_set_ready_subscription},
   {"clear", rcl_lua_wait_set_clear},
   {"wait", rcl_lua_wait_set_wait},
   {"__gc", rcl_lua_wait_set_free},

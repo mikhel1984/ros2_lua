@@ -31,6 +31,7 @@ add_library(${LIB_NAME} SHARED
   src/node.c
   src/wait_set.c
   src/publisher.c
+  src/subscriber.c
   src/qos.c
 )
 

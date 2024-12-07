@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "node.h"
 #include "publisher.h"
+#include "subscriber.h"
 #include "time.h"
 #include "timer.h"
 #include "clock.h"
@@ -21,10 +22,11 @@ int luaopen_rcllua_rclbind (lua_State* L)
   rcl_lua_add_time_methods(L);
   rcl_lua_add_timer_methods(L);
   rcl_lua_add_clock_methods(L);
-  rcl_lua_add_qos_methods(L);
+  //rcl_lua_add_qos_methods(L);
 
   rcl_lua_add_node_methods(L);
   rcl_lua_add_publisher_methods(L);
+  rcl_lua_add_subscription_methods(L);
   rcl_lua_add_wait_set_methods(L);
 
   return 1;

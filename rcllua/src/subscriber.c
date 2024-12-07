@@ -18,11 +18,12 @@ const char* MT_SUBSCRIPTION = "ROS2.Subscription";
 
 static int rcl_lua_subscription_init (lua_State* L)
 {
+  /* arg1 - node */
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
 
+  /* arg2 - message (table) */
   bool is_ref = false;
   rosidl_message_type_support_t *ts = NULL;
-  /* check table */
   if (lua_istable(L, 2)) {
     lua_getfield(L, 2, "_type_support");
     if (lua_islightuserdata(L, -1)) {
@@ -37,10 +38,15 @@ static int rcl_lua_subscription_init (lua_State* L)
   if (NULL == ts) {
     luaL_error(L, "message not found");
   }
+
+  /* arg3 - topic name */
   const char* topic = luaL_checkstring(L, 3);
+
+  /* arg4 - callback function */
+  luaL_argcheck(L, LUA_TFUNCTION == lua_type(L, 4), 4, "function expected");
   // TODO read qos profile
 
-  rcl_subscription_t *subscription = lua_newuserdata(L, sizeof(rcl_subscription_t));
+  rcl_subscription_t* subscription = lua_newuserdata(L, sizeof(rcl_subscription_t));
   *subscription = rcl_get_zero_initialized_subscription();
 
   rcl_subscription_options_t subscription_ops = rcl_subscription_get_default_options();
@@ -60,15 +66,18 @@ static int rcl_lua_subscription_init (lua_State* L)
   lua_setmetatable(L, -2);   // pop metatable, set
 
   /* save node reference and metatable */
-  lua_createtable(L, 2, 0);  // push table
+  lua_createtable(L, 4, 0);  // push table
   lua_pushvalue(L, 1);  // push node
-  lua_seti(L, -2, SUB_REG_NODE);   // pop node, set t[1] = node
+  lua_rawseti(L, -2, SUB_REG_NODE);   // pop node, set t[1] = node
 
   lua_getfield(L, 2, "_metatable");  // push name
-  lua_seti(L, -2, SUB_REG_MT);   // pop name, set t[2] = name
+  lua_rawseti(L, -2, SUB_REG_MT);   // pop name, set t[2] = name
 
   lua_getfield(L, 2, "_new");  // push function
-  lua_seti(L, -2, SUB_REG_NEW);   // pop function, set t[3] = function
+  lua_rawseti(L, -2, SUB_REG_NEW);   // pop function, set t[3] = function
+
+  lua_pushvalue(L, 4);  // push function
+  lua_rawseti(L, -2, SUB_REG_CALLBACK);
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, subscription);  // pop table, reg[pub] = t
 
@@ -77,11 +86,11 @@ static int rcl_lua_subscription_init (lua_State* L)
 
 static int rcl_lua_subscription_free (lua_State* L)
 {
-  rcl_publisher_t* subscription = lua_touserdata(L, 1);
+  rcl_subscription_t* subscription = lua_touserdata(L, 1);
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, subscription);  
-  lua_geti(L, -1, SUB_REG_NODE);                              
+  lua_rawgeti(L, -1, SUB_REG_NODE);                              
   rcl_node_t* node = lua_touserdata(L, -1);
   
   rcl_ret_t ret = rcl_subscription_fini(subscription, node);
@@ -97,37 +106,45 @@ static int rcl_lua_subscription_free (lua_State* L)
   return 0;
 }
 
-static int rcl_lua_subscription_take_msg (lua_State* L)
+void rcl_lua_subscription_callback_and_message (lua_State* L, const rcl_subscription_t* sub)
 {
-  rcl_publisher_t* subscription = lua_touserdata(L, 1);
+  /* save into table */
+  lua_createtable(L, 2, 0);                         // push table a
 
-  /* get constructor */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, subscription);
-  lua_geti(L, -1, SUB_REG_NEW);
+  /* get message constructor */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, sub);  // push table b
+  if (lua_isnil(L, -1)) {
+    luaL_error(L, "subscriber bindings not found");
+  }
+  lua_rawgeti(L, -1, SUB_REG_NEW);                  // push function from b
+
   /* make empty message */
-  lua_call(L, 0, 1);
+  lua_call(L, 0, 1);                                // pop function, push message
   idl_lua_msg_t *msg = lua_touserdata(L, -1);
 
+  /* get message */
   rmw_message_info_t message_info;
-  rcl_ret_t ret = rcl_take(subscription, msg->obj, &message_info, NULL);
+  rcl_ret_t ret = rcl_take(sub, msg->obj, &message_info, NULL);
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_BAD_ALLOC:
-      luaL_error(L, "failed to allocate memory for message");
+      luaL_error(L, "failed to allocate memory for message"); break;
     default:
       luaL_error(L, "failed to take message from subscription");
   }
+  lua_rawseti(L, -3, 1);                  // pop message, a[1] = message
 
-  /* time info */
-  lua_pushinteger(L, message_info.source_timestamp);
-  lua_pushinteger(L, message_info.received_timestamp);
-  
-  return 3;
+  // TODO save values: message_info.source_timestamp, L, message_info.received_timestamp
+
+  /* callback function */
+  lua_rawgeti(L, -1, SUB_REG_CALLBACK);   // push function brom b
+  lua_rawseti(L, -3, 2);                  // pop function, a[2] = message
+
+  lua_pop(L, 1);                          // pop table b
+  /* keep table a on the stack */
 }
 
-
 static const struct luaL_Reg sub_methods[] = {
-  {"take_msg", rcl_lua_subscription_take_msg},
   {"__gc", rcl_lua_subscription_free},
   {NULL, NULL}
 };

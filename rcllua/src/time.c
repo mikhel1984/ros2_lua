@@ -5,11 +5,11 @@
 
 #include <rcl/time.h>
 
+#include "time.h"
 #include "utils.h"
 
-#define NSEC_IN_SEC 1000000000
-
 const char* MT_TIME = "ROS2.Time";
+const char* MT_DURATION = "ROS2.Duration";
 
 static int rcl_lua_time_init (lua_State* L)
 {

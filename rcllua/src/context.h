@@ -1,14 +1,38 @@
+// Copyright 2025 Stanislav Mikhel
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef RCL_LUA_CONTEXT_H
 #define RCL_LUA_CONTEXT_H
 
 #include <lua.h>
 
-#include <rcl/context.h>
+struct rcl_context_s;
 
-/* Save methods into the table on the top of the stack */
+/**
+ * Add to library access to context and common methods.
+ *
+ * \param[inout] L Lua stack.
+ */
 void rcl_lua_add_context_methods(lua_State* L);
 
-rcl_context_t* rcl_lua_context_ref();
+/**
+ * Get pointer to the context object. If it is not initialized,
+ * return NULL.
+ *
+ * \return pointer or NULL.
+ */
+struct rcl_context_s* rcl_lua_context_ref();
 
 #endif  // RCL_LUA_CONTEXT_H
 

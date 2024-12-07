@@ -9,6 +9,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rcllua_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_luacommon</buildtool_depend>
 
   <depend>rcl</depend>
   <depend>rcutils</depend>

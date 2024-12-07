@@ -119,7 +119,7 @@ void rcl_lua_add_qos_methods (lua_State* L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_qos_init);
-  lua_setfield(L, -1, "qos_init");
+  lua_setfield(L, -2, "qos_init");
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_QOS, qos_methods);

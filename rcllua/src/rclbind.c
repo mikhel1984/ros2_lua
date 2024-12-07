@@ -22,7 +22,7 @@ int luaopen_rcllua_rclbind (lua_State* L)
   rcl_lua_add_time_methods(L);
   rcl_lua_add_timer_methods(L);
   rcl_lua_add_clock_methods(L);
-  //rcl_lua_add_qos_methods(L);
+  rcl_lua_add_qos_methods(L);
 
   rcl_lua_add_node_methods(L);
   rcl_lua_add_publisher_methods(L);

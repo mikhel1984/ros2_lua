@@ -26,6 +26,14 @@
 #include "node.h"
 #include "utils.h"
 
+/** Indices of publisher bindings in register */
+enum PubReg {
+  /** node reference */
+  PUB_REG_NODE = 1,
+  /** metatable name */
+  PUB_REG_MT
+};
+
 /** Publisher object metatable name. */
 const char* MT_PUBLISHER = "ROS2.Publisher";
 

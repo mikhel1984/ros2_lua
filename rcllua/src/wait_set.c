@@ -1,3 +1,16 @@
+// Copyright 2025 Stanislav Mikhel
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <lauxlib.h>
 
@@ -11,9 +24,26 @@
 #include "subscriber.h"
 #include "utils.h"
 
-
+/** WaitSet object metatable name. */
 const char* MT_WAIT_SET = "ROS2.WaitSet";
 
+/**
+ * Init WaitSet object.
+ *
+ * Arguments:
+ * - subscriptions number
+ * - guard conditiona number
+ * - timers number
+ * - clients number
+ * - services number
+ * - events number
+ *
+ * Return:
+ * - WaitSet object.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_wait_set_init (lua_State* L)
 {
   /* arg1 - #subsctiptions */
@@ -29,16 +59,15 @@ static int rcl_lua_wait_set_init (lua_State* L)
   /* arg6 - #events */
   int num_ev = luaL_checkinteger(L, 6);
 
-  if (num_sub < 0 || num_guard < 0 || num_timers < 0 || num_cli < 0 
+  if (num_sub < 0 || num_guard < 0 || num_timers < 0 || num_cli < 0
    || num_srv < 0 || num_ev < 0
   ) {
-    luaL_error(L, "wrong number of items");
+    luaL_error(L, "negative number of items");
   }
 
   /* make */
-  rcl_wait_set_t* wait_set = lua_newuserdata(L, sizeof(rcl_wait_set_t));
+  rcl_wait_set_t* wait_set = lua_newuserdata(L, sizeof(rcl_wait_set_t));  // push object
   *wait_set = rcl_get_zero_initialized_wait_set();
-
   rcl_ret_t ret = rcl_wait_set_init(
     wait_set,
     (size_t) num_sub,
@@ -53,16 +82,27 @@ static int rcl_lua_wait_set_init (lua_State* L)
     luaL_error(L, "failed to initialize wait set");
   }
 
-  /* set metatable */
-  luaL_getmetatable(L, MT_WAIT_SET);
-  lua_setmetatable(L, -2);
+  /* metamethods */
+  luaL_getmetatable(L, MT_WAIT_SET);  // push metatable
+  lua_setmetatable(L, -2);            // pop metatable
 
   return 1;
 }
 
+/**
+ * WaitSet destructor.
+ *
+ * Arguments:
+ * - WaitSet object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_wait_set_free (lua_State* L)
 {
+  /* arg1 - waitset object */
   rcl_wait_set_t* ws = lua_touserdata(L, 1);
+
   rcl_ret_t ret = rcl_wait_set_fini(ws);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to fini wait set: %s", rcl_get_error_string().str);
@@ -72,9 +112,20 @@ static int rcl_lua_wait_set_free (lua_State* L)
   return 0;
 }
 
+/**
+ * Clear WaitSet object.
+ *
+ * Arguments:
+ * - WaitSet object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_wait_set_clear (lua_State* L)
 {
+  /* arg1 - waitset object */
   rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+
   rcl_ret_t ret = rcl_wait_set_clear(ws);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to clear wait set");
@@ -83,6 +134,19 @@ static int rcl_lua_wait_set_clear (lua_State* L)
   return 0;
 }
 
+/**
+ * Add timer for waiting.
+ *
+ * Arguments:
+ * - WaitSet object
+ * - timer object
+ *
+ * Return:
+ * - index of added timer
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_wait_set_add_timer (lua_State* L)
 {
   /* arg1 - wait set */
@@ -90,16 +154,30 @@ static int rcl_lua_wait_set_add_timer (lua_State* L)
   /* arg2 - timer */
   rcl_timer_t* timer = luaL_checkudata(L, 2, MT_TIMER);
 
+  /* add */
   size_t index = 0;
   rcl_ret_t ret = rcl_wait_set_add_timer(ws, timer, &index);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to add timer");
   }
-  lua_pushinteger(L, (lua_Integer) index);
 
+  lua_pushinteger(L, (lua_Integer) index);
   return 1;
 }
 
+/**
+ * Add subscription for waiting.
+ *
+ * Arguments:
+ * - WaitSet object
+ * - subscription object
+ *
+ * Return:
+ * - index of added subscription
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_wait_set_add_subscription (lua_State* L)
 {
   /* arg1 - wait set */
@@ -107,16 +185,27 @@ static int rcl_lua_wait_set_add_subscription (lua_State* L)
   /* arg2 - subsctiption */
   rcl_subscription_t* sub = luaL_checkudata(L, 2, MT_SUBSCRIPTION);
 
+  /* add */
   size_t index = 0;
   rcl_ret_t ret = rcl_wait_set_add_subscription(ws, sub, &index);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to add subscription");
   }
-  lua_pushinteger(L, (lua_Integer) index);
 
+  lua_pushinteger(L, (lua_Integer) index);
   return 1;
 }
 
+/**
+ * Waiting for the next ready object.
+ *
+ * Arguments:
+ * - WaitSet object
+ * - timeout  (??)
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_wait_set_wait (lua_State* L)
 {
   /* arg1 - wait set */
@@ -124,6 +213,7 @@ static int rcl_lua_wait_set_wait (lua_State* L)
   /* arg2 - timeout */
   lua_Integer timeout = luaL_checkinteger(L, 2);
 
+  /* waiting */
   rcl_ret_t ret = rcl_wait(ws, timeout);
   if (RCL_RET_OK != ret && RCL_RET_TIMEOUT != ret) {
     luaL_error(L, "failed to wait on wait set");
@@ -132,13 +222,25 @@ static int rcl_lua_wait_set_wait (lua_State* L)
   return 0;
 }
 
+/**
+ * Collect ready timers.
+ *
+ * Arguments:
+ * - WaitSet object
+ *
+ * Return:
+ * - table of callback functions
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_wait_set_ready_timers (lua_State* L)
 {
   /* arg1 - wait set */
   rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
 
   /* collect functions */
-  lua_createtable(L, ws->size_of_timers, 0);
+  lua_createtable(L, ws->size_of_timers, 0);           // push table
   for (size_t i = 0; i < ws->size_of_timers; i++) {
     lua_rawgetp(L, LUA_REGISTRYINDEX, ws->timers[i]);  // push function
     lua_rawseti(L, -2, i+1);                           // pop function
@@ -147,22 +249,36 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
   return 1;
 }
 
+/**
+ * Collect ready subscriptions.
+ *
+ * Arguments:
+ * - WaitSet object
+ *
+ * Return:
+ * - table of tuples (message, callback)
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+
 static int rcl_lua_wait_set_ready_subscription (lua_State* L)
 {
   /* arg1 - wait set */
   rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
 
   /* collect functions */
-  lua_createtable(L, ws->size_of_subscriptions, 0);
+  lua_createtable(L, ws->size_of_subscriptions, 0);  // push table a
   for (size_t i = 0; i < ws->size_of_subscriptions; i++) {
     /* table {message, function} */
-    rcl_lua_subscription_callback_and_message(L, ws->subscriptions[i]);  // push table
-    lua_rawseti(L, -2, i+1);                           // pop table
+    rcl_lua_subscription_callback_and_message(L, ws->subscriptions[i]);  // push table b
+    lua_rawseti(L, -2, i+1);                         // pop table b
   }
 
   return 1;
 }
 
+/** List of WaitSet methods */
 static const struct luaL_Reg wait_set_methods[] = {
   {"add_timer", rcl_lua_wait_set_add_timer},
   {"add_subscription", rcl_lua_wait_set_add_subscription},
@@ -174,11 +290,12 @@ static const struct luaL_Reg wait_set_methods[] = {
   {NULL, NULL}
 };
 
+/* Add to library */
 void rcl_lua_add_wait_set_methods (lua_State* L)
-{  
-  /* make wait set */
-  lua_pushcfunction(L, rcl_lua_wait_set_init);
-  lua_setfield(L, -2, "new_wait_set");
+{
+  /* wait set constructor*/
+  lua_pushcfunction(L, rcl_lua_wait_set_init);  // push function
+  lua_setfield(L, -2, "new_wait_set");          // pop, lib['new_wait_set'] = function
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_WAIT_SET, wait_set_methods);

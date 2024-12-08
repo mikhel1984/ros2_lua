@@ -17,6 +17,8 @@
 
 #include <lua.h>
 
+extern const char* MT_CLOCK;
+
 /**
  * Create clock metatable, add constructor and enum to library.
  *

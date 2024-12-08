@@ -31,17 +31,18 @@ ament_target_dependencies(${LIB_NAME}
   rosidl_runtime_c
 )
 
-set_target_properties(${LIB_NAME} PROPERTIES 
+set_target_properties(${LIB_NAME} PROPERTIES
   PREFIX ""
 )
 
+# export header
 install(
   DIRECTORY include/
   DESTINATION include
 )
-
 ament_export_include_directories("include")
 
+# library access
 rcllua_cmake_install_clib(${PROJECT_NAME} ${LIB_NAME})
 
 if(BUILD_TESTING)

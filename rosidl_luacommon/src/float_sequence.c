@@ -1,3 +1,16 @@
+// Copyright 2025 Stanislav Mikhel
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <float.h>
 
@@ -7,6 +20,14 @@
 #include "rosidl_luacommon/definition.h"
 #include "sequence_macro.h"
 
+/**
+ * Set value by index.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param TYPE_NAME C data type name
+ * \param V_MAX upper limit
+ * \return setter function
+ */
 #define FLOAT_SEQ_SET(STRUCT_NAME, TYPE_NAME, V_MAX) \
 static int STRUCT_NAME ## _seq_set (lua_State* L) \
 { \
@@ -33,6 +54,13 @@ static int STRUCT_NAME ## _seq_set (lua_State* L) \
   return 0; \
 }
 
+/**
+ * Get value by index.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param TYPE_NAME C data type name
+ * \return getter function
+ */
 #define FLOAT_SEQ_GET(STRUCT_NAME, TYPE_NAME) \
 static int STRUCT_NAME ## _seq_get (lua_State* L) \
 { \
@@ -59,6 +87,14 @@ static int STRUCT_NAME ## _seq_get (lua_State* L) \
   return 1; \
 }
 
+/**
+ * Message caller.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param TYPE_NAME C data type name
+ * \param V_MAX upper limit
+ * \return caller function
+ */
 #define FLOAT_SEQ_CALL(STRUCT_NAME, TYPE_NAME, V_MAX) \
 static int STRUCT_NAME ## _seq_call (lua_State* L) \
 { \
@@ -108,8 +144,7 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
   return 1; \
 }
 
-/* float */
-
+/** Float sequence metatable name. */
 const char* MT_SEQ_FLOAT = "ROS2.rosidl_sequence.float";
 
 FLOAT_SEQ_SET (float, float, FLT_MAX)
@@ -124,8 +159,7 @@ FLOAT_SEQ_CALL (float, float, FLT_MAX)
 OBJ_METHODS(float, float_seq_len)
 OBJ_ADD_TABLE (float, MT_SEQ_FLOAT)
 
-/* double */
-
+/** Double sequence metatable name. */
 const char* MT_SEQ_DOUBLE = "ROS2.rosidl_sequence.double";
 
 FLOAT_SEQ_SET (double, double, DBL_MAX)
@@ -139,8 +173,7 @@ FLOAT_SEQ_CALL (double, double, DBL_MAX)
 OBJ_METHODS(double, float_seq_len)
 OBJ_ADD_TABLE (double, MT_SEQ_DOUBLE)
 
-/* long double */
-
+/** Long double metatable name. */
 const char* MT_SEQ_LDOUBLE = "ROS2.rosidl_sequence.ldouble";
 
 FLOAT_SEQ_SET (long_double, long double, LDBL_MAX)
@@ -153,4 +186,3 @@ FLOAT_SEQ_CALL (long_double, long double, LDBL_MAX)
 
 OBJ_METHODS(long_double, float_seq_len)
 OBJ_ADD_TABLE (long_double, MT_SEQ_LDOUBLE)
-

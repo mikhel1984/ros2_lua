@@ -1,5 +1,17 @@
+// Copyright 2025 Stanislav Mikhel
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-//#include <limits.h>
 #include <stdint.h>
 
 #include <rosidl_runtime_c/primitives_sequence.h>
@@ -8,6 +20,15 @@
 #include "rosidl_luacommon/definition.h"
 #include "sequence_macro.h"
 
+/**
+ * Set value by index.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param TYPE_NAME C data type name
+ * \param V_MIN lower limit
+ * \param V_MAX upper limit
+ * \return setter function
+ */
 #define INT_SEQ_SET(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
 static int STRUCT_NAME ## _seq_set (lua_State* L) \
 { \
@@ -34,6 +55,13 @@ static int STRUCT_NAME ## _seq_set (lua_State* L) \
   return 0; \
 }
 
+/**
+ * Get value by index.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param TYPE_NAME C data type name
+ * \return getter function
+ */
 #define INT_SEQ_GET(STRUCT_NAME, TYPE_NAME) \
 static int STRUCT_NAME ## _seq_get (lua_State* L) \
 { \
@@ -60,6 +88,15 @@ static int STRUCT_NAME ## _seq_get (lua_State* L) \
   return 1; \
 }
 
+/**
+ * Message caller.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param TYPE_NAME C data type name
+ * \param V_MIN lower limit
+ * \param V_MAX upper limit
+ * \return caller function
+ */
 #define INT_SEQ_CALL(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
 static int STRUCT_NAME ## _seq_call (lua_State* L) \
 { \
@@ -105,8 +142,7 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
   return 1; \
 }
 
-/* int8 */
-
+/** int8 sequence metatable name. */
 const char* MT_SEQ_INT8 = "ROS2.rosidl_sequence.int8";
 
 INT_SEQ_SET (int8, int8_t, INT8_MIN, INT8_MAX)
@@ -121,9 +157,7 @@ INT_SEQ_CALL (int8, int8_t, INT8_MIN, INT8_MAX)
 OBJ_METHODS (int8, int8_seq_len)
 OBJ_ADD_TABLE (int8, MT_SEQ_INT8)
 
-
-/* uint8 */
-
+/** uint8 sequence metatable name. */
 const char* MT_SEQ_UINT8 = "ROS2.rosidl_sequence.uint8";
 
 INT_SEQ_SET (uint8, uint8_t, 0, UINT8_MAX)
@@ -137,9 +171,7 @@ INT_SEQ_CALL (uint8, uint8_t, 0, UINT8_MAX)
 OBJ_METHODS (uint8, int8_seq_len)
 OBJ_ADD_TABLE (uint8, MT_SEQ_UINT8)
 
-
-/* int16 */
-
+/** int16 sequence metatable name. */
 const char* MT_SEQ_INT16 = "ROS2.rosidl_sequence.int16";
 
 INT_SEQ_SET (int16, int16_t, INT16_MIN, INT16_MAX)
@@ -153,9 +185,7 @@ INT_SEQ_CALL (int16, int16_t, INT16_MIN, INT16_MAX)
 OBJ_METHODS (int16, int8_seq_len)
 OBJ_ADD_TABLE (int16, MT_SEQ_INT16)
 
-
-/* uint16 */
-
+/* uint16 sequence metatable name. */
 const char* MT_SEQ_UINT16 = "ROS2.rosidl_sequence.uint16";
 
 INT_SEQ_SET (uint16, uint16_t, 0, UINT16_MAX)
@@ -169,9 +199,7 @@ INT_SEQ_CALL (uint16, uint16_t, 0, UINT16_MAX)
 OBJ_METHODS (uint16, int8_seq_len)
 OBJ_ADD_TABLE (uint16, MT_SEQ_UINT16)
 
-
-/* int32 */
-
+/* int32 sequence metatable name. */
 const char* MT_SEQ_INT32 = "ROS2.rosidl_sequence.int32";
 
 INT_SEQ_SET (int32, int32_t, INT32_MIN, INT32_MAX)
@@ -185,9 +213,7 @@ INT_SEQ_CALL (int32, int32_t, INT32_MIN, INT32_MAX)
 OBJ_METHODS (int32, int8_seq_len)
 OBJ_ADD_TABLE (int32, MT_SEQ_INT32)
 
-
-/* uint32 */
-
+/* uint32 sequence metatable name. */
 const char* MT_SEQ_UINT32 = "ROS2.rosidl_sequence.uint32";
 
 INT_SEQ_SET (uint32, uint32_t, 0, UINT32_MAX)
@@ -201,9 +227,7 @@ INT_SEQ_CALL (uint32, uint32_t, 0, UINT32_MAX)
 OBJ_METHODS (uint32, int8_seq_len)
 OBJ_ADD_TABLE (uint32, MT_SEQ_UINT32)
 
-
-/* int64 */
-
+/* int64 sequence metatable name. */
 const char* MT_SEQ_INT64 = "ROS2.rosidl_sequence.int64";
 
 INT_SEQ_SET (int64, int64_t, INT64_MIN, INT64_MAX)
@@ -217,9 +241,7 @@ INT_SEQ_CALL (int64, int64_t, INT64_MIN, INT64_MAX)
 OBJ_METHODS (int64, int8_seq_len)
 OBJ_ADD_TABLE (int64, MT_SEQ_INT64)
 
-
-/* uint32 */
-
+/* uint64 sequence metatable name. */
 const char* MT_SEQ_UINT64 = "ROS2.rosidl_sequence.uint64";
 
 INT_SEQ_SET (uint64, uint64_t, 0, UINT64_MAX)
@@ -232,4 +254,3 @@ INT_SEQ_CALL (uint64, uint64_t, 0, UINT64_MAX)
 
 OBJ_METHODS (uint64, int8_seq_len)
 OBJ_ADD_TABLE (uint64, MT_SEQ_UINT64)
-

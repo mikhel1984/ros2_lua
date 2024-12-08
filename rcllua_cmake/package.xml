@@ -3,7 +3,7 @@
 <package format="3">
   <name>rcllua_cmake</name>
   <version>0.0.1</version>
-  <description>TODO: Package description</description>
+  <description>Environment setup methods for ros2_lua</description>
   <maintainer email="mikhel.sk@gmail.com">Stanislav Mikhel</maintainer>
   <license>Apache License 2.0</license>
 

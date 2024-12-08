@@ -2,9 +2,9 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rosidl_luacommon</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="mikhel.sk@gmail.com">stas</maintainer>
+  <version>0.0.1</version>
+  <description>Lua binding for lists of primitive datatypes.</description>
+  <maintainer email="mikhel.sk@gmail.com">Stanislav Mikhel</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

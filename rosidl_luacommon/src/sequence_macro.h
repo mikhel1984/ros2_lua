@@ -1,6 +1,27 @@
+// Copyright 2025 Stanislav Mikhel
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef SEQUENCE_MACRO_H
 #define SEQUENCE_MACRO_H
 
+/**
+ * Check equality of two sequences.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param METATABLE metatable name
+ * \return function for equality checking
+ */
 #define OBJ_SEQ_EQ(STRUCT_NAME, METATABLE) \
 static int STRUCT_NAME ## _seq_eq (lua_State* L) \
 { \
@@ -30,6 +51,12 @@ static int STRUCT_NAME ## _seq_eq (lua_State* L) \
   return 1; \
 }
 
+/**
+ * Get sequence length.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \return function for getting length.
+ */
 #define OBJ_SEQ_LEN(STRUCT_NAME) \
 static int STRUCT_NAME ## _seq_len (lua_State* L) \
 { \
@@ -45,6 +72,12 @@ static int STRUCT_NAME ## _seq_len (lua_State* L) \
   return 1; \
 }
 
+/**
+ * Short string description.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \return function for getting string description.
+ */
 #define OBJ_SEQ_STR(STRUCT_NAME) \
 static int STRUCT_NAME ## _seq_str (lua_State* L) \
 { \
@@ -60,6 +93,14 @@ static int STRUCT_NAME ## _seq_str (lua_State* L) \
   return 1; \
 }
 
+/**
+ * Make copy of sequence.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param TYPE_NAME C data type name
+ * \param METATABLE metatable name
+ * \return function for making copy.
+ */
 #define OBJ_SEQ_COPY(STRUCT_NAME, TYPE_NAME, METATABLE) \
 static int STRUCT_NAME ## _seq_copy (lua_State* L) \
 { \
@@ -96,6 +137,13 @@ static int STRUCT_NAME ## _seq_copy (lua_State* L) \
   return 1; \
 }
 
+/**
+ * Resize sequence.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param METATABLE metatable name
+ * \return function for changing size.
+ */
 #define OBJ_SEQ_RESIZE(STRUCT_NAME, METATABLE) \
 static int STRUCT_NAME ## _seq_resize (lua_State* L) \
 { \
@@ -129,6 +177,13 @@ static int STRUCT_NAME ## _seq_resize (lua_State* L) \
   return 1; \
 }
 
+/**
+ * Prepare list of metamethods.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param LEN_METHOD length getter name
+ * \return array of metamethods.
+ */
 #define OBJ_METHODS(STRUCT_NAME, LEN_METHOD) \
 static const struct luaL_Reg STRUCT_NAME ## _seq_methods[] = {\
   {"__index", STRUCT_NAME ## _seq_get}, \
@@ -141,6 +196,14 @@ static const struct luaL_Reg STRUCT_NAME ## _seq_methods[] = {\
   {"resize", STRUCT_NAME ## _seq_resize}, \
   {NULL, NULL} \
 };
+
+/**
+ * Defin metatable, fill with methods.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \param METATABLE metatable name
+ * \return function for saving metamethods to library.
+ */
 
 #define OBJ_ADD_TABLE(STRUCT_NAME, METATABLE) \
 void rosidl_luacommon_add_ ## STRUCT_NAME (lua_State* L) \

@@ -1,16 +1,27 @@
---[[
+-- Copyright 2025 Stanislav Mikhel
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 
-Define and call unit tests in Lua.
+-- Define and call unit tests in Lua.
+--
+-- Usage:
+--
+-- Load moule, define test functions as a methods for the loaded table.
+-- Checking can be done with assertions. Call 'run' method to execute
+-- all the unit tests.
 
-Usage:
 
-Load moule, define test functions as a methods for the loaded table.
-Checking can be done with assertions. Call 'run' method to execute
-all the unit tests.
-
-2024, Stanislav Mikhel]]
-
--- test library
+--- Unit test library
 local lib = {
 _fn = {},
 _nm = {},
@@ -40,7 +51,7 @@ lib.eql = function (self, x, y)
   return true
 end
 
---- Execute registered unit tests.
+--- Execute the registered unit tests.
 lib.run = function (self)
   local err = 0
   -- execute
@@ -62,12 +73,13 @@ lib.run = function (self)
   end
 end
 
-return setmetatable(lib, 
+-- Make library
+return setmetatable(lib,
 {
--- Save registered functions into specific tables.
-__newindex = function (t, k, v)
-  table.insert(t._nm, k)  -- names
-  table.insert(t._fn, v)  -- functions
-end,
+  -- Save registered functions into the specific tables.
+  __newindex = function (t, k, v)
+    table.insert(t._nm, k)  -- names
+    table.insert(t._fn, v)  -- functions
+  end,
 })
 

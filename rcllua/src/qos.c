@@ -23,6 +23,7 @@
 #include "qos.h"
 #include "utils.h"
 
+/** Collect structure fields for access. */
 enum QoSFields {
   QOS_F_HISTORY,
   QOS_F_DEPTH,
@@ -65,6 +66,7 @@ static void duration_to_rmw_time (const rcl_duration_t* dur, rmw_time_t* tm)
  */
 static int rcl_lua_qos_init (lua_State* L)
 {
+  /* arg1 - type name */
   const char* profile = luaL_optstring(L, 1, "qos_profile_default");
   rmw_qos_profile_t *qos = lua_newuserdata(L, sizeof(rmw_qos_profile_t));  // push object
 
@@ -94,66 +96,11 @@ static int rcl_lua_qos_init (lua_State* L)
   return 1;
 }
 
-static int rcl_lua_qos_update (lua_State* L)
-{
-  rmw_qos_profile_t *qos = luaL_checkudata(L, 1, MT_QOS);
-  luaL_argcheck(L, lua_istable(L, 2), 2, "table expected");
-
-  if (LUA_TNIL != lua_getfield(L, 2, "history")) {
-    qos->history = (rmw_qos_history_policy_t) luaL_checkinteger(L, -1);
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "depth")) {
-    qos->depth = (int) luaL_checkinteger(L, -1);
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "reliability")) {
-    qos->reliability = (rmw_qos_reliability_policy_t) luaL_checkinteger(L, -1);
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "durability")) {
-    qos->durability = (rmw_qos_durability_policy_t) luaL_checkinteger(L, -1);
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "liveliness")) {
-    qos->liveliness = (rmw_qos_liveliness_policy_t) luaL_checkinteger(L, -1);
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "avoid_ros_namespace_conventions")) {
-    if (lua_isboolean(L, -1)) {
-      qos->avoid_ros_namespace_conventions = lua_toboolean(L, -1);
-    } else {
-      luaL_error(L, "avoid_ros_namespace_conventions is boolean");
-    }
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "lifespan")) {
-    rcl_duration_t* dur = luaL_checkudata(L, -1, MT_DURATION);
-    duration_to_rmw_time(dur, &(qos->lifespan));
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "deadline")) {
-    rcl_duration_t* dur = luaL_checkudata(L, -1, MT_DURATION);
-    duration_to_rmw_time(dur, &(qos->deadline));
-  }
-  lua_pop(L, 1);
-
-  if (LUA_TNIL != lua_getfield(L, 2, "liveliness_lease_duration")) {
-    rcl_duration_t* dur = luaL_checkudata(L, -1, MT_DURATION);
-    duration_to_rmw_time(dur, &(qos->liveliness_lease_duration));
-  }
-  lua_pop(L, 1);
-
-  return 0;
-}
-
+/**
+ * Prepare hash table for quick access to QoS fields.
+ *
+ * \param[inout] L Lua stack.
+ */
 static void rcl_lua_qos_set_types (lua_State* L)
 {
   /* set to metatable */
@@ -185,6 +132,12 @@ static void rcl_lua_qos_set_types (lua_State* L)
   lua_pop(L, 1);                           // pop metatable
 }
 
+/**
+ * Translate value to ROS duration, put to stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] tm rmw duration.
+ */
 static void rcl_lua_qos_push_duration (lua_State* L, const rmw_time_t* tm)
 {
   rcl_duration_t* dur = lua_newuserdata(L, sizeof(rcl_duration_t));
@@ -195,10 +148,24 @@ static void rcl_lua_qos_push_duration (lua_State* L, const rmw_time_t* tm)
   lua_setmetatable(L, -2);
 }
 
+/**
+ * Read QoS field value by name.
+ *
+ * Arguments:
+ * - QoS object
+ * - field name
+ *
+ * Return:
+ * - field value
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_qos_index (lua_State* L)
 {
-  /* find index */
+  /* arg1 - qos object, find index */
   luaL_getmetafield(L, 1, "_fields");                // push _fields
+  /* arg2 - field name */
   const char* field = luaL_checkstring(L, 2);
   if (LUA_TNUMBER != lua_getfield(L, -1, field)) {   // push int
     luaL_error(L, "%s not found", field);
@@ -243,11 +210,74 @@ static int rcl_lua_qos_index (lua_State* L)
   return 1;
 }
 
-// TODO __index, __newindex, remove __call
+/**
+ * Write QoS field value by name.
+ *
+ * Arguments:
+ * - QoS object
+ * - field name
+ * - field value
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_qos_newindex (lua_State* L)
+{
+  /* arg1 - qos object, find index */
+  luaL_getmetafield(L, 1, "_fields");                // push _fields
+  /* arg2 - field name */
+  const char* field = luaL_checkstring(L, 2);
+  if (LUA_TNUMBER != lua_getfield(L, -1, field)) {   // push int
+    luaL_error(L, "%s not found", field);
+  }
+  int id = lua_tointeger(L, -1);
+  lua_pop(L, 2);                                     // pop int and _fields
+
+  /* arg3 - value, set */
+  rmw_qos_profile_t* qos = lua_touserdata(L, 1);
+  rcl_duration_t* dur = NULL;
+  switch (id) {
+    case QOS_F_HISTORY:
+      qos->history = (rmw_qos_history_policy_t) luaL_checkinteger(L, 3);
+      break;
+    case QOS_F_DEPTH:
+      qos->depth = (int) luaL_checkinteger(L, 3);
+      break;
+    case QOS_F_RELIABILITY:
+      qos->reliability = (rmw_qos_reliability_policy_t) luaL_checkinteger(L, 3);
+      break;
+    case QOS_F_DURABILITY:
+      qos->durability = (rmw_qos_durability_policy_t) luaL_checkinteger(L, 3);
+      break;
+    case QOS_F_LIVELINESS:
+      qos->liveliness = (rmw_qos_liveliness_policy_t) luaL_checkinteger(L, 3);
+      break;
+    case QOS_F_AVOID_ROS:
+      qos->avoid_ros_namespace_conventions = lua_toboolean(L, 3);
+      break;
+    case QOS_F_LIFESPAN:
+      dur = luaL_checkudata(L, 3, MT_DURATION);
+      duration_to_rmw_time(dur, &(qos->lifespan));
+      break;
+    case QOS_F_DEADLINE:
+      dur = luaL_checkudata(L, 3, MT_DURATION);
+      duration_to_rmw_time(dur, &(qos->deadline));
+      break;
+    case QOS_F_LIVELINESS_LEASE:
+      dur = luaL_checkudata(L, -1, MT_DURATION);
+      duration_to_rmw_time(dur, &(qos->liveliness_lease_duration));
+      break;
+    default:
+      luaL_error(L, "unexpected error");
+  }
+
+  return 1;
+}
 
 /** List of QoS methods */
 static const struct luaL_Reg qos_methods[] = {
-  {"__call", rcl_lua_qos_update},
+  {"__index", rcl_lua_qos_index},
+  {"__newindex", rcl_lua_qos_newindex},
   {NULL, NULL}
 };
 
@@ -255,10 +285,12 @@ static const struct luaL_Reg qos_methods[] = {
 void rcl_lua_add_qos_methods (lua_State* L)
 {
   /* constructor */
-  lua_pushcfunction(L, rcl_lua_qos_init);
-  lua_setfield(L, -2, "new_qos");
+  lua_pushcfunction(L, rcl_lua_qos_init);   // push function
+  lua_setfield(L, -2, "new_qos");           // pop, lib['new_qos'] = function
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_QOS, qos_methods);
-}
 
+  /* fill _fields table */
+  rcl_lua_qos_set_types(L);
+}

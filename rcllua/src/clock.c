@@ -128,7 +128,7 @@ static const rcl_lua_enum enum_clock_types[] = {
   {NULL, -1}
 };
 
-/** List of methods. */
+/** List of clock methods. */
 static const struct luaL_Reg clock_methods[] = {
   {"now", rcl_lua_clock_get_now},
   {"__gc", rcl_lua_clock_free},
@@ -140,7 +140,7 @@ void rcl_lua_add_clock_methods (lua_State* L)
 {
   /* clock constructor */
   lua_pushcfunction(L, rcl_lua_clock_init);   // push function
-  lua_setfield(L, -2, "new_clock");           // pop, lib['new_clock']= function
+  lua_setfield(L, -2, "new_clock");           // pop, lib['new_clock'] = function
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_CLOCK, clock_methods);

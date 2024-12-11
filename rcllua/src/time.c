@@ -392,7 +392,7 @@ static int rcl_lua_time_add (lua_State* L)
   /* arg1 - time object */
   rcl_time_point_t* t = luaL_checkudata(L, 1, MT_TIME);
   /* arg2 - duration object */
-  rcl_duration_t* d = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t* d = luaL_checkudata(L, 2, MT_DURATION);
 
   /* check result */
   double sum = t->nanoseconds + (double) d->nanoseconds;
@@ -430,7 +430,7 @@ static int rcl_lua_time_sub (lua_State* L)
   /* arg1 - time object */
   rcl_time_point_t* t1 = luaL_checkudata(L, 1, MT_TIME);
   /* arg2 - time object */
-  rcl_time_point_t* t2 = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t* t2 = luaL_checkudata(L, 2, MT_TIME);
 
   /* init */
   rcl_duration_t* dur = lua_newuserdata(L, sizeof(rcl_duration_t));
@@ -482,6 +482,7 @@ static const struct luaL_Reg duration_methods[] = {
   {"__eq", rcl_lua_time_eq_dur},
   {"__lt", rcl_lua_time_lt_dur},
   {"__le", rcl_lua_time_le_dur},
+  {"__unm", rcl_lua_time_unm_dur},
   {"seconds", rcl_lua_time_seconds_dur},
   {NULL, NULL}
 };

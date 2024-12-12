@@ -61,13 +61,7 @@ static int rcl_lua_time_init (lua_State* L)
   /* init time object */
   rcl_time_point_value_t val = nsec;
   val += sec * NSEC_IN_SEC;
-  rcl_time_point_t* time = lua_newuserdata(L, sizeof(rcl_time_point_t));  // push object
-  time->nanoseconds = val;
-  time->clock_type = tp;
-
-  /* set metamethods */
-  luaL_getmetatable(L, MT_TIME);  // push metatable
-  lua_setmetatable(L, -2);        // pop metatable
+  rcl_lua_time_push_time(L, val, tp);
 
   return 1;
 }
@@ -98,14 +92,9 @@ static int rcl_lua_time_init_dur (lua_State* L)
     luaL_error(L, "out of range");
   }
 
-  /* initialize */
-  rcl_duration_t* dur = lua_newuserdata(L, sizeof(rcl_duration_t));
-  dur->nanoseconds = nsec;
-  dur->nanoseconds += sec*NSEC_IN_SEC;
-
-  /* set metamethods */
-  luaL_getmetatable(L, MT_DURATION);  // push metatable
-  lua_setmetatable(L, -2);        // pop metatable
+  rcl_duration_value_t val = nsec;
+  val += sec*NSEC_IN_SEC;
+  rcl_lua_time_push_duration(L, val);
 
   return 1;
 }
@@ -135,7 +124,7 @@ static int rcl_lua_time_index (lua_State* L)
     lua_pushinteger(L, time->nanoseconds / NSEC_IN_SEC);
   } else if (0 == strcmp(field, "nsec")) {
     lua_pushinteger(L, time->nanoseconds % NSEC_IN_SEC);
-  } else if (0 == strcmp(field, "clock")) {
+  } else if (0 == strcmp(field, "clock_type")) {
     lua_pushinteger(L, time->clock_type);
   } else if (LUA_TNIL == luaL_getmetafield(L, 1, field)) {
     luaL_error(L, "unknown field '%s'", field);
@@ -401,14 +390,7 @@ static int rcl_lua_time_add (lua_State* L)
   }
 
   /* init */
-  rcl_time_point_t* time = lua_newuserdata(L, sizeof(rcl_time_point_t));
-  *time = *t;
-  time->nanoseconds += d->nanoseconds;
-
-  /* set metamethods */
-  luaL_getmetatable(L, MT_TIME);  // push metatable
-  lua_setmetatable(L, -2);        // pop metatable
-
+  rcl_lua_time_push_time( L, t->nanoseconds + d->nanoseconds, t->clock_type);
   return 1;
 }
 
@@ -433,18 +415,7 @@ static int rcl_lua_time_sub (lua_State* L)
   rcl_time_point_t* t2 = luaL_checkudata(L, 2, MT_TIME);
 
   /* init */
-  rcl_duration_t* dur = lua_newuserdata(L, sizeof(rcl_duration_t));
-  if (t1->nanoseconds >= t2->nanoseconds) {
-    dur->nanoseconds = (t1->nanoseconds - t2->nanoseconds);
-  } else {
-    dur->nanoseconds = (t2->nanoseconds - t1->nanoseconds);
-    dur->nanoseconds *= -1;
-  }
-
-  /* set metamethods */
-  luaL_getmetatable(L, MT_DURATION);  // push metatable
-  lua_setmetatable(L, -2);        // pop metatable
-
+  rcl_lua_time_push_duration(L, t1->nanoseconds - t2->nanoseconds);
   return 1;
 }
 
@@ -454,13 +425,7 @@ static int rcl_lua_time_unm_dur (lua_State* L)
   rcl_duration_t* d = lua_touserdata(L, 1);
 
   /* init */
-  rcl_duration_t* dst = lua_newuserdata(L, sizeof(rcl_duration_t));
-  dst->nanoseconds = - d->nanoseconds;
-
-  /* set metamethods */
-  luaL_getmetatable(L, MT_DURATION);  // push metatable
-  lua_setmetatable(L, -2);        // pop metatable
-
+  rcl_lua_time_push_duration(L, - d->nanoseconds);
   return 1;
 }
 
@@ -503,4 +468,27 @@ void rcl_lua_add_time_methods (lua_State* L)
 
   /* duration metamethods */
   rcl_lua_utils_add_mt(L, MT_DURATION, duration_methods);
+}
+
+/* Create time object, init and push to the stack. */
+void rcl_lua_time_push_time (lua_State* L, int64_t ns, int clock_type)
+{
+  rcl_time_point_t* time = lua_newuserdata(L, sizeof(rcl_time_point_t));  // push object
+  time->nanoseconds = ns;
+  time->clock_type = clock_type;
+
+  /* set metamethods */
+  luaL_getmetatable(L, MT_TIME);  // push metatable
+  lua_setmetatable(L, -2);        // pop metatable
+}
+
+/* Create duration object, init and push to the stack. */
+void rcl_lua_time_push_duration (lua_State* L, int64_t ns)
+{
+  rcl_duration_t* dur = lua_newuserdata(L, sizeof(rcl_duration_t));  // push object
+  dur->nanoseconds = ns;
+
+  /* set metamethods */
+  luaL_getmetatable(L, MT_DURATION);  // push metatable
+  lua_setmetatable(L, -2);        // pop metatable
 }

@@ -14,6 +14,7 @@ function ut:time_value()
 
   assert(ut:eql(tm.sec, 123))
   assert(ut:eql(tm.nsec, 456))
+  assert(ut:eql(tm.clock_type, 2))
 
   -- immutable
   assert(not pcall(function() tm.sec = 3 end))

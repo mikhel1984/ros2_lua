@@ -30,4 +30,21 @@ extern const char* MT_DURATION;
  */
 void rcl_lua_add_time_methods (lua_State* L);
 
+/**
+ * Create time object, init and push to the stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] ns time in nanoseconds.
+ * \param[in] clock_type type of clock.
+ */
+void rcl_lua_time_push_time (lua_State* L, int64_t ns, int clock_type);
+
+/**
+ * Create duration object, init and push to the stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] ns time in nanoseconds.
+ */
+void rcl_lua_time_push_duration (lua_State* L, int64_t ns);
+
 #endif  // RCL_LUA_TIME_H

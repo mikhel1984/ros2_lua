@@ -23,6 +23,7 @@
 #include <rosidl_luacommon/definition.h>
 
 #include "subscriber.h"
+#include "qos.h"
 #include "node.h"
 #include "utils.h"
 
@@ -49,6 +50,7 @@ const char* MT_SUBSCRIPTION = "ROS2.Subscription";
  * - message type (table)
  * - topic name
  * - callback function: fn(message) -> nil
+ * - qos profile (optional)
  *
  * Return:
  * - subscription object
@@ -78,13 +80,16 @@ static int rcl_lua_subscription_init (lua_State* L)
   const char* topic = luaL_checkstring(L, 3);
   /* arg4 - callback function */
   luaL_argcheck(L, LUA_TFUNCTION == lua_type(L, 4), 4, "function expected");
-  // TODO read qos profile
 
   /* create and init subscription */
+  rcl_subscription_options_t subscription_ops = rcl_subscription_get_default_options();
+  /* arg5 - QoS profile */
+  if (!lua_isnoneornil(L, 5)) {
+    rmw_qos_profile_t* qos = luaL_checkudata(L, 5, MT_QOS);
+    subscription_ops.qos = *qos;
+  }
   rcl_subscription_t* subscription = lua_newuserdata(L, sizeof(rcl_subscription_t));
   *subscription = rcl_get_zero_initialized_subscription();
-  rcl_subscription_options_t subscription_ops = rcl_subscription_get_default_options();
-  // TODO update options with qos
 
   rcl_ret_t ret = rcl_subscription_init(subscription, node, ts, topic, &subscription_ops);
   switch (ret) {

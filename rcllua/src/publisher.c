@@ -17,12 +17,13 @@
 #include <rcl/publisher.h>
 #include <rcl/node.h>
 #include <rcl/error_handling.h>
-//#include <rmw/types.h>
+#include <rmw/types.h>
 #include <rosidl_runtime_c/message_type_support_struct.h>
 
 #include <rosidl_luacommon/definition.h>
 
 #include "publisher.h"
+#include "qos.h"
 #include "node.h"
 #include "utils.h"
 
@@ -44,6 +45,7 @@ const char* MT_PUBLISHER = "ROS2.Publisher";
  * - node object
  * - message type (table)
  * - topic name
+ * - qos profile
  *
  * Return:
  * - publisher object
@@ -72,13 +74,16 @@ static int rcl_lua_publisher_init (lua_State* L)
 
   /* arg3 - topic name */
   const char* topic = luaL_checkstring(L, 3);
-  // TODO read qos profile
 
   /* init object */
+  rcl_publisher_options_t publisher_opt = rcl_publisher_get_default_options();
+  /* arg4 - QoS profile */
+  if (!lua_isnoneornil(L, 4)) {
+    rmw_qos_profile_t* qos = luaL_checkudata(L, 4, MT_QOS);
+    publisher_opt.qos = *qos;
+  }
   rcl_publisher_t *publisher = lua_newuserdata(L, sizeof(rcl_publisher_t));  // push object
   *publisher = rcl_get_zero_initialized_publisher();
-  rcl_publisher_options_t publisher_opt = rcl_publisher_get_default_options();
-  // TODO update options with qos
 
   rcl_ret_t ret = rcl_publisher_init(publisher, node, ts, topic, &publisher_opt);
   switch (ret) {

@@ -107,15 +107,28 @@ static int rcl_lua_clock_get_now (lua_State* L)
     luaL_error(L, "failed to get clock value");
   }
 
-  /* to Lua object */
-  rcl_time_point_t* ptr = lua_newuserdata(L, sizeof(rcl_time_point_t));  // push object
-  ptr->clock_type = clock->type;
-  ptr->nanoseconds = time_ns;
+  rcl_lua_time_push_time(L, time_ns, clock->type);
+  return 1;
+}
 
-  /* set metamethods */
-  luaL_getmetatable(L, MT_TIME);  // push metatable
-  lua_setmetatable(L, -2);        // pop methods
+/**
+ * Get clock type.
+ *
+ * Arguments:
+ * - clock object
+ *
+ * Return:
+ * - type value (int)
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_clock_get_type (lua_State* L)
+{
+  /* arg1 - clock */
+  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
 
+  lua_pushinteger(L, clock->type);
   return 1;
 }
 
@@ -131,6 +144,7 @@ static const rcl_lua_enum enum_clock_types[] = {
 /** List of clock methods. */
 static const struct luaL_Reg clock_methods[] = {
   {"now", rcl_lua_clock_get_now},
+  {"clock_type", rcl_lua_clock_get_type},
   {"__gc", rcl_lua_clock_free},
   {NULL, NULL}
 };

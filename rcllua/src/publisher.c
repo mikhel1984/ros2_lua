@@ -45,7 +45,7 @@ const char* MT_PUBLISHER = "ROS2.Publisher";
  * - node object
  * - message type (table)
  * - topic name
- * - qos profile
+ * - qos profile (optional)
  *
  * Return:
  * - publisher object

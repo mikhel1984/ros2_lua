@@ -66,6 +66,8 @@ if(BUILD_TESTING)
     tests/rcl_context.lua
     tests/rcl_logger.lua
     tests/rcl_time.lua
+    tests/rcl_clock.lua
+    tests/rcl_qos.lua
   )
 endif()
 

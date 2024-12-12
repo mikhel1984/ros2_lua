@@ -15,8 +15,8 @@ function rut:logs()
   rclbind.simp_log(Log.WARN, "some_node", "Message")
 end
 
-function rut:shrutdown()
-  rclbind.context_shrutdown()
+function rut:shutdown()
+  rclbind.context_shutdown()
 end
 
 rut:run()

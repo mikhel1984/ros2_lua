@@ -11,8 +11,8 @@ function rut:init_context()
   assert(rclbind.context_ok())
 end
 
-function rut:shrutdown()
-  rclbind.context_shrutdown()
+function rut:shutdown()
+  rclbind.context_shutdown()
   assert(not rclbind.context_ok())
 end
 

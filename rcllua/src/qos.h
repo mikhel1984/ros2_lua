@@ -17,6 +17,8 @@
 
 #include <lua.h>
 
+struct rmw_qos_profile_s;
+
 /* Metatable name */
 extern const char* MT_QOS;
 
@@ -26,5 +28,13 @@ extern const char* MT_QOS;
  * \param[inout] L Lua stack.
  */
 void rcl_lua_add_qos_methods (lua_State* L);
+
+/**
+ * Make copy of the gimen QoS object.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] src object making copy.
+ */
+void rcl_lua_qos_push_copy (lua_State* L, struct rmw_qos_profile_s* src);
 
 #endif  // RCL_LUA_QOS_H

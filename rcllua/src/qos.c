@@ -294,3 +294,19 @@ void rcl_lua_add_qos_methods (lua_State* L)
   /* fill _fields table */
   rcl_lua_qos_set_types(L);
 }
+
+/* Make copy of the gimen QoS object. */
+void rcl_lua_qos_push_copy (lua_State* L, rmw_qos_profile_t* src)
+{
+  if (NULL == src) {
+    luaL_error(L, "no QoS");
+  }
+
+  /* make copy */
+  rmw_qos_profile_t *qos = lua_newuserdata(L, sizeof(rmw_qos_profile_t));  // push object
+  *qos = *src;
+
+  /* add metamethods */
+  luaL_getmetatable(L, MT_QOS);  // push metatable
+  lua_setmetatable(L, -2);       // pop metatable
+}

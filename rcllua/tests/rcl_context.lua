@@ -1,20 +1,20 @@
-local ut = require 'rcllua_unit.testing'
+local rut = require 'rcllua_unit.testing'
 
 local rclbind
 
-function ut:load()
+function rut:load()
   rclbind = require('rcllua.rclbind')
 end
 
-function ut:init_context()
+function rut:init_context()
   rclbind.context_init(arg)
   assert(rclbind.context_ok())
 end
 
-function ut:shutdown()
-  rclbind.context_shutdown()
+function rut:shrutdown()
+  rclbind.context_shrutdown()
   assert(not rclbind.context_ok())
 end
 
-ut:run()
+rut:run()
 

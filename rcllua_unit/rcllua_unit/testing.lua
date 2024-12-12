@@ -58,9 +58,9 @@ lib.run = function (self)
   for i, fn in ipairs(self._fn) do
     local ok, res = pcall(fn)
     if ok then
-      io.write('[ OK ] ', self._nm[i], '\n')
+      io.write('[  OK  ] ', self._nm[i], '\n')
     else
-      io.stderr:write('[FAIL] ', self._nm[i], ', ', res, '\n')
+      io.stderr:write('[FAILED] ', self._nm[i], ', ', res, '\n')
       err = err + 1
     end
   end

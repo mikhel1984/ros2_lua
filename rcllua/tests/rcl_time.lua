@@ -1,39 +1,39 @@
-local ut = require 'rcllua_unit.testing'
+local rut = require 'rcllua_unit.testing'
 
 local rclbind
 
 local function empty(x) end
 
-function ut:time_value()
+function rut:time_value()
   rclbind = require('rcllua.rclbind')
 
   local tm = rclbind.new_time(123, 456)
 
   local float = tm:seconds()
-  assert(ut:eqlf(math.floor(float), 123))
+  assert(rut:eqlf(math.floor(float), 123))
 
-  assert(ut:eql(tm.sec, 123))
-  assert(ut:eql(tm.nsec, 456))
-  assert(ut:eql(tm.clock_type, 2))
+  assert(rut:eql(tm.sec, 123))
+  assert(rut:eql(tm.nsec, 456))
+  assert(rut:eql(tm.clock_type, 2))
 
-  -- immutable
+  -- immrutable
   assert(not pcall(function() tm.sec = 3 end))
 end
 
-function ut:duration_value()
+function rut:duration_value()
   local dur = rclbind.new_duration(123, 456)
 
   local float = dur:seconds()
-  assert(ut:eqlf(math.floor(float), 123))
+  assert(rut:eqlf(math.floor(float), 123))
 
-  assert(ut:eql(dur.sec, 123))
-  assert(ut:eql(dur.nsec, 456))
+  assert(rut:eql(dur.sec, 123))
+  assert(rut:eql(dur.nsec, 456))
 
-  -- immutable
+  -- immrutable
   assert(not pcall(function() tm.sec = 3 end))
 end
 
-function ut:compare_time()
+function rut:compare_time()
   local t1 = rclbind.new_time(1, 2)
   local t2 = rclbind.new_time(3, 4)
 
@@ -46,7 +46,7 @@ function ut:compare_time()
   assert(not pcall(function() empty(t1 == t3) end))
 end
 
-function ut:compare_duration()
+function rut:compare_duration()
   local d1 = rclbind.new_duration(-1, -2)
   local d2 = rclbind.new_duration(1, 2)
 
@@ -55,7 +55,7 @@ function ut:compare_duration()
   assert(d2 >= d2, "ge failed")
 end
 
-function ut:add_sub()
+function rut:add_sub()
   local t1 = rclbind.new_time(100)
   local d = rclbind.new_duration(1)
 
@@ -72,5 +72,5 @@ function ut:add_sub()
   assert(d3 == -d)
 end
 
-ut:run()
+rut:run()
 

@@ -129,7 +129,7 @@ static int rcl_lua_time_index (lua_State* L)
   } else if (LUA_TNIL == luaL_getmetafield(L, 1, field)) {
     luaL_error(L, "unknown field '%s'", field);
   }
-    
+
   return 1;
 }
 
@@ -161,7 +161,7 @@ static int rcl_lua_time_index_dur (lua_State* L)
   } else if (LUA_TNIL == luaL_getmetafield(L, 1, field)) {
     luaL_error(L, "unknown field '%s'", field);
   }
-    
+
   return 1;
 }
 
@@ -292,7 +292,7 @@ static int rcl_lua_time_le (lua_State* L)
 }
 
 /**
- * Check d1 == d2. 
+ * Check d1 == d2.
  *
  * Arguments:
  * - duration 1
@@ -316,7 +316,7 @@ static int rcl_lua_time_eq_dur (lua_State* L)
 }
 
 /**
- * Check d1 < d2. 
+ * Check d1 < d2.
  *
  * Arguments:
  * - duration 1
@@ -340,7 +340,7 @@ static int rcl_lua_time_lt_dur (lua_State* L)
 }
 
 /**
- * Check d1 <= d2. 
+ * Check d1 <= d2.
  *
  * Arguments:
  * - duration 1

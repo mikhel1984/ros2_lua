@@ -2,8 +2,6 @@ local rut = require 'rcllua_unit.testing'
 
 local rclbind
 
-local function empty(x) end
-
 function rut:time_value()
   rclbind = require('rcllua.rclbind')
 
@@ -16,8 +14,8 @@ function rut:time_value()
   assert(rut:eql(tm.nsec, 456))
   assert(rut:eql(tm.clock_type, 2))
 
-  -- immrutable
-  assert(not pcall(function() tm.sec = 3 end))
+  -- immutable
+  rut:catch(function() tm.sec = 3 end)
 end
 
 function rut:duration_value()
@@ -30,7 +28,7 @@ function rut:duration_value()
   assert(rut:eql(dur.nsec, 456))
 
   -- immrutable
-  assert(not pcall(function() tm.sec = 3 end))
+ rut:catch(function() tm.sec = 3 end)
 end
 
 function rut:compare_time()
@@ -43,7 +41,7 @@ function rut:compare_time()
 
   -- different clock type
   local t3 = rclbind.new_time(1, 2, 3)
-  assert(not pcall(function() empty(t1 == t3) end))
+  rut:catch(function() return (t1 == t3) end)
 end
 
 function rut:compare_duration()

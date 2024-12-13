@@ -17,7 +17,9 @@ function rut:setting()
   qos.lifespan = dur
   qos.deadline = dur
   qos.liveliness_lease_duration = dur
-  assert(not pcall(function() qos.foo = 42 end))
+
+  -- unknown field
+  rut:catch(function() qos.foo = 42 end)
 end
 
 function rut:getting()
@@ -38,23 +40,19 @@ function rut:qos_profile()
 
   q = rclbind.new_qos('qos_profile_sensor_data')
   assert(rut:eql(q.depth, 5))
-
   q = rclbind.new_qos('qos_profile_system_default')
   assert(rut:eql(q.depth, 0))
-
   q = rclbind.new_qos('qos_profile_service_default')
   assert(rut:eql(q.depth, 10))
-
   q = rclbind.new_qos('qos_profile_parameter_events')
   assert(rut:eql(q.depth, 1000))
-
   q = rclbind.new_qos('qos_profile_unknown')
   assert(rut:eql(q.depth, 0))
-
   q = rclbind.new_qos('qos_profile_parameters')
   assert(rut:eql(q.depth, 1000))
 
-  assert(not pcall(function() rclbind.new_qos('other') end))
+  -- unknown profile
+  rut:catch(function() rclbind.new_qos('other') end)
 end
 
 rut:run()

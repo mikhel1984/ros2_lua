@@ -27,7 +27,7 @@ typedef enum {
   /** Main pointer to the object. */
   IDL_LUA_OBJECT = -2,
 
-  /* Don't need int 'fini' call. */
+  /* Don't need to call 'fini'. */
   /** Copy of the pointer to the object. */
   IDL_LUA_PTR = -1,
   /** Dynamic size array. */

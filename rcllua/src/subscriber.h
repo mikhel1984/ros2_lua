@@ -11,12 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef RCL_LUA_SUBSCRIBER_H
 #define RCL_LUA_SUBSCRIBER_H
 
 #include <lua.h>
 
 struct rcl_subscription_s;
+
 extern const char * MT_SUBSCRIPTION;
 
 /**

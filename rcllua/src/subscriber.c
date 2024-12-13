@@ -29,7 +29,7 @@
 
 /** Indices of subscription bindings in register. */
 enum SubReg {
-  /** node ference */
+  /** node reference */
   SUB_REG_NODE = 1,
   /** metatable name */
   SUB_REG_MT,
@@ -155,6 +155,23 @@ static int rcl_lua_subscription_free (lua_State* L)
   return 0;
 }
 
+/** List of subscription methods */
+static const struct luaL_Reg sub_methods[] = {
+  {"__gc", rcl_lua_subscription_free},
+  {NULL, NULL}
+};
+
+/* Add subscription to library */
+void rcl_lua_add_subscription_methods (lua_State* L)
+{
+  /* constructor */
+  lua_pushcfunction(L, rcl_lua_subscription_init);  // push function
+  lua_setfield(L, -2, "new_subscription");          // pop, lib['new_subscription'] = function
+
+  /* metamethods */
+  rcl_lua_utils_add_mt(L, MT_SUBSCRIPTION, sub_methods);
+}
+
 /* Return table {message, callback}. */
 void rcl_lua_subscription_callback_and_message (lua_State* L, const rcl_subscription_t* sub)
 {
@@ -191,21 +208,4 @@ void rcl_lua_subscription_callback_and_message (lua_State* L, const rcl_subscrip
 
   lua_pop(L, 1);                          // pop table b
   /* keep table 'a' on the stack */
-}
-
-/** List of subscription methods */
-static const struct luaL_Reg sub_methods[] = {
-  {"__gc", rcl_lua_subscription_free},
-  {NULL, NULL}
-};
-
-/* Add subscription to library */
-void rcl_lua_add_subscription_methods (lua_State* L)
-{
-  /* constructor */
-  lua_pushcfunction(L, rcl_lua_subscription_init);  // push function
-  lua_setfield(L, -2, "new_subscription");          // pop, lib['new_subscription'] = function
-
-  /* metamethods */
-  rcl_lua_utils_add_mt(L, MT_SUBSCRIPTION, sub_methods);
 }

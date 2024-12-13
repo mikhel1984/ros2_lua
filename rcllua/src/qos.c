@@ -296,7 +296,7 @@ void rcl_lua_add_qos_methods (lua_State* L)
 }
 
 /* Make copy of the gimen QoS object. */
-void rcl_lua_qos_push_copy (lua_State* L, rmw_qos_profile_t* src)
+void rcl_lua_qos_push_copy (lua_State* L, const rmw_qos_profile_t* src)
 {
   if (NULL == src) {
     luaL_error(L, "no QoS");

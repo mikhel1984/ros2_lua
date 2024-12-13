@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_SERVICE_H
-#define RCL_LUA_SERVICE_H
+#ifndef RCL_LUA_CLIENT_H
+#define RCL_LUA_CLIENT_H
 
 #include <lua.h>
 
 /**
- * Create service metatable, add constructor to library.
+ * Create client metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_service_methods (lua_State* L);
+void rcl_lua_add_client_methods (lua_State* L);
 
-#endif  // RCL_LUA_SERVICE_H
+#endif  // RCL_LUA_CLIENT_H

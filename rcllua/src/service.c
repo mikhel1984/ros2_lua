@@ -105,9 +105,9 @@ static int rcl_lua_service_init (lua_State* L)
   lua_rawseti(L, -2, SRV_REG_NODE);    // pop node, a[1] = node
 
   lua_pushvalue(L, 4);                 // push function
-  lua_rawseti(L, -2, SRV_REG_CALLBACK);  // pop function, a[.] = callback
+  lua_rawseti(L, -2, SRV_REG_CALLBACK);    // pop function, a[.] = callback
 
-  lua_rawsetp(L, LUA_REGISTRYINDEX, srv);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, srv);  // pop table a
 
   return 1;
 }
@@ -188,7 +188,7 @@ static int rcl_lua_service_get_qos (lua_State* L)
   rcl_lua_qos_push_copy(L, &(options->qos));
   return 1;
 }
- 
+
 /** List of service methods */
 static const struct luaL_Reg srv_methods[] = {
   {"get_qos", rcl_lua_service_get_qos},

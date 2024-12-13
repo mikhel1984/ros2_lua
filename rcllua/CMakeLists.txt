@@ -33,6 +33,7 @@ add_library(${LIB_NAME} SHARED
   src/publisher.c
   src/subscriber.c
   src/service.c
+  src/client.c
   src/qos.c
 )
 

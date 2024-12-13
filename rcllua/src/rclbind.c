@@ -18,6 +18,7 @@
 #include "publisher.h"
 #include "subscriber.h"
 #include "service.h"
+#include "client.h"
 #include "time.h"
 #include "timer.h"
 #include "clock.h"
@@ -49,6 +50,7 @@ int luaopen_rcllua_rclbind (lua_State* L)
   rcl_lua_add_publisher_methods(L);
   rcl_lua_add_subscription_methods(L);
   rcl_lua_add_service_methods(L);
+  rcl_lua_add_client_methods(L);
   rcl_lua_add_wait_set_methods(L);
 
   return 1;

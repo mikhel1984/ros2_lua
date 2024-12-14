@@ -19,6 +19,8 @@
 #include <rcl/error_handling.h>
 #include <rosidl_runtime_c/service_type_support_struct.h>
 
+#include <rosidl_luacommon/definition.h>
+
 #include "service.h"
 #include "node.h"
 #include "qos.h"
@@ -27,9 +29,29 @@
 /** Indices of service bindings in register. */
 enum SrvReg {
   /** node reference */
-  SRV_REG_NODE = 1,
+  SRV_REG_NODE=1,
   /** function */
-  SRV_REG_CALLBACK
+  SRV_REG_CALLBACK,
+  /** request message constructor */
+  SRV_REG_NEW_REQUEST,
+  /** response message constructor */
+  SRV_REG_NEW_RESPONSE,
+  /** number of elements + 1 */
+  SRV_REG_NUMBER
+};
+
+/** Sequence of output elements */
+enum SrvOut {
+  /** request message */
+  SRV_OUT_REQUEST=1,
+  /** response message */
+  SRV_OUT_RESPONSE,
+  /** callback funciton */
+  SRV_OUT_CALLBACK,
+  /** light userdata */
+  SRV_OUT_REF,
+  /** number of elements + 1 */
+  SRV_OUT_NUMBER
 };
 
 /** Service object metatable name. */
@@ -100,12 +122,21 @@ static int rcl_lua_service_init (lua_State* L)
   lua_setmetatable(L, -2);           // pop metatable
 
   /* save reference objects */
-  lua_createtable(L, 0, 0);            // push table a
+  lua_createtable(L, SRV_REG_NUMBER-1, 0);  // push table a
   lua_pushvalue(L, 1);                 // push node
-  lua_rawseti(L, -2, SRV_REG_NODE);    // pop node, a[1] = node
+  lua_rawseti(L, -2, SRV_REG_NODE);    // pop node, a[.] = node
 
   lua_pushvalue(L, 4);                 // push function
   lua_rawseti(L, -2, SRV_REG_CALLBACK);    // pop function, a[.] = callback
+
+  lua_getfield(L, 2, "Request");       // push table
+  lua_getfield(L, -1, "_new");         // push function
+  lua_rawseti(L, -3, SRV_REG_NEW_REQUEST);  // pop funciton, a[.] = function
+  lua_pop(L, 1);
+
+  lua_getfield(L, 2, "Response");      // push table
+  lua_getfield(L, -1, "_new");         // push function
+  lua_rawseti(L, -3, SRV_REG_NEW_RESPONSE);  // pop function a[.] = function
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, srv);  // pop table a
 
@@ -206,4 +237,49 @@ void rcl_lua_add_service_methods (lua_State* L)
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_SERVICE, srv_methods);
+}
+
+void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
+{
+  /* save result into table */
+  lua_createtable(L, SRV_OUT_NUMBER-1, 0);  // push table a
+
+  /* save pointer */
+  lua_pushlightuserdata(L, (void*) srv);    // push pointer
+  lua_rawseti(L, -2, SRV_OUT_REF);          // pop pointer, a[.] = srv
+
+  /* prepare request message */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);   // push table b (bindings)
+  if (lua_isnil(L, -1)) {
+    luaL_error(L, "service binginds not found");
+  }
+  lua_rawgeti(L, -1, SRV_REG_NEW_REQUEST);  // push constructor from b
+  lua_call(L, 0, 1);                        // pop constructor, push message
+  idl_lua_msg_t *msg = lua_touserdata(L, -1);
+
+  /* get request */
+  rmw_service_info_t header;
+  rcl_ret_t ret = rcl_take_request_with_info(srv, &header, msg->obj);
+  switch (ret) {
+    case RCL_RET_OK: break;
+    case RCL_RET_SERVICE_TAKE_FAILED:
+      lua_pop(L, 2);  // keep only a
+      return;         // {nil, nil, nil, srv}
+    default:
+      luaL_error(L, "service failed to take request");
+  }
+  lua_rawseti(L, -3, SRV_OUT_REQUEST);     // pop message, a[.] = request
+
+  /* add response */
+  lua_rawgeti(L, -1, SRV_REG_NEW_RESPONSE);  // push constructor from b
+  lua_call(L, 0, 1);                       // pop constructor, push empty message
+  lua_rawseti(L, -3, SRV_OUT_RESPONSE);    // pop message, a[.] = response
+
+  /* save callback function */
+  lua_rawgeti(L, -1, SRV_REG_CALLBACK);    // push function from b
+  lua_rawseti(L, -3, SRV_OUT_CALLBACK);    // pop function, a[.] = callback
+
+  lua_pop(L, 1);                           // pop table b
+  /* keep table 'a' on stack */
+
 }

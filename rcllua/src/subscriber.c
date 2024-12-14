@@ -30,13 +30,25 @@
 /** Indices of subscription bindings in register. */
 enum SubReg {
   /** node reference */
-  SUB_REG_NODE = 1,
+  SUB_REG_NODE=1,
   /** metatable name */
   SUB_REG_MT,
   /** message constructor */
   SUB_REG_NEW,
   /** callback function */
-  SUB_REG_CALLBACK
+  SUB_REG_CALLBACK,
+  /** number of elements + 1 */
+  SUB_REG_NUMBER
+};
+
+/** Indices of output elements. */
+enum SubOut {
+  /** received message */
+  SUB_OUT_MSG = 1,
+  /** callback function */
+  SUB_OUT_CALLBACK,
+  /** number of elements + 1 */
+  SUB_OUT_NUMBER
 };
 
 /** Subscription object metatable name */
@@ -105,7 +117,7 @@ static int rcl_lua_subscription_init (lua_State* L)
   lua_setmetatable(L, -2);                // pop metatable
 
   /* save node reference and metatable */
-  lua_createtable(L, 4, 0);               // push table a
+  lua_createtable(L, SUB_REG_NUMBER-1, 0);   // push table a
   lua_pushvalue(L, 1);                    // push node
   lua_rawseti(L, -2, SUB_REG_NODE);       // pop node, a[1] = node
 
@@ -173,10 +185,10 @@ void rcl_lua_add_subscription_methods (lua_State* L)
 }
 
 /* Return table {message, callback}. */
-void rcl_lua_subscription_callback_and_message (lua_State* L, const rcl_subscription_t* sub)
+void rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t* sub)
 {
   /* save result into table */
-  lua_createtable(L, 2, 0);                // push table a
+  lua_createtable(L, SUB_OUT_NUMBER-1, 0);  // push table a
 
   /* get message constructor */
   lua_rawgetp(L, LUA_REGISTRYINDEX, sub);  // push table b
@@ -199,12 +211,12 @@ void rcl_lua_subscription_callback_and_message (lua_State* L, const rcl_subscrip
     default:
       luaL_error(L, "failed to take message from subscription");
   }
-  lua_rawseti(L, -3, 1);                  // pop message, a[1] = message
+  lua_rawseti(L, -3, SUB_OUT_MSG);        // pop message, a[1] = message
   // TODO save values: message_info.source_timestamp, L, message_info.received_timestamp
 
   /* save callback function */
   lua_rawgeti(L, -1, SUB_REG_CALLBACK);   // push function brom b
-  lua_rawseti(L, -3, 2);                  // pop function, a[2] = message
+  lua_rawseti(L, -3, SUB_OUT_CALLBACK);   // pop function, a[2] = callback
 
   lua_pop(L, 1);                          // pop table b
   /* keep table 'a' on the stack */

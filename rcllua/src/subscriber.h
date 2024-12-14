@@ -35,7 +35,7 @@ void rcl_lua_add_subscription_methods (lua_State* L);
  * \param[inout] L Lua stack.
  * \param[in] sub pointer to subscription.
  */
-void rcl_lua_subscription_callback_and_message (
+void rcl_lua_subscription_push_callback (
   lua_State* L, const struct rcl_subscription_s* sub);
 
 #endif  // RCL_LUA_SUBSCRIBER_H

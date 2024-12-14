@@ -17,11 +17,22 @@
 
 #include <lua.h>
 
+struct rcl_service_s;
+
 /**
  * Create service metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
 void rcl_lua_add_service_methods (lua_State* L);
+
+/**
+ * Take request message, translate to Lua object.
+ * Push to the stack table {req, resp, callback, ref};
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] srv pointer to service.
+ */
+void rcl_lua_service_push_callback (lua_State* L, const struct rcl_service_s* srv);
 
 #endif  // RCL_LUA_SERVICE_H

@@ -271,7 +271,7 @@ static int rcl_lua_wait_set_ready_subscription (lua_State* L)
   lua_createtable(L, ws->size_of_subscriptions, 0);  // push table a
   for (size_t i = 0; i < ws->size_of_subscriptions; i++) {
     /* table {message, function} */
-    rcl_lua_subscription_callback_and_message(L, ws->subscriptions[i]);  // push table b
+    rcl_lua_subscription_push_callback(L, ws->subscriptions[i]);  // push table b
     lua_rawseti(L, -2, i+1);                         // pop table b
   }
 

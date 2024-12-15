@@ -757,7 +757,7 @@ fn_name = name_parts[-1]
   lua_newtable(L);                       // push table
 
   // add metatable
-  lua_createtable(L, 0, @(len(message.constants) + 2));  // push table
+  lua_createtable(L, 0, @(len(message.constants) + 3));  // push table
   lua_pushcfunction(L, @(msg_prefix)__lnew);  // push function
   lua_setfield(L, -2, "__call");         // pop function, add to table
 @[for constant in message.constants]@
@@ -780,7 +780,8 @@ type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
   // metatable
   lua_pushliteral(L, "@(msg_metatable)");
   lua_setfield(L, -2, "_metatable");
-
+  
+  // constructor
   lua_pushcfunction(L, @(msg_prefix)__lnew);  // push function
   lua_setfield(L, -2, "_new");         // pop function, add to table
 

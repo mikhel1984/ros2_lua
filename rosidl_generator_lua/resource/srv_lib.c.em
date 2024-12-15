@@ -64,10 +64,8 @@ req_name = srv.request_message.structure.namespaced_type.name.rsplit('_', 1)
   lua_createtable(L, 0, 2);    // push table
   @(make_prefix(srv.request_message))__add_methods(L);
   @(make_prefix(srv.response_message))__add_methods(L);
-  // add type support
   
-  // ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_c, @(', '.join(srv.namespaced_type.namespaced_name())))()
-  
+  // add type support  
   ts = ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_c, @(', '.join(srv.namespaced_type.namespaced_name())))();
   lua_pushlightuserdata(L, (void*) ts);
   lua_setfield(L, -2, "_type_support");

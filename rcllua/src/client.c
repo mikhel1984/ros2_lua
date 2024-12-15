@@ -226,7 +226,7 @@ static int rcl_lua_client_send_request (lua_State* L)
 
   /* send */
   int64_t seq_num = 0;
-  rcl_ret_t ret = rcl_send_request(cli, req, &seq_num);
+  rcl_ret_t ret = rcl_send_request(cli, req->obj, &seq_num);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to send request");
   }

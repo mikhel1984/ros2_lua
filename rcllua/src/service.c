@@ -48,6 +48,8 @@ enum SrvOut {
   SRV_OUT_RESPONSE,
   /** callback funciton */
   SRV_OUT_CALLBACK,
+  /** header */
+  SRV_OUT_HEADER,
   /** light userdata */
   SRV_OUT_REF,
   /** number of elements + 1 */
@@ -220,6 +222,51 @@ static int rcl_lua_service_get_qos (lua_State* L)
   return 1;
 }
 
+/**
+ * Send service response.
+ *
+ * Arguments:
+ * - table from service request receiving
+ *
+ * Return:
+ * - flag of success
+ * - error message (optional)
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_service_send_response (lua_State* L)
+{
+  /* arg1 - table {request, response, cb, ... } */
+  luaL_argcheck(L, 
+                LUA_TTABLE == lua_type(L, 1) && lua_rawlen(L, 1) == (SRV_OUT_NUMBER-1), 
+                1, "expected table from service request");
+
+  /* get required elements */
+  lua_rawgeti(L, 1, SRV_OUT_REF);        // push lightuserdata
+  rcl_service_t* srv = lua_touserdata(L, -1);
+  lua_rawgeti(L, 1, SRV_OUT_RESPONSE);   // push message
+  idl_lua_msg_t *resp = lua_touserdata(L, -1);
+  lua_rawgeti(L, 1, SRV_OUT_HEADER);     // push header
+  rmw_service_info_t* header = lua_touserdata(L, -1);
+
+  /* send response */
+  rcl_ret_t ret = rcl_send_response(srv, &header->request_id, resp->obj);
+  switch (ret) {
+    case RCL_RET_OK: break;
+    case RCL_RET_TIMEOUT:
+      lua_pushboolean(L, false);
+      lua_pushfstring(L, "failed to send response (timeout): %s", rcl_get_error_string().str);
+      rcl_reset_error();
+      return 2;
+    default:
+      luaL_error(L, "failed to send response");
+  }
+
+  lua_pushboolean(L, true);
+  return 1;
+}
+
 /** List of service methods */
 static const struct luaL_Reg srv_methods[] = {
   {"get_qos", rcl_lua_service_get_qos},
@@ -235,10 +282,14 @@ void rcl_lua_add_service_methods (lua_State* L)
   lua_pushcfunction(L, rcl_lua_service_init);  // push function
   lua_setfield(L, -2, "new_service");          // pop, lib['new_service'] = function
 
+  lua_pushcfunction(L, rcl_lua_service_send_response);  // push function
+  lua_setfield(L, -2, "service_send_response");   // pop, lib['service_send_response'] = func
+
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_SERVICE, srv_methods);
 }
 
+/* Receive request */
 void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
 {
   /* save result into table */
@@ -264,11 +315,16 @@ void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
     case RCL_RET_OK: break;
     case RCL_RET_SERVICE_TAKE_FAILED:
       lua_pop(L, 2);  // keep only a
-      return;         // {nil, nil, nil, srv}
+      return;         // {nil, ..., srv}
     default:
       luaL_error(L, "service failed to take request");
   }
   lua_rawseti(L, -3, SRV_OUT_REQUEST);     // pop message, a[.] = request
+
+  /* save header */
+  rmw_service_info_t* info = lua_newuserdata(L, sizeof(rmw_service_info_t));  // push header
+  *info = header;
+  lua_rawseti(L, -3, SRV_OUT_HEADER);      // pop header, a[.] = header
 
   /* add response */
   lua_rawgeti(L, -1, SRV_REG_NEW_RESPONSE);  // push constructor from b

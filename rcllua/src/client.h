@@ -17,11 +17,22 @@
 
 #include <lua.h>
 
+struct rcl_client_s;
+
 /**
  * Create client metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
 void rcl_lua_add_client_methods (lua_State* L);
+
+/**
+ * Take response message, translate to Lua object.
+ * Push to the stack table {resp, callback}.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] cli pointer to client.
+ */
+void rcl_lua_client_push_response (lua_State* L, const struct rcl_client_s* cli);
 
 #endif  // RCL_LUA_CLIENT_H

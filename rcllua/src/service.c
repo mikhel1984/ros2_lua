@@ -40,7 +40,7 @@ enum SrvReg {
   SRV_REG_NUMBER
 };
 
-/** Sequence of output elements */
+/** List of output elements. */
 enum SrvOut {
   /** request message */
   SRV_OUT_REQUEST=1,
@@ -131,14 +131,15 @@ static int rcl_lua_service_init (lua_State* L)
   lua_pushvalue(L, 4);                 // push function
   lua_rawseti(L, -2, SRV_REG_CALLBACK);    // pop function, a[.] = callback
 
-  lua_getfield(L, 2, "Request");       // push table
+  lua_getfield(L, 2, "Request");       // push table b
   lua_getfield(L, -1, "_new");         // push function
   lua_rawseti(L, -3, SRV_REG_NEW_REQUEST);  // pop funciton, a[.] = function
-  lua_pop(L, 1);
+  lua_pop(L, 1);                       // pop table b
 
-  lua_getfield(L, 2, "Response");      // push table
+  lua_getfield(L, 2, "Response");      // push table b
   lua_getfield(L, -1, "_new");         // push function
   lua_rawseti(L, -3, SRV_REG_NEW_RESPONSE);  // pop function a[.] = function
+  lua_pop(L, 1);                       // pop table b
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, srv);  // pop table a
 
@@ -238,8 +239,8 @@ static int rcl_lua_service_get_qos (lua_State* L)
 static int rcl_lua_service_send_response (lua_State* L)
 {
   /* arg1 - table {request, response, cb, ... } */
-  luaL_argcheck(L, 
-                LUA_TTABLE == lua_type(L, 1) && lua_rawlen(L, 1) == (SRV_OUT_NUMBER-1), 
+  luaL_argcheck(L,
+                LUA_TTABLE == lua_type(L, 1) && lua_rawlen(L, 1) == (SRV_OUT_NUMBER-1),
                 1, "expected table from service request");
 
   /* get required elements */

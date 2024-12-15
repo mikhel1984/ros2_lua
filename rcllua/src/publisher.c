@@ -30,9 +30,11 @@
 /** Indices of publisher bindings in register */
 enum PubReg {
   /** node reference */
-  PUB_REG_NODE = 1,
+  PUB_REG_NODE=1,
   /** metatable name */
-  PUB_REG_MT
+  PUB_REG_MT,
+  /** number of elements + 1*/
+  PUB_REG_NUMBER
 };
 
 /** Publisher object metatable name. */
@@ -99,7 +101,7 @@ static int rcl_lua_publisher_init (lua_State* L)
   lua_setmetatable(L, -2);             // pop metatable
 
   /* save publisher dependencies */
-  lua_createtable(L, 2, 0);            // push table a
+  lua_createtable(L, PUB_REG_NUMBER-1, 0);  // push table a
   lua_pushvalue(L, 1);                 // push node
   lua_rawseti(L, -2, PUB_REG_NODE);    // pop node, a[1] = node
 

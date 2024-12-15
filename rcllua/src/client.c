@@ -28,11 +28,31 @@
 #include "node.h"
 #include "utils.h"
 
+/** Indices of service bindings in register. */
 enum CliReg {
-  CLI_REG_NODE = 1,
-
+  /** node reference */
+  CLI_REG_NODE=1,
+  /** request metatable */
+  CLI_REG_MT_REQUEST,
+  /** response message constructor */
+  CLI_REG_NEW_RESPONSE,
+  /** callback function */
+  CLI_REG_CALLBACK,
+  /** number of elements + 1 */
+  CLI_REG_NUMBER
 };
 
+/** List of output elements */
+enum CliOut {
+  /** response message */
+  CLI_OUT_RESPONSE=1,
+  /** callback function (if any) */
+  CLI_OUT_CALLBACK,
+  /** number of elements + 1 */
+  CLI_OUT_NUMBER
+};
+
+/** Client object metatable name. */
 const char* MT_CLIENT = "ROS2.Client";
 
 /**
@@ -96,10 +116,19 @@ static int rcl_lua_client_init (lua_State* L)
   lua_setmetatable(L, -2);          // pop metatable
 
   /* save reference objects */
-  // TODO need table ?
-  lua_createtable(L, 0, 0);            // push table a
+  lua_createtable(L, CLI_REG_NUMBER-1, 0);    // push table a
   lua_pushvalue(L, 1);                 // push node
-  lua_rawseti(L, -2, CLI_REG_NODE);    // pop node, a[1] = node
+  lua_rawseti(L, -2, CLI_REG_NODE);    // pop node, a[.] = node
+
+  lua_getfield(L, 2, "Request");       // push table b
+  lua_getfield(L, -1, "_metatable");   // push name
+  lua_rawseti(L, -3, CLI_REG_MT_REQUEST);  // pop name, a[.] = name
+  lua_pop(L, 1);                       // pop table b
+
+  lua_getfield(L, 2, "Response");      // push table b
+  lua_getfield(L, -1, "_new");         // push function
+  lua_rawseti(L, -3, CLI_REG_NEW_RESPONSE);  // pop function, a[.] = function
+  lua_pop(L, 1);                       // pop table b
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, cli);  // pop table a
 
@@ -189,12 +218,15 @@ static int rcl_lua_client_send_request (lua_State* L)
   /* arg1 - client object */
   rcl_client_t* cli = luaL_checkudata(L, 1, MT_CLIENT);
 
-  // TODO check type
-  idl_lua_msg_t* msg = lua_touserdata(L, 2);
+  /* arg2 - request object */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table
+  lua_rawgeti(L, -1, CLI_REG_MT_REQUEST);  // push metatable name
+  const char* mt = lua_tostring(L, -1);
+  idl_lua_msg_t* req = luaL_checkudata(L, 2, mt);
 
   /* send */
   int64_t seq_num = 0;
-  rcl_ret_t ret = rcl_send_request(cli, msg, &seq_num);
+  rcl_ret_t ret = rcl_send_request(cli, req, &seq_num);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to send request");
   }
@@ -220,4 +252,40 @@ void rcl_lua_add_client_methods (lua_State* L)
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_CLIENT, cli_methods);
+}
+
+/* Receive response */
+void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
+{
+  /* save result into table */
+  lua_createtable(L, CLI_OUT_NUMBER-1, 0);  // push table a
+
+  /* prepare response message */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);   // push table b (bindings)
+  if (lua_isnil(L, -1)) {
+    luaL_error(L, "client bindings not found");
+  }
+  lua_rawgeti(L, -1, CLI_REG_NEW_RESPONSE);   // push constructor from b
+  lua_call(L, 0, 1);                        // pop constructor, push message
+  idl_lua_msg_t* msg = lua_touserdata(L, -1);
+
+  /* get response */
+  rmw_service_info_t header;
+  rcl_ret_t ret = rcl_take_response_with_info(cli, &header, msg->obj);
+  switch (ret) {
+    case RCL_RET_OK: break;
+    case RCL_RET_CLIENT_TAKE_FAILED:
+      lua_pop(L, 2);  // keep only a
+      return;         // {nil, nil}
+    default:
+      luaL_error(L, "encountered error when taking client response");
+  }
+  lua_rawseti(L, -3, CLI_OUT_RESPONSE);    // pop message, a[.] = response
+
+  /* save callback function */
+  lua_rawgeti(L, -1, CLI_REG_CALLBACK);    // push function from b
+  lua_rawseti(L, -3, CLI_OUT_CALLBACK);    // pop function, a[.] = callback
+
+  lua_pop(L, 1);                           // pop b
+  /* keep table 'a' on stack */
 }

@@ -115,4 +115,8 @@ def generate_lua(generator_arguments_file, typesupport_impls):
 def make_prefix(tp):
     return '__'.join(tp.structure.namespaced_type.namespaces + [
                   convert_camel_case_to_lower_case_underscore(tp.structure.namespaced_type.name)])
+                  
+def make_include_prefix(tp):
+    lst = tp.namespaced_type.namespaced_name()
+    return '/'.join([lst[0], lst[1], 'detail', convert_camel_case_to_lower_case_underscore(lst[2])])        
 

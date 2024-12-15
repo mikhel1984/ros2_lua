@@ -14,7 +14,7 @@ ament_export_dependencies(rmw)
 #ament_export_dependencies(rosidl_generator_c)
 
 ament_index_register_resource("rosidl_generator_packages")
-#ament_python_install_package(${PROJECT_NAME})
+ament_python_install_package(${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

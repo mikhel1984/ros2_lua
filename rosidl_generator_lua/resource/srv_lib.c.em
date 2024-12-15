@@ -3,6 +3,15 @@
 #include <lauxlib.h>
 
 #include <rosidl_luacommon/definition.h>
+
+@# add headers
+@{
+from rosidl_generator_lua import make_include_prefix
+}@
+@[for srv in content]@
+#include "@(make_include_prefix(srv))__type_support.h"
+@[end for]@
+
 @{
 from rosidl_generator_lua import make_prefix
 from rosidl_parser.definition import AbstractNestedType, NamespacedType
@@ -44,17 +53,25 @@ int luaopen_@(package_name)_srv (lua_State* L)
 @[for pair in nested_list]@
   ROSIDL_LUA_REQUIRE("@('.'.join(pair))");
 @[end for]@
-
+  
+  const rosidl_service_type_support_t *ts;
   lua_createtable(L, 0, @(len(content)));   // push table "srv"
 @[for srv in content]@
 @{
 req_name = srv.request_message.structure.namespaced_type.name.rsplit('_', 1)
 }@
-
   // open "namespace" @(req_name[0])
   lua_createtable(L, 0, 2);    // push table
   @(make_prefix(srv.request_message))__add_methods(L);
   @(make_prefix(srv.response_message))__add_methods(L);
+  // add type support
+  
+  // ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_c, @(', '.join(srv.namespaced_type.namespaced_name())))()
+  
+  ts = ROSIDL_TYPESUPPORT_INTERFACE__SERVICE_SYMBOL_NAME(rosidl_typesupport_c, @(', '.join(srv.namespaced_type.namespaced_name())))();
+  lua_pushlightuserdata(L, (void*) ts);
+  lua_setfield(L, -2, "_type_support");
+  
   // close "namespace" @(req_name[0])
   lua_setfield(L, -2, "@(req_name[0])");   // pop table
 @[end for]@

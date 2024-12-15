@@ -19,6 +19,8 @@
 
 struct rcl_client_s;
 
+extern const char* MT_CLIENT;
+
 /**
  * Create client metatable, add constructor to library.
  *

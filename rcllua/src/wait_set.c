@@ -22,6 +22,8 @@
 #include "context.h"
 #include "timer.h"
 #include "subscriber.h"
+#include "service.h"
+#include "client.h"
 #include "utils.h"
 
 /** WaitSet object metatable name. */
@@ -197,6 +199,68 @@ static int rcl_lua_wait_set_add_subscription (lua_State* L)
 }
 
 /**
+ * Add service for waiting.
+ *
+ * Arguments:
+ * - WaitSet object
+ * - service object
+ *
+ * Return:
+ * - index of added service
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_wait_set_add_service (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  /* arg2 - service */
+  rcl_service_t* srv = luaL_checkudata(L, 2, MT_SERVICE);
+  
+  /* add */
+  size_t index = 0;
+  rcl_ret_t ret = rcl_wait_set_add_service(ws, srv, &index);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to add service");
+  }
+
+  lua_pushinteger(L, (lua_Integer) index);
+  return 1;
+}
+
+/**
+ * Add client for waiting.
+ *
+ * Arguments:
+ * - WaitSet object
+ * - client object
+ *
+ * Return:
+ * - index of added client
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_wait_set_add_client (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  /* arg2 - client */
+  rcl_client_t* cli = luaL_checkudata(L, 2, MT_CLIENT);
+  
+  /* add */
+  size_t index = 0;
+  rcl_ret_t ret = rcl_wait_set_add_client(ws, cli, &index);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to add client");
+  }
+
+  lua_pushinteger(L, (lua_Integer) index);
+  return 1;
+}
+
+/**
  * Waiting for the next ready object.
  *
  * Arguments:
@@ -261,7 +325,6 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-
 static int rcl_lua_wait_set_ready_subscription (lua_State* L)
 {
   /* arg1 - wait set */
@@ -278,12 +341,72 @@ static int rcl_lua_wait_set_ready_subscription (lua_State* L)
   return 1;
 }
 
+/**
+ * Collect ready client response.
+ *
+ * Arguments:
+ * - WaitSet object
+ *
+ * Return:
+ * - table of tuples (response, callback)
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_wait_set_ready_clients (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+
+  /* collect services */
+  lua_createtable(L, ws->size_of_clients, 0);  // push table a
+  for (size_t i = 0; i < ws->size_of_clients; i++) {
+    /* add table */
+    rcl_lua_client_push_response(L, ws->clients[i]);  // push table b
+    lua_rawseti(L, -2, i+1);                   // pop table b
+  }
+
+  return 1;
+}
+
+/**
+ * Collect ready service requests.
+ *
+ * Arguments:
+ * - WaitSet object
+ *
+ * Return:
+ * - table of tuples (response, response, ...)
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_wait_set_ready_services (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+
+  /* collect services */
+  lua_createtable(L, ws->size_of_services, 0);  // push table a
+  for (size_t i = 0; i < ws->size_of_services; i++) {
+    /* add table */
+    rcl_lua_service_push_callback(L, ws->services[i]);  // push table b
+    lua_rawseti(L, -2, i+1);                   // pop table b
+  }
+
+  return 1;
+}
+
 /** List of WaitSet methods */
 static const struct luaL_Reg wait_set_methods[] = {
   {"add_timer", rcl_lua_wait_set_add_timer},
   {"add_subscription", rcl_lua_wait_set_add_subscription},
+  {"add_service", rcl_lua_wait_set_add_service},
+  {"add_client", rcl_lua_wait_set_add_client},
   {"ready_timers", rcl_lua_wait_set_ready_timers},
   {"ready_subscriptions", rcl_lua_wait_set_ready_subscription},
+  {"ready_services", rcl_lua_wait_set_ready_services},
+  {"ready_clients", rcl_lua_wait_set_ready_clients},
   {"clear", rcl_lua_wait_set_clear},
   {"wait", rcl_lua_wait_set_wait},
   {"__gc", rcl_lua_wait_set_free},

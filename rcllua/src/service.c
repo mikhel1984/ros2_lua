@@ -338,5 +338,4 @@ void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
 
   lua_pop(L, 1);                           // pop table b
   /* keep table 'a' on stack */
-
 }

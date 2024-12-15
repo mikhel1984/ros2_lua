@@ -19,6 +19,8 @@
 
 struct rcl_service_s;
 
+extern const char* MT_SERVICE;
+
 /**
  * Create service metatable, add constructor to library.
  *

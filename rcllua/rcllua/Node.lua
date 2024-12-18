@@ -14,7 +14,9 @@ function Node.create_publisher (self, ...)
 end
 
 function Node.create_timer (self, period)
-  return rclbind.new_timer(self._clock__object, period)
+  local timer = rclbind.new_timer(self._clock__object, period)
+  table.insert(self._timer__list, timer)
+  return timer
 end
 
 function Node.get_logger (self)
@@ -34,6 +36,13 @@ function Node.__call (self, ...)
   o._clock__object = rclbind.new_clock()
   -- save name for quick access
   o._node__name = param.name
+  -- references
+  o._timer__list = {}
+  o._subscription__list = {}
+  o._client__list = {}
+  o._service__list = {}
+  o._guard__list = {}
+  o._event__list = {}
   -- call initialization
   if param.init then
     param.init(self, ...)

@@ -265,7 +265,10 @@ static int rcl_lua_wait_set_add_client (lua_State* L)
  *
  * Arguments:
  * - WaitSet object
- * - timeout  (??)
+ * - timeout  (nanoseconds)
+ *
+ * Return:
+ * - true when time is out
  *
  * \param[inout] L Lua stack.
  * \return number of outputs.
@@ -279,11 +282,17 @@ static int rcl_lua_wait_set_wait (lua_State* L)
 
   /* waiting */
   rcl_ret_t ret = rcl_wait(ws, timeout);
-  if (RCL_RET_OK != ret && RCL_RET_TIMEOUT != ret) {
-    luaL_error(L, "failed to wait on wait set");
+  switch (ret) {
+    case RCL_RET_OK: break;
+    case RCL_RET_TIMEOUT:
+      lua_pushboolean(L, true);
+      return 1;
+    default:
+      luaL_error(L, "failed to wait on wait set");
   }
 
-  return 0;
+  lua_pushboolean(L, false);
+  return 1;
 }
 
 /**

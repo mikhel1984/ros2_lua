@@ -24,6 +24,12 @@ function Node.get_logger (self)
   return setmetatable(o, Logger)
 end
 
+function Node.bind (self, name)
+  return function (...)
+    return self[name](self, ...)
+  end
+end
+
 local protected = {name=true, namespace=true, init=true}
 
 function Node.__call (self, ...)
@@ -55,7 +61,6 @@ function Node.__call (self, ...)
   return o
 end
 
-local node_mt = {}
 
 setmetatable(Node, {
 __call = function (self, param)

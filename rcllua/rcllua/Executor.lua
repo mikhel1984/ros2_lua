@@ -61,6 +61,7 @@ local function _exec_ready_callbacks (executor, timeout_sec)
     wait_set:add_subscription(subscriptions[i]) 
   end
   for i = 1, #timers do
+    timers[i]:call()
     wait_set:add_timer(timers[i])
   end
   for i = 1, #clients do
@@ -89,14 +90,18 @@ local function _exec_ready_callbacks (executor, timeout_sec)
     fn(msg)
     coroutine.yield()
   end
-
-
+  for i = 1, #timers do
+    local fn = timers[i]
+    fn()
+    coroutine.yield()
+  end
   
   return true
 end
 
 
-local Executor = {}
+Executor = {}
+Executor.__index = Executor
 
 function Executor.add_node (self, node)
   for i = 1, #self._nodes do
@@ -132,6 +137,7 @@ end
 
 function Executor.spin_once (self, timeout_sec)
   local ok, res 
+  timeout_sec = timeout_sec or -1
   repeat
     if not self._cb_iter then
       self._cb_iter = coroutine.create(_exec_ready_callbacks)
@@ -148,8 +154,8 @@ function Executor.spin_once (self, timeout_sec)
   until not res    -- exit when res = nil/false
 end
 
-
-function new_executor ()
+setmetatable(Executor, {
+__call = function ()
   local o = {}
   o._nodes = {}
   o._is_shutdown = false
@@ -160,5 +166,6 @@ function new_executor ()
   o._cli_no = 0
   o._srv_no = 0
   o._ev_no = 0
-end
-
+  setmetatable(o, Executor)
+  return o
+end })

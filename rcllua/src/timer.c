@@ -22,6 +22,19 @@
 #include "context.h"
 #include "utils.h"
 
+/* Check timer status. */
+static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer);
+
+/** Indices of output elements. */
+enum TmOut {
+  /** callback function */
+  TM_OUT_CALLBACK=1,
+  /** light userdata */
+  TM_OUT_REF,
+  /** number of elements + 1 */
+  TM_OUT_NUMBER
+};
+
 /** Timer object metatable name. */
 const char* MT_TIMER = "ROS2.Timer";
 
@@ -115,15 +128,27 @@ static int rcl_lua_timer_is_ready (lua_State* L)
   /* arg1 - timer object */
   rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
 
-  /* check status */
-  bool ready = false;
-  rcl_ret_t ret = rcl_timer_is_ready(timer, &ready);
-  if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to check timer ready");
-  }
+  return rcl_lua_timer_push_ready(L, timer);
+}
 
-  lua_pushboolean(L, ready);
-  return 1;
+/**
+ * Check if the timer is ready using pointer.
+ *
+ * Arguments:
+ * - timer pointer (light userdata)
+ *
+ * Return:
+ * - true when ready.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_timer_is_ready_ptr (lua_State* L)
+{
+  /* arg1 - light userdata */
+  rcl_timer_t* timer = lua_topointer(L, 1);
+
+  return rcl_lua_timer_push_ready(L, timer);
 }
 
 /**
@@ -358,6 +383,46 @@ void rcl_lua_add_timer_methods (lua_State* L)
   lua_pushcfunction(L, rcl_lua_timer_init);  // push function
   lua_setfield(L, -2, "new_timer");          // pop, lib['new_timer'] = function
 
+  lua_pushcfunction(L, rcl_lua_timer_is_ready_ptr);  // push function
+  lua_setfield(L, -2, "is_timer_ready");     // pop, lib['is_timer_ready'] = fn
+
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_TIMER, timer_methods);
+}
+
+/**
+ * Check if the timer is ready, common part. Push result to the stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] timer Timer object.
+ * \return number of outputs.
+ */
+static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer)
+{
+  /* check status */
+  bool ready = false;
+  rcl_ret_t ret = rcl_timer_is_ready(timer, &ready);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to check timer ready");
+  }
+
+  lua_pushboolean(L, ready);
+  return 1;
+}
+
+/* Return table {callback, ref}. */
+void rcl_lua_timer_push_callback (lua_State* L, const rcl_timer_t* timer)
+{
+  /* save result into table */
+  lua_createtable(L, TM_OUT_NUMBER-1, 0);  // push table a
+
+  lua_rawgetp(L, LUA_REGISTRYINDEX, timer);  // push function
+  if (lua_isnil(L, -1)) {
+    luaL_error(L, "timer bindings not found");
+  }
+  lua_rawseti(L, -2, TM_OUT_CALLBACK);     // pop, a[.] = callback
+
+  lua_pushlightuserdata(L, timer);         // push reference
+  lua_rawseti(L, -2, TM_OUT_REF);          // pop, a[.] = reference
+  /* keep table 'a' on stack */
 }

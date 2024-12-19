@@ -30,7 +30,7 @@ function Node.bind (self, name)
   end
 end
 
-local protected = {name=true, namespace=true, init=true}
+local protected = {name=true, namespace=true, init=true, bind=true}
 
 function Node.__call (self, ...)
   local param = self._init__param

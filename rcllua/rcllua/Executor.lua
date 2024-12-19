@@ -91,9 +91,11 @@ local function _exec_ready_callbacks (executor, timeout_sec)
     coroutine.yield()
   end
   for i = 1, #timers do
-    local fn = timers[i]
-    fn()
-    coroutine.yield()
+    local fn, ref = table.unpack(timers[i])
+    if rclbind.is_timer_ready(ref) then
+      fn()
+      coroutine.yield()
+    end
   end
   
   return true
@@ -152,6 +154,10 @@ function Executor.spin_once (self, timeout_sec)
       self._cb_iter = nil
     end
   until not res    -- exit when res = nil/false
+end
+
+function Executor.shutdown (self, timeout_sec)
+  self._is_shutdown = true
 end
 
 setmetatable(Executor, {

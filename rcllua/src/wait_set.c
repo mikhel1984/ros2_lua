@@ -315,7 +315,8 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
   /* collect functions */
   lua_createtable(L, ws->size_of_timers, 0);           // push table
   for (size_t i = 0; i < ws->size_of_timers; i++) {
-    lua_rawgetp(L, LUA_REGISTRYINDEX, ws->timers[i]);  // push function
+    /* table {callback, ref} */
+    rcl_lua_timer_push_callback(L, ws->timers[i]);     // push table
     lua_rawseti(L, -2, i+1);                           // pop function
   }
 

@@ -72,10 +72,10 @@ static int rcl_lua_context_init (lua_State* L)
   }
 
   /* init logger */
-  ret = rcl_logging_configure(
-    &context_.global_arguments, rcl_init_options_get_allocator(&init_options));
-  if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to configure logging");
+  rcutils_ret_t rcret = rcutils_logging_initialize();
+  if (RCUTILS_RET_OK != rcret) {
+    rcutils_reset_error();
+    luaL_error(L, "failed to initialize logging system");
   }
 
   lua_pop(L, 1);                   // pop argv
@@ -113,9 +113,10 @@ static int rcl_lua_context_shutdown (lua_State* L)
     luaL_error(L, "failed to shutdown");
   }
 
-  ret = rcl_logging_fini();
-  if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini logging");
+  rcutils_ret_t rcret = rcutils_logging_shutdown();
+  if (RCUTILS_RET_OK != rcret) {
+    rcutils_reset_error();
+    luaL_error(L, "failed to shutdown logging system");
   }
 
   return 0;

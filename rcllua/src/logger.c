@@ -49,7 +49,6 @@ static int rcl_lua_logger_log (lua_State* L)
   luaL_argcheck(L, num > 0, 6, "negative line number");
 
   /* write */
-  RCUTILS_LOGGING_AUTOINIT;
   rcutils_log_location_t logging_location = {func_name, file_name, (uint64_t) num};
   rcutils_log(&logging_location, severity, name, "%s", message);
 
@@ -77,7 +76,6 @@ static int rcl_lua_logger_log_simp (lua_State* L)
   const char* message = luaL_checkstring(L, 3);
 
   /* write */
-  RCUTILS_LOGGING_AUTOINIT;
   rcutils_log(NULL, severity, name, "%s", message);
 
   return 0;

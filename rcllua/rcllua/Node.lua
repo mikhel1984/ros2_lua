@@ -13,8 +13,8 @@ function Node.create_publisher (self, ...)
   return rclbind.new_publisher(self._node__object, ...)
 end
 
-function Node.create_timer (self, period)
-  local timer = rclbind.new_timer(self._clock__object, period)
+function Node.create_timer (self, period, callback)
+  local timer = rclbind.new_timer(self._clock__object, period, callback)
   table.insert(self._timer__list, timer)
   return timer
 end
@@ -27,7 +27,7 @@ end
 local protected = {name=true, namespace=true, init=true}
 
 function Node.__call (self, ...)
-  local param = self._init__list
+  local param = self._init__param
   -- make instance
   local o = {}
   -- create node object
@@ -43,29 +43,28 @@ function Node.__call (self, ...)
   o._service__list = {}
   o._guard__list = {}
   o._event__list = {}
-  -- call initialization
-  if param.init then
-    param.init(self, ...)
-  end
   -- copy other elements
   for k, v in pairs(param) do
     if not protected[k] then o[k] = v end
   end
   setmetatable(o, Node)
+  -- call initialization
+  if param.init then
+    param.init(o, ...)
+  end
   return o
 end
 
 local node_mt = {}
 
-function node_mt.__call (self, param)
+setmetatable(Node, {
+__call = function (self, param)
   assert(param and param.name, "'name' must be defined")
-  -- prepare object
+  -- save init parameters
   local o = {_init__param=param}
   setmetatable(o, self)
   return o
-end
-
-setmetatable(Node, node_mt)
+end})
 
 local LogLevel = rclbind.LogLevel
 local sformat = string.format

@@ -16,7 +16,7 @@
 
 #include <rcutils/logging.h>
 
-#include "utils.h"
+#include "rcllua/utils.h"
 
 /**
  * Write message full form into log.

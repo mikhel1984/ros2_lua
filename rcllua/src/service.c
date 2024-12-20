@@ -21,10 +21,10 @@
 
 #include <rosidl_luacommon/definition.h>
 
-#include "service.h"
-#include "node.h"
-#include "qos.h"
-#include "utils.h"
+#include "rcllua/service.h"
+#include "rcllua/node.h"
+#include "rcllua/qos.h"
+#include "rcllua/utils.h"
 
 /** Indices of service bindings in register. */
 enum SrvReg {

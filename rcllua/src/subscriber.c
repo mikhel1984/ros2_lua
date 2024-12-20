@@ -22,10 +22,10 @@
 
 #include <rosidl_luacommon/definition.h>
 
-#include "subscriber.h"
-#include "qos.h"
-#include "node.h"
-#include "utils.h"
+#include "rcllua/subscriber.h"
+#include "rcllua/qos.h"
+#include "rcllua/node.h"
+#include "rcllua/utils.h"
 
 /** Indices of subscription bindings in register. */
 enum SubReg {

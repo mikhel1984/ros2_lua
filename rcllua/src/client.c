@@ -23,10 +23,10 @@
 
 #include <rosidl_luacommon/definition.h>
 
-#include "client.h"
-#include "qos.h"
-#include "node.h"
-#include "utils.h"
+#include "rcllua/client.h"
+#include "rcllua/qos.h"
+#include "rcllua/node.h"
+#include "rcllua/utils.h"
 
 /** Indices of service bindings in register. */
 enum CliReg {

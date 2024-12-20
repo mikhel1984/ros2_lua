@@ -17,9 +17,9 @@
 #include <rcl/node.h>
 #include <rcl/error_handling.h>
 
-#include "node.h"
-#include "context.h"
-#include "utils.h"
+#include "rcllua/node.h"
+#include "rcllua/context.h"
+#include "rcllua/utils.h"
 
 /** Node object metatable name */
 const char* MT_NODE = "ROS2.Node";

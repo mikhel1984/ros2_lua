@@ -14,7 +14,7 @@
 
 #include <lauxlib.h>
 
-#include "utils.h"
+#include "rcllua/utils.h"
 
 /* Save metatable */
 void rcl_lua_utils_add_mt (lua_State* L, const char* name, const luaL_Reg* fn)

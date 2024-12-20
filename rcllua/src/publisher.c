@@ -22,10 +22,10 @@
 
 #include <rosidl_luacommon/definition.h>
 
-#include "publisher.h"
-#include "qos.h"
-#include "node.h"
-#include "utils.h"
+#include "rcllua/publisher.h"
+#include "rcllua/qos.h"
+#include "rcllua/node.h"
+#include "rcllua/utils.h"
 
 /** Indices of publisher bindings in register */
 enum PubReg {

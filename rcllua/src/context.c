@@ -19,7 +19,7 @@
 #include <rcl/init_options.h>
 #include <rcl/logging.h>
 
-#include "context.h"
+#include "rcllua/context.h"
 
 /** Keep context state. */
 static rcl_context_t context_;

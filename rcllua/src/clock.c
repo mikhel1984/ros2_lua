@@ -18,9 +18,9 @@
 #include <rcl/allocator.h>
 #include <rcl/error_handling.h>
 
-#include "clock.h"
-#include "time.h"
-#include "utils.h"
+#include "rcllua/clock.h"
+#include "rcllua/time.h"
+#include "rcllua/utils.h"
 
 /** Clock object metatable name. */
 const char* MT_CLOCK = "ROS2.Clock";

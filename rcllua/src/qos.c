@@ -19,9 +19,9 @@
 #include <rmw/qos_profiles.h>
 #include <rcl/time.h>
 
-#include "time.h"
-#include "qos.h"
-#include "utils.h"
+#include "rcllua/time.h"
+#include "rcllua/qos.h"
+#include "rcllua/utils.h"
 
 /** Collect structure fields for access. */
 enum QoSFields {

@@ -17,10 +17,10 @@
 #include <rcl/timer.h>
 #include <rcl/error_handling.h>
 
-#include "timer.h"
-#include "clock.h"
-#include "context.h"
-#include "utils.h"
+#include "rcllua/timer.h"
+#include "rcllua/clock.h"
+#include "rcllua/context.h"
+#include "rcllua/utils.h"
 
 /* Check timer status. */
 static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer);
@@ -146,7 +146,7 @@ static int rcl_lua_timer_is_ready (lua_State* L)
 static int rcl_lua_timer_is_ready_ptr (lua_State* L)
 {
   /* arg1 - light userdata */
-  rcl_timer_t* timer = lua_topointer(L, 1);
+  const rcl_timer_t* timer = lua_topointer(L, 1);
 
   return rcl_lua_timer_push_ready(L, timer);
 }
@@ -421,8 +421,8 @@ void rcl_lua_timer_push_callback (lua_State* L, const rcl_timer_t* timer)
     luaL_error(L, "timer bindings not found");
   }
   lua_rawseti(L, -2, TM_OUT_CALLBACK);     // pop, a[.] = callback
-
-  lua_pushlightuserdata(L, timer);         // push reference
+    
+  lua_pushlightuserdata(L, (void*) timer);         // push reference
   lua_rawseti(L, -2, TM_OUT_REF);          // pop, a[.] = reference
   /* keep table 'a' on stack */
 }

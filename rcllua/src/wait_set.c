@@ -18,13 +18,13 @@
 #include <rcl/allocator.h>
 #include <rcl/error_handling.h>
 
-#include "wait_set.h"
-#include "context.h"
-#include "timer.h"
-#include "subscriber.h"
-#include "service.h"
-#include "client.h"
-#include "utils.h"
+#include "rcllua/wait_set.h"
+#include "rcllua/context.h"
+#include "rcllua/timer.h"
+#include "rcllua/subscriber.h"
+#include "rcllua/service.h"
+#include "rcllua/client.h"
+#include "rcllua/utils.h"
 
 /** WaitSet object metatable name. */
 const char* MT_WAIT_SET = "ROS2.WaitSet";

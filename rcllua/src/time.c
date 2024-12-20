@@ -18,8 +18,8 @@
 
 #include <rcl/time.h>
 
-#include "time.h"
-#include "utils.h"
+#include "rcllua/time.h"
+#include "rcllua/utils.h"
 
 /** Time object metatable name. */
 const char* MT_TIME = "ROS2.Time";

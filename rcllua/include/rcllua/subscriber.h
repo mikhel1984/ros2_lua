@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_SUBSCRIBER_H
-#define RCL_LUA_SUBSCRIBER_H
+#ifndef RCLLUA__SUBSCRIBER_H_
+#define RCLLUA__SUBSCRIBER_H_
 
 #include <lua.h>
 
@@ -38,4 +38,4 @@ void rcl_lua_add_subscription_methods (lua_State* L);
 void rcl_lua_subscription_push_callback (
   lua_State* L, const struct rcl_subscription_s* sub);
 
-#endif  // RCL_LUA_SUBSCRIBER_H
+#endif  // RCLLUA__SUBSCRIBER_H_

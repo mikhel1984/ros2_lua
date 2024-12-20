@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_QOS_H
-#define RCL_LUA_QOS_H
+#ifndef RCLLUA__QOS_H_
+#define RCLLUA__QOS_H_
 
 #include <lua.h>
 
@@ -37,4 +37,4 @@ void rcl_lua_add_qos_methods (lua_State* L);
  */
 void rcl_lua_qos_push_copy (lua_State* L, const struct rmw_qos_profile_s* src);
 
-#endif  // RCL_LUA_QOS_H
+#endif  // RCLLUA__QOS_H_

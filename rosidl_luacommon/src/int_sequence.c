@@ -18,7 +18,7 @@
 #include <rosidl_runtime_c/primitives_sequence_functions.h>
 
 #include "rosidl_luacommon/definition.h"
-#include "sequence_macro.h"
+#include "rosidl_luacommon/sequence_macro.h"
 
 /**
  * Set value by index.

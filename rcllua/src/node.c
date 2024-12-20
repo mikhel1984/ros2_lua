@@ -43,7 +43,7 @@ static int rcl_lua_node_init (lua_State* L)
   const char* name = luaL_checkstring(L, 1);
   /* arg2 - namespace */
   const char* namespace = luaL_optstring(L, 2, "");
-  // TODO add options
+  // TODO(Mikhel) add options
 
   /* initialize */
   rcl_context_t* context = rcl_lua_context_ref();

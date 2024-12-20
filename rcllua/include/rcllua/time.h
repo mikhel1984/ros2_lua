@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_TIME_H
-#define RCL_LUA_TIME_H
+#ifndef RCLLUA__TIME_H_
+#define RCLLUA__TIME_H_
 
 #include <lua.h>
 
@@ -47,4 +47,4 @@ void rcl_lua_time_push_time (lua_State* L, int64_t ns, int clock_type);
  */
 void rcl_lua_time_push_duration (lua_State* L, int64_t ns);
 
-#endif  // RCL_LUA_TIME_H
+#endif  // RCLLUA__TIME_H_

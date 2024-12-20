@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_LOGGER_H
-#define RCL_LUA_LOGGER_H
+#ifndef RCLLUA__LOGGER_H_
+#define RCLLUA__LOGGER_H_
 
 #include <lua.h>
 
@@ -24,4 +24,4 @@
  */
 void rcl_lua_add_logger_methods (lua_State* L);
 
-#endif  // RCL_LUA_LOGGER_H
+#endif  // RCLLUA__LOGGER_H_

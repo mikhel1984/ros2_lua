@@ -17,7 +17,7 @@
 #include <rosidl_runtime_c/primitives_sequence_functions.h>
 
 #include "rosidl_luacommon/definition.h"
-#include "sequence_macro.h"
+#include "rosidl_luacommon/sequence_macro.h"
 
 /** String sequence metatable name. */
 const char* MT_SEQ_STRING = "ROS2.rosidl_sequence.String";

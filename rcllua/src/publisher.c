@@ -30,7 +30,7 @@
 /** Indices of publisher bindings in register */
 enum PubReg {
   /** node reference */
-  PUB_REG_NODE=1,
+  PUB_REG_NODE = 1,
   /** metatable name */
   PUB_REG_MT,
   /** number of elements + 1*/

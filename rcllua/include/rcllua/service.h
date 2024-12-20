@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_SERVICE_H
-#define RCL_LUA_SERVICE_H
+#ifndef RCLLUA__SERVICE_H_
+#define RCLLUA__SERVICE_H_
 
 #include <lua.h>
 
@@ -37,4 +37,4 @@ void rcl_lua_add_service_methods (lua_State* L);
  */
 void rcl_lua_service_push_callback (lua_State* L, const struct rcl_service_s* srv);
 
-#endif  // RCL_LUA_SERVICE_H
+#endif  // RCLLUA__SERVICE_H_

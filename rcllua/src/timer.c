@@ -28,7 +28,7 @@ static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer);
 /** Indices of output elements. */
 enum TmOut {
   /** callback function */
-  TM_OUT_CALLBACK=1,
+  TM_OUT_CALLBACK = 1,
   /** light userdata */
   TM_OUT_REF,
   /** number of elements + 1 */
@@ -421,7 +421,7 @@ void rcl_lua_timer_push_callback (lua_State* L, const rcl_timer_t* timer)
     luaL_error(L, "timer bindings not found");
   }
   lua_rawseti(L, -2, TM_OUT_CALLBACK);     // pop, a[.] = callback
-    
+
   lua_pushlightuserdata(L, (void*) timer);         // push reference
   lua_rawseti(L, -2, TM_OUT_REF);          // pop, a[.] = reference
   /* keep table 'a' on stack */

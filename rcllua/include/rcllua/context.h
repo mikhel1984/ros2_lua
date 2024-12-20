@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_CONTEXT_H
-#define RCL_LUA_CONTEXT_H
+#ifndef RCLLUA__CONTEXT_H_
+#define RCLLUA__CONTEXT_H_
 
 #include <lua.h>
 
@@ -34,5 +34,4 @@ void rcl_lua_add_context_methods(lua_State* L);
  */
 struct rcl_context_s* rcl_lua_context_ref();
 
-#endif  // RCL_LUA_CONTEXT_H
-
+#endif  // RCLLUA__CONTEXT_H_

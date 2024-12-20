@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_CLIENT_H
-#define RCL_LUA_CLIENT_H
+#ifndef RCLLUA__CLIENT_H_
+#define RCLLUA__CLIENT_H_
 
 #include <lua.h>
 
@@ -37,4 +37,4 @@ void rcl_lua_add_client_methods (lua_State* L);
  */
 void rcl_lua_client_push_response (lua_State* L, const struct rcl_client_s* cli);
 
-#endif  // RCL_LUA_CLIENT_H
+#endif  // RCLLUA__CLIENT_H_

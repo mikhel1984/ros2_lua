@@ -30,7 +30,7 @@
 /** Indices of subscription bindings in register. */
 enum SubReg {
   /** node reference */
-  SUB_REG_NODE=1,
+  SUB_REG_NODE = 1,
   /** metatable name */
   SUB_REG_MT,
   /** message constructor */
@@ -212,7 +212,7 @@ void rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t*
       luaL_error(L, "failed to take message from subscription");
   }
   lua_rawseti(L, -3, SUB_OUT_MSG);        // pop message, a[1] = message
-  // TODO save values: message_info.source_timestamp, L, message_info.received_timestamp
+  // TODO(Mikhel) save values: message_info.source_timestamp, message_info.received_timestamp
 
   /* save callback function */
   lua_rawgeti(L, -1, SUB_REG_CALLBACK);   // push function brom b

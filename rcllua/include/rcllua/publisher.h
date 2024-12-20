@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_PUBLISHER_H
-#define RCL_LUA_PUBLISHER_H
+#ifndef RCLLUA__PUBLISHER_H_
+#define RCLLUA__PUBLISHER_H_
 
 #include <lua.h>
 
@@ -24,4 +24,4 @@
  */
 void rcl_lua_add_publisher_methods (lua_State* L);
 
-#endif  // RCL_LUA_PUBLISHER_H
+#endif  // RCLLUA__PUBLISHER_H_

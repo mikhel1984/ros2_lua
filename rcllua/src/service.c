@@ -29,7 +29,7 @@
 /** Indices of service bindings in register. */
 enum SrvReg {
   /** node reference */
-  SRV_REG_NODE=1,
+  SRV_REG_NODE = 1,
   /** function */
   SRV_REG_CALLBACK,
   /** request message constructor */
@@ -43,7 +43,7 @@ enum SrvReg {
 /** List of output elements. */
 enum SrvOut {
   /** request message */
-  SRV_OUT_REQUEST=1,
+  SRV_OUT_REQUEST = 1,
   /** response message */
   SRV_OUT_RESPONSE,
   /** callback funciton */

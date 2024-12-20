@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_WAIT_SET_H
-#define RCL_LUA_WAIT_SET_H
+#ifndef RCLLUA__WAIT_SET_H_
+#define RCLLUA__WAIT_SET_H_
 
 #include <lua.h>
 
@@ -24,4 +24,4 @@
  */
 void rcl_lua_add_wait_set_methods (lua_State* L);
 
-#endif  // RCL_LUA_WAIT_SET_H
+#endif  // RCLLUA__WAIT_SET_H_

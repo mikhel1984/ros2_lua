@@ -40,13 +40,13 @@ void rosidl_luacommon_add_String (lua_State* L);
  */
 int luaopen_rosidl_luacommon_sequence (lua_State* L)
 {
-  lua_createtable(L, 0, 0);  // TODO save metatables 
-  
+  lua_createtable(L, 0, 0);  // TODO(Mikhel) save metatables
+
   /* prepare metatables */
   rosidl_luacommon_add_float(L);
   rosidl_luacommon_add_double(L);
   rosidl_luacommon_add_long_double(L);
-  
+
   rosidl_luacommon_add_int8(L);
   rosidl_luacommon_add_uint8(L);
   rosidl_luacommon_add_int16(L);
@@ -54,10 +54,10 @@ int luaopen_rosidl_luacommon_sequence (lua_State* L)
   rosidl_luacommon_add_int32(L);
   rosidl_luacommon_add_uint32(L);
   rosidl_luacommon_add_int64(L);
-  rosidl_luacommon_add_uint64(L);  
-  
+  rosidl_luacommon_add_uint64(L);
+
   rosidl_luacommon_add_boolean(L);
   rosidl_luacommon_add_String(L);
-  
-  return 1;  
+
+  return 1;
 }

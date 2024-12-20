@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_TIMER_H
-#define RCL_LUA_TIMER_H
+#ifndef RCLLUA__TIMER_H_
+#define RCLLUA__TIMER_H_
 
 #include <lua.h>
 
@@ -36,4 +36,4 @@ void rcl_lua_add_timer_methods (lua_State* L);
  */
 void rcl_lua_timer_push_callback (lua_State* L, const struct rcl_timer_s* timer);
 
-#endif  // RCL_LUA_TIMER_H
+#endif  // RCLLUA__TIMER_H_

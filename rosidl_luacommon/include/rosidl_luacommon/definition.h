@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROSIDL_LUACOMMON_DEFINITION_H
-#define ROSIDL_LUACOMMON_DEFINITION_H
+#ifndef ROSIDL_LUACOMMON__DEFINITION_H_
+#define ROSIDL_LUACOMMON__DEFINITION_H_
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -55,4 +55,4 @@ typedef struct {
   lua_call(L, 1, 2); \
   lua_pop(L, 3);
 
-#endif  // ROSIDL_LUACOMMON_DEFINITION_H
+#endif  // ROSIDL_LUACOMMON__DEFINITION_H_

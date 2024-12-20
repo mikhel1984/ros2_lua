@@ -31,7 +31,7 @@
 /** Indices of service bindings in register. */
 enum CliReg {
   /** node reference */
-  CLI_REG_NODE=1,
+  CLI_REG_NODE = 1,
   /** request metatable */
   CLI_REG_MT_REQUEST,
   /** response message constructor */
@@ -45,7 +45,7 @@ enum CliReg {
 /** List of output elements */
 enum CliOut {
   /** response message */
-  CLI_OUT_RESPONSE=1,
+  CLI_OUT_RESPONSE = 1,
   /** callback function (if any) */
   CLI_OUT_CALLBACK,
   /** number of elements + 1 */

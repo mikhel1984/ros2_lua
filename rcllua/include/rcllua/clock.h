@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCL_LUA_CLOCK_H
-#define RCL_LUA_CLOCK_H
+#ifndef RCLLUA__CLOCK_H_
+#define RCLLUA__CLOCK_H_
 
 #include <lua.h>
 
@@ -26,4 +26,4 @@ extern const char* MT_CLOCK;
  */
 void rcl_lua_add_clock_methods (lua_State* L);
 
-#endif  // RCL_LUA_CLOCK_H
+#endif  // RCLLUA__CLOCK_H_

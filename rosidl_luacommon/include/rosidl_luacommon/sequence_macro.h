@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SEQUENCE_MACRO_H
-#define SEQUENCE_MACRO_H
+#ifndef ROSIDL_LUACOMMON__SEQUENCE_MACRO_H_
+#define ROSIDL_LUACOMMON__SEQUENCE_MACRO_H_
 
 /**
  * Check equality of two sequences.
@@ -213,4 +213,4 @@ void rosidl_luacommon_add_ ## STRUCT_NAME (lua_State* L) \
   lua_pop(L, 1); \
 }
 
-#endif  // SEQUENCE_MACRO_H
+#endif  // ROSIDL_LUACOMMON__SEQUENCE_MACRO_H_

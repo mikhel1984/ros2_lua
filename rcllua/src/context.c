@@ -41,7 +41,7 @@ static int rcl_lua_context_init (lua_State* L)
 {
   /* arg1 - command line arguments */
   luaL_argcheck(L, lua_istable(L, 1), 1, "expected table of arguments");
-  // TODO read options
+  // TODO(Mikhel) read options
 
   if (context_init_) {
     return 0;

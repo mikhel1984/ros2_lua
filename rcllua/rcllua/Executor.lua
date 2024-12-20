@@ -1,7 +1,7 @@
 
 local rclbind = require("rcllua.rclbind")
 
-local function _exec_ready_callbacks (executor, timeout_sec)
+local function _wait_ready_callbacks (executor, timeout_sec)
   local subscriptions = {}
   local timers = {}
   local services = {}
@@ -9,15 +9,13 @@ local function _exec_ready_callbacks (executor, timeout_sec)
   local guards = {}
   local events = {}
 
-  local is_new = (executor._wait_set == nil)
-
   for _, node in ipairs(executor._nodes) do
     for _, sub in ipairs(node._subscription__list) do
       subscriptions[#subscriptions+1] = sub
     end
     if executor._sub_no ~= #subscriptions then 
       executor._sub_no = #subscriptions
-      is_new = true 
+      executor._wait_set = nil
     end
 
     for _, timer in ipairs(node._timer__list) do
@@ -25,7 +23,7 @@ local function _exec_ready_callbacks (executor, timeout_sec)
     end
     if executor._timer_no ~= #timers then
       executor._timer_no = #timers
-      is_new = true
+      executor._wait_set = nil
     end
 
     for _, cli in ipairs(node._client__list) do
@@ -33,7 +31,7 @@ local function _exec_ready_callbacks (executor, timeout_sec)
     end
     if executor._cli_no ~= #clients then
       executor._cli_no = #clients
-      is_new = true
+      executor._wait_set = nil
     end
 
     for _, srv in ipairs(node._service__list) do
@@ -41,35 +39,33 @@ local function _exec_ready_callbacks (executor, timeout_sec)
     end
     if executor._srv_no ~= #services then
       executor._srv_no = #services
-      is_new = true
+      executor._wait_set = nil
     end
   end
 
-  if is_new then
-    executor._wait_set = rclbind.new_wait_set(
+  executor._wait_set = executor._wait_set or 
+    rclbind.new_wait_set(
       executor._sub_no,
       executor._guard_no,
       executor._timer_no,
       executor._cli_no,
       executor._srv_no,
       executor._ev_no)
-  end
+
+
   local wait_set = executor._wait_set
   wait_set:clear()
 
-  for i = 1, #subscriptions do
-    wait_set:add_subscription(subscriptions[i]) 
-  end
+  for i = 1, #subscriptions do wait_set:add_subscription(subscriptions[i]) end
+
   for i = 1, #timers do
     timers[i]:call()
     wait_set:add_timer(timers[i])
   end
-  for i = 1, #clients do
-    wait_set:add_client(clients[i])
-  end
-  for i = 1, #services do
-    wait_set:add_service(services[i])
-  end
+
+  for i = 1, #clients do wait_set:add_client(clients[i]) end
+
+  for i = 1, #services do wait_set:add_service(services[i]) end
 
   if timeout_sec > 0 then
     -- to nanoseconds
@@ -78,7 +74,7 @@ local function _exec_ready_callbacks (executor, timeout_sec)
 
   wait_set:wait(timeout_sec)
 
-  -- reuse
+  -- collect result
   subscriptions = wait_set:ready_subscriptions()
   timers = wait_set:ready_timers()
   clients = wait_set:ready_clients()
@@ -87,14 +83,13 @@ local function _exec_ready_callbacks (executor, timeout_sec)
   -- execute
   for i = 1, #subscriptions do
     local msg, fn = table.unpack(subscriptions[i])
-    fn(msg)
-    coroutine.yield()
+    coroutine.yield(function() fn(msg) end)
   end
+
   for i = 1, #timers do
     local fn, ref = table.unpack(timers[i])
     if rclbind.is_timer_ready(ref) then
-      fn()
-      coroutine.yield()
+      coroutine.yield(fn)
     end
   end
   
@@ -138,22 +133,22 @@ function Executor.spin (self)
 end
 
 function Executor.spin_once (self, timeout_sec)
-  local ok, res 
   timeout_sec = timeout_sec or -1
+  local ok, handle
   repeat
-    if not self._cb_iter then
-      self._cb_iter = coroutine.create(_exec_ready_callbacks)
-      ok, res = coroutine.resume(self._cb_iter, self, timeout_sec)
+    if self._cb_iter then
+      ok, handle = coroutine.resume(self._cb_iter)
     else
-      ok, res = coroutine.resume(self._cb_iter)
+      self._cb_iter = coroutine.create(_wait_ready_callbacks)
+      ok, handle = coroutine.resume(self._cb_iter, self, timeout_sec)
     end
     if not ok then 
-      error(res)   -- resend error
-    elseif res then
-      -- _exec_ready_callbacks is finished, restart
-      self._cb_iter = nil
+      error(handle)   -- resend error
+    elseif coroutine.status(self._cb_iter) == 'dead' then
+      self._cb_iter = nil  -- finished
     end
-  until not res    -- exit when res = nil/false
+  until self._cb_iter
+  handle()
 end
 
 function Executor.shutdown (self, timeout_sec)

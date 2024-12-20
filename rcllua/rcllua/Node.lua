@@ -13,6 +13,12 @@ function Node.create_publisher (self, ...)
   return rclbind.new_publisher(self._node__object, ...)
 end
 
+function Node.create_subscription (self, ...)
+  local sub = rclbind.new_subscription(self._node__object, ...)
+  table.insert(self._subscription__list, sub)
+  return sub
+end
+
 function Node.create_timer (self, period, callback)
   local timer = rclbind.new_timer(self._clock__object, period, callback)
   table.insert(self._timer__list, timer)
@@ -52,6 +58,9 @@ function Node.__call (self, ...)
   -- copy other elements
   for k, v in pairs(param) do
     if not protected[k] then o[k] = v end
+  end
+  for k, v in pairs(self) do
+    if v ~= param then o[k] = v end
   end
   setmetatable(o, Node)
   -- call initialization

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <threads.h>
-#include <math.h>
 #include <lauxlib.h>
 
 #include "rcllua/utils.h"
@@ -61,13 +60,14 @@ static int rcl_lua_utils_sleep_thread (lua_State* L)
   /* arg1 - time value */
   double sec = luaL_checknumber(L, 1);
   luaL_argcheck(L, sec >= 1E-9, 1, "duration >= 1ns is expected");
-  double full, part;
-  part = modf(sec, &full);
+  long full = (long) sec;
+  long part = (long) ((sec - full)*1E9);
 
   /* sleep */
   struct timespec time;
-  time.tv_sec = (time_t) full;
-  time.tv_nsec = (long) (part*1E9);
+  time.tv_sec = full;
+  time.tv_nsec = part;
+  
   thrd_sleep(&time, NULL);
 
   return 0;

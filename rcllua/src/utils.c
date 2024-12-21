@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <threads.h>
+#include <math.h>
 #include <lauxlib.h>
 
 #include "rcllua/utils.h"
@@ -43,4 +45,38 @@ void rcl_lua_utils_add_enum (lua_State* L, const char* name, const rcl_lua_enum*
   }
   /* save table */
   lua_setfield(L, -2, name);          // pop, lib['name'] = a
+}
+
+/**
+ * Stop execution for some time.
+ *
+ * Arguments:
+ * - sleep duration, seconds
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_utils_sleep_thread (lua_State* L)
+{
+  /* arg1 - time value */
+  double sec = luaL_checknumber(L, 1);
+  luaL_argcheck(L, sec >= 1E-9, 1, "duration >= 1ns is expected");
+  double full, part;
+  part = modf(sec, &full);
+
+  /* sleep */
+  struct timespec time;
+  time.tv_sec = (time_t) full;
+  time.tv_nsec = (long) (part*1E9);
+  thrd_sleep(&time, NULL);
+
+  return 0;
+}
+
+/* Add to library */
+void rcl_lua_add_util_methods (lua_State* L)
+{
+  /* sleep some time */
+  lua_pushcfunction(L, rcl_lua_utils_sleep_thread);  // push function
+  lua_setfield(L, -2, "sleep_thread");               // pop, lib['sleep_thread'] = fn
 }

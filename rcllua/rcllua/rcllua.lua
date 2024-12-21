@@ -36,4 +36,8 @@ function rcllua.spin_until_future_complete (self, node, future, executor, timeou
   if is_add then exec:remove_node(node) end
 end
 
+function rcllua.sleep_sec (self, time)
+  rclbind.sleep_thread(time)
+end
+
 return rcllua

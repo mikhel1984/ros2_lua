@@ -24,6 +24,7 @@
 #include "rcllua/clock.h"
 #include "rcllua/qos.h"
 #include "rcllua/wait_set.h"
+#include "rcllua/utils.h"
 
 /**
  * Create rclbind library.
@@ -33,7 +34,6 @@
  *
  * \param[inout] L Lua stack.
  */
-
 int luaopen_rcllua_rclbind (lua_State* L)
 {
   lua_createtable(L, 0, 20);  // TODO(Mikhel) set number
@@ -52,6 +52,8 @@ int luaopen_rcllua_rclbind (lua_State* L)
   rcl_lua_add_service_methods(L);
   rcl_lua_add_client_methods(L);
   rcl_lua_add_wait_set_methods(L);
+
+  rcl_lua_add_util_methods(L);
 
   return 1;
 }

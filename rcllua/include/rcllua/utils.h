@@ -17,6 +17,8 @@
 
 #include <lua.h>
 
+struct luaL_Reg;
+
 /** Keep pairs 'name - value' to fill 'enum' in Lua. */
 typedef struct rcl_lua_enum
 {
@@ -33,7 +35,7 @@ typedef struct rcl_lua_enum
  * \param[in] name metatable name.
  * \param[in] fn function list.
  */
-void rcl_lua_utils_add_mt (lua_State* L, const char* name, const luaL_Reg* fn);
+void rcl_lua_utils_add_mt (lua_State* L, const char* name, const struct luaL_Reg* fn);
 
 /**
  * Combine list of pairs to 'enum', add to library.
@@ -43,5 +45,12 @@ void rcl_lua_utils_add_mt (lua_State* L, const char* name, const luaL_Reg* fn);
  * \param[in] ps list of pairs 'name - value'.
  */
 void rcl_lua_utils_add_enum (lua_State* L, const char* name, const rcl_lua_enum* ps);
+
+/**
+ * Add useful functions to library.
+ *
+ * \param[inout] L Lua stack.
+ */
+void rcl_lua_add_util_methods (lua_State* L);
 
 #endif  // RCLLUA__UTILS_H_

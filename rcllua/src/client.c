@@ -206,6 +206,7 @@ static int rcl_lua_client_service_is_available (lua_State* L)
  * Arguments:
  * - client object
  * - request message
+ * - callback
  *
  * Return:
  * - sequence id
@@ -219,10 +220,20 @@ static int rcl_lua_client_send_request (lua_State* L)
   rcl_client_t* cli = luaL_checkudata(L, 1, MT_CLIENT);
 
   /* arg2 - request object */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table
+  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table a
   lua_rawgeti(L, -1, CLI_REG_MT_REQUEST);  // push metatable name
   const char* mt = lua_tostring(L, -1);
   idl_lua_msg_t* req = luaL_checkudata(L, 2, mt);
+  lua_pop(L, 1);                           // pop name
+
+  /* arg3 - callback function */
+  luaL_argcheck(L, lua_isfunction(L, 3), 3, "calback is expected");
+  lua_pushvalue(L, 3);                     // push function (copy)
+  lua_rawseti(L, -2, CLI_REG_CALLBACK);    // pop function, a[.] = fn
+
+  if (!lua_isfunction(L, 3)) {
+    luaL_error(L, "cal");
+  }
 
   /* send */
   int64_t seq_num = 0;

@@ -1,5 +1,6 @@
 
 local rclbind = require("rcllua.rclbind")
+local client_lib = require("rcllua.Client")
 
 
 local Logger = {name='rcllua'}
@@ -19,6 +20,18 @@ function Node.create_subscription (self, ...)
   return sub
 end
 
+function Node.create_service (self, ...)
+  local srv = rclbind.new_service(self._node__object, ...)
+  table.insert(self._service__list, srv)
+  return srv
+end
+
+function Node.create_client (self, ...)
+  local cli = client_lib.new_client(self._node__object, ...)
+  table.insert(self._client__list, cli)
+  return cli
+end
+
 function Node.create_timer (self, period, callback)
   local timer = rclbind.new_timer(self._clock__object, period, callback)
   table.insert(self._timer__list, timer)
@@ -28,6 +41,17 @@ end
 function Node.get_logger (self)
   local o = {name=self._node__name}
   return setmetatable(o, Logger)
+end
+
+function Node.set_executor (self, executor)
+  if self._executor__weak.ref then
+    self._executor__weak.ref:remove_node(self)
+  end
+  self._executor__weak.ref = executor
+end
+
+function Node.executor (self)
+  return self._executor__weak.ref
 end
 
 function Node.bind (self, name)
@@ -48,6 +72,7 @@ function Node.__call (self, ...)
   o._clock__object = rclbind.new_clock()
   -- save name for quick access
   o._node__name = param.name
+  o._executor__weak = setmetatable({ref=nil}, {__mode='v'})
   -- references
   o._timer__list = {}
   o._subscription__list = {}

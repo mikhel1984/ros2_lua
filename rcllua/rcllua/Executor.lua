@@ -1,6 +1,10 @@
 
 local rclbind = require("rcllua.rclbind")
 
+local function _sec_nsec (time_sec)
+  return math.floor(time_sec), math.floor((time_sec % 1)*1E9)
+end
+
 local function _wait_ready_callbacks (executor, timeout_sec)
   local subscriptions = {}
   local timers = {}
@@ -63,7 +67,7 @@ local function _wait_ready_callbacks (executor, timeout_sec)
     wait_set:add_timer(timers[i])
   end
 
-  for i = 1, #clients do wait_set:add_client(clients[i]) end
+  for i = 1, #clients do wait_set:add_client(clients[i]:handle()) end
 
   for i = 1, #services do wait_set:add_service(services[i]) end
 
@@ -92,6 +96,22 @@ local function _wait_ready_callbacks (executor, timeout_sec)
       coroutine.yield(fn)
     end
   end
+
+  for i = 1, #services do
+    local t = services[i]
+    local req, resp, fn = table.unpack(t)
+    coroutine.yield(
+      function()
+        fn(req, resp)
+        rclbind.service_send_response(t)
+      end)
+  end
+
+  for i = 1, #clients do
+    print('got client response')
+    local resp, fn = table.unpack(clients[i])
+    coroutine.yield(function() fn(resp) end)
+  end
   
   return true
 end
@@ -107,6 +127,7 @@ function Executor.add_node (self, node)
     end
   end
   table.insert(self._nodes, node)
+  node:set_executor(self)
   return true
 end
 
@@ -114,6 +135,7 @@ function Executor.remove_node (self, node)
   for i = 1, #self._nodes do
     if self._nodes[i] == node then
       table.remove(self._nodes, i)
+      node:set_executor(nil)  -- remove
       return true
     end
   end
@@ -129,6 +151,24 @@ end
 function Executor.spin (self)
   while rclbind.context_ok() and not self._is_shutdown do
     Executor.spin_once(self)
+  end
+end
+
+function Executor.spin_until_future_complete (self, future, timeout_sec)
+  if not future._is_future then error('Future expected') end
+  if not timeout_sec or timeout_sec < 0 then
+    while rclbind.context_ok() and not self._is_shutdown and not future:done() do
+      Executor.spin_once(self, timeout_sec)
+    end
+  else
+    local dur = rclbind.new_duration(_sec_nsec(timeout_sec))
+    local finish = self._clock:now() + dur
+    while rclbind.context_ok() and not self._is_shutdown and timeout_sec > 0 
+          and not future:done() 
+    do
+      Executor.spin_once(timeout_sec)
+      timeout_sec = (finish - self._clock:now()):seconds()
+    end
   end
 end
 
@@ -159,6 +199,7 @@ setmetatable(Executor, {
 __call = function ()
   local o = {}
   o._nodes = {}
+  o._clock = rclbind.new_clock(rclbind.ClockType.STEADY_TIME)
   o._is_shutdown = false
   -- counters
   o._sub_no = 0

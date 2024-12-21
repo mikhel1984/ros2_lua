@@ -1,11 +1,30 @@
+-- Copyright 2025 Stanislav Mikhel
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 
 local rclbind = require("rcllua.rclbind")
 
-local function _sec_nsec (time_sec)
+--- Split seconds (float) into seconds and nanoseconds.
+--  @param time_sec Time as float value.
+--  @return seconds (int), nanoseconds (int)
+local function sec_nsec (time_sec)
   return math.floor(time_sec), math.floor((time_sec % 1)*1E9)
 end
 
-local function _wait_ready_callbacks (executor, timeout_sec)
+--- Collect ready for execution tasks.
+--  @param timeout_sec Wait time.
+--  @return coroutine yield with function for execution.
+local function wait_for_ready_callbacks (executor, timeout_sec)
   local subscriptions = {}
   local timers = {}
   local services = {}
@@ -17,7 +36,7 @@ local function _wait_ready_callbacks (executor, timeout_sec)
     for _, sub in ipairs(node._subscription__list) do
       subscriptions[#subscriptions+1] = sub
     end
-    if executor._sub_no ~= #subscriptions then 
+    if executor._sub_no ~= #subscriptions then
       executor._sub_no = #subscriptions
       executor._wait_set = nil
     end
@@ -47,7 +66,7 @@ local function _wait_ready_callbacks (executor, timeout_sec)
     end
   end
 
-  executor._wait_set = executor._wait_set or 
+  executor._wait_set = executor._wait_set or
     rclbind.new_wait_set(
       executor._sub_no,
       executor._guard_no,
@@ -111,14 +130,17 @@ local function _wait_ready_callbacks (executor, timeout_sec)
     local resp, fn = table.unpack(clients[i])
     coroutine.yield(function() fn(resp) end)
   end
-  
+
   return true
 end
 
-
+--- Executor class.
 Executor = {}
 Executor.__index = Executor
 
+--- Add Node object.
+--  @param node Object to add.
+--  @return true if the node is new.
 function Executor.add_node (self, node)
   for i = 1, #self._nodes do
     if self._nodes[i] == node then
@@ -130,6 +152,9 @@ function Executor.add_node (self, node)
   return true
 end
 
+--- Remove node object.
+--  @param node Object to remove.
+--  @return true if node found.
 function Executor.remove_node (self, node)
   for i = 1, #self._nodes do
     if self._nodes[i] == node then
@@ -141,18 +166,16 @@ function Executor.remove_node (self, node)
   return false
 end
 
-function Executor.get_nodes (self)
-  local ns = {}
-  for i = 1, #self._nodes do ns[i] = self._nodes[i] end
-  return ns
-end
-
+--- Run data spin.
 function Executor.spin (self)
   while rclbind.context_ok() and not self._is_shutdown do
     Executor.spin_once(self)
   end
 end
 
+--- Spin data until time is out or task is completed.
+--  @param future Future object.
+--  @param timeout_sec Wait time (optional).
 function Executor.spin_until_future_complete (self, future, timeout_sec)
   if not future._is_future then error('Future expected') end
   if not timeout_sec or timeout_sec < 0 then
@@ -160,10 +183,10 @@ function Executor.spin_until_future_complete (self, future, timeout_sec)
       Executor.spin_once(self, timeout_sec)
     end
   else
-    local dur = rclbind.new_duration(_sec_nsec(timeout_sec))
+    local dur = rclbind.new_duration(sec_nsec(timeout_sec))
     local finish = self._clock:now() + dur
-    while rclbind.context_ok() and not self._is_shutdown and timeout_sec > 0 
-          and not future:done() 
+    while rclbind.context_ok() and not self._is_shutdown and timeout_sec > 0
+      and not future:done()
     do
       Executor.spin_once(timeout_sec)
       timeout_sec = (finish - self._clock:now()):seconds()
@@ -171,6 +194,8 @@ function Executor.spin_until_future_complete (self, future, timeout_sec)
   end
 end
 
+--- Spin until time is out or got new data.
+--  @param timeout_sec Wait time (optional).
 function Executor.spin_once (self, timeout_sec)
   timeout_sec = timeout_sec or -1
   local ok, handle
@@ -178,23 +203,22 @@ function Executor.spin_once (self, timeout_sec)
     if self._cb_iter then
       ok, handle = coroutine.resume(self._cb_iter)
     else
-      self._cb_iter = coroutine.create(_wait_ready_callbacks)
+      self._cb_iter = coroutine.create(wait_for_ready_callbacks)
       ok, handle = coroutine.resume(self._cb_iter, self, timeout_sec)
     end
-    if not ok then 
+    if not ok then
       error(handle)   -- resend error
     elseif coroutine.status(self._cb_iter) == 'dead' then
       self._cb_iter = nil  -- finished
     end
   until self._cb_iter
+  -- execute
   handle()
 end
 
-function Executor.shutdown (self, timeout_sec)
-  self._is_shutdown = true
-end
-
+-- Allow to call Executor table.
 setmetatable(Executor, {
+--- Create Executor object.
 __call = function ()
   local o = {}
   o._nodes = {}
@@ -210,3 +234,5 @@ __call = function ()
   setmetatable(o, Executor)
   return o
 end })
+
+return Executor

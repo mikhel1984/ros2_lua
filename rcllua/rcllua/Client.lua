@@ -53,6 +53,18 @@ function Client.call_async (self, req, callback)
   return future
 end
 
+function Client.wait_for_service (self, timeout_sec)
+  local sleep_time = math.min(0.2, timeout_sec)
+  timeout_sec = timeout_sec or math.huge
+  while rclbind.context_ok() and not self._client:service_is_available() 
+    and timeout_sec > 0
+  do
+    rclbind.sleep_thread(sleep_time)
+    timeout_sec = timeout_sec - sleep_time
+  end
+  return self._client:service_is_available()
+end
+
 function Client.handle (self)
   return self._client
 end

@@ -108,7 +108,6 @@ local function _wait_ready_callbacks (executor, timeout_sec)
   end
 
   for i = 1, #clients do
-    print('got client response')
     local resp, fn = table.unpack(clients[i])
     coroutine.yield(function() fn(resp) end)
   end

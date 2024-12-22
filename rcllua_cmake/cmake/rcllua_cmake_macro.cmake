@@ -49,3 +49,26 @@ macro(rcllua_cmake_install_clib proj_name src_name)
       "${rcllua_cmake_DIR}/templates/env_hook_lua_c.sh.in")
   endif()
 endmacro()
+
+# Lua binary file
+set(LUA_EXEC /usr/local/bin/lua)
+
+# Make executable file to call with 'ros2 run'
+# src_name - source file name in package directory
+# exec_name - desired executable name
+macro(rcllua_cmake_executable src_name exec_name)
+  set(_out_dir ${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME})
+  file(MAKE_DIRECTORY "${_out_dir}")
+  # file content
+  file(WRITE "${_out_dir}/${exec_name}"
+    "#!${LUA_EXEC}\n"
+    "local script = loadfile(${CMAKE_SOURCE_DIR}/${src_name})\n"
+    "script()"
+  )
+  file(CHMOD "${_out_dir}/${exec_name}"
+    PERMISSIONS
+      OWNER_READ OWNER_EXECUTE
+      GROUP_READ GROUP_EXECUTE
+      WORLD_READ WORLD_EXECUTE
+  )
+endmacro()

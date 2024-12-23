@@ -62,7 +62,7 @@ macro(rcllua_cmake_executable src_name exec_name)
   # file content
   file(WRITE "${_out_dir}/${exec_name}"
     "#!${LUA_EXEC}\n"
-    "local script = loadfile(${CMAKE_SOURCE_DIR}/${src_name})\n"
+    "local script = loadfile('${CMAKE_SOURCE_DIR}/${src_name}')\n"
     "script()"
   )
   file(CHMOD "${_out_dir}/${exec_name}"

@@ -1,4 +1,5 @@
 # Copyright 2021 Open Source Robotics Foundation, Inc.
+# Copyright 2025 Stanislav Mikhel
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -62,9 +63,7 @@ def sequence_metatable(type_):
 
 
 def generate_lua(generator_arguments_file, typesupport_impls):
-    mapping = {
-        'idl.c.em': '%s.c',
-    }
+    mapping = {'idl.c.em': '%s.c'}
     generated_files = generate_files(generator_arguments_file, mapping)
 
     args = read_generator_arguments(generator_arguments_file)
@@ -112,11 +111,14 @@ def generate_lua(generator_arguments_file, typesupport_impls):
 
     return generated_files
 
+
 def make_prefix(tp):
     return '__'.join(tp.structure.namespaced_type.namespaces + [
                   convert_camel_case_to_lower_case_underscore(tp.structure.namespaced_type.name)])
-                  
+
+
 def make_include_prefix(tp):
     lst = tp.namespaced_type.namespaced_name()
-    return '/'.join([lst[0], lst[1], 'detail', convert_camel_case_to_lower_case_underscore(lst[2])])        
+    return '/'.join(
+        [lst[0], lst[1], 'detail', convert_camel_case_to_lower_case_underscore(lst[2])])
 

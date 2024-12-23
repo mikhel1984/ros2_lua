@@ -76,7 +76,6 @@ if isinstance(type_, AbstractString) and have_not_included_string:
 @[  for header_file in header_files]@
 @[    if header_file in include_directives]@
 // already included above
-// @
 @[    else]@
 @{include_directives.add(header_file)}@
 @[    end if]@
@@ -98,7 +97,6 @@ nested_header += '__functions.h'
 }@
 @[    if nested_header in include_directives]@
 // already included above
-// @
 @[    else]@
 @{include_directives.add(nested_header)}@
 @[    end if]@
@@ -115,16 +113,15 @@ msg_getters = []
 msg_setters = []
 msg_metatable = msg_typename + '__mt'
 }@
-
-//const rosidl_message_type_support_t * ROSIDL_GET_MSG_TYPE_SUPPORT(@(', '.join(msg_components)));
-
 static int @(msg_prefix)__lcall (lua_State* L);
 
-@#  constructor
+/**
+ * Message constructor.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int @(msg_prefix)__lnew (lua_State* L) {
-  bool is_table = (lua_type(L, 2) == LUA_TTABLE);
-  
-  // message object
+  /* message object */
   @(msg_typename)* msg = @(msg_typename)__create();
   if (NULL == msg) {
     luaL_error(L, "failed to create message");
@@ -134,26 +131,31 @@ static int @(msg_prefix)__lnew (lua_State* L) {
     luaL_error(L, "failed to init message");
   }
 
-  // object wrapper
-  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));
-  ptr->obj = msg;
-  ptr->value = IDL_LUA_OBJECT;
+  /* object wrapper */
+  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
+  ptr->obj = msg;                // message
+  ptr->value = IDL_LUA_OBJECT;   // pointer type
 
-  // add metamethods
-  luaL_getmetatable(L, "@(msg_metatable)");
-  lua_setmetatable(L, -2);
+  /* add metamethods */
+  luaL_getmetatable(L, "@(msg_metatable)");   // push metatable
+  lua_setmetatable(L, -2);       // pop metatable
 
-  if (is_table) {
+  /* table based initialization */
+  if (LUA_TTABLE == lua_type(L, 2)) {
     // initialize
-    lua_replace(L, 1);      // move userdata to first place
+    lua_replace(L, 1);         // pop, move userdata to first place
     @(msg_prefix)__lcall(L);   // call initialization
-    lua_settop(L, 1);       // pop except first element
+    lua_settop(L, 1);          // pop, remove call result
   }
 
   return 1;
 }
 
-@#  destructor
+/**
+ * Message destruction.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int @(msg_prefix)__lgc (lua_State* L) {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
   if (IDL_LUA_OBJECT == ptr->value && NULL != ptr->obj) {
@@ -165,38 +167,42 @@ static int @(msg_prefix)__lgc (lua_State* L) {
   return 0;
 }
 
-@#  check equality
+/**
+ * Check equality of two messages.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int @(msg_prefix)__leq (lua_State* L) {
-  // check equality
-  lua_getmetatable(L, 1);
-  lua_getmetatable(L, 2);
+  /* check type equality */
+  lua_getmetatable(L, 1);  // push table
+  lua_getmetatable(L, 2);  // push table
   if (lua_isnil(L, -2) || !lua_rawequal(L, -1, -2)) {
     lua_pushboolean(L, false);
     return 1;
   }
-  lua_pop(L, 2);  // remove metatables
+  lua_pop(L, 2);           // pop, remove metatables
 
-  // data
+  /* compare data */
   idl_lua_msg_t* p1 = lua_touserdata(L, 1);
   idl_lua_msg_t* p2 = lua_touserdata(L, 2);
 
   if (p1->value < IDL_LUA_SEQ && p2->value < IDL_LUA_SEQ) {
-    // object or reference
+    /* object or reference */
     lua_pushboolean(L, @(msg_typename)__are_equal(p1->obj, p2->obj));
   } else if (p1->value >= IDL_LUA_SEQ && p2->value >= IDL_LUA_SEQ) {
-    // lists
+    /* lists */
     @(msg_typename)__Sequence s1, s2;
     if (p1->value == IDL_LUA_SEQ) {
       s1 = *(@(msg_typename)__Sequence*) p1->obj;
     } else {
-      // array, to Sequence object
+      /* array, to Sequence object */
       s1.data = p1->obj;
       s1.size = s1.capacity = p1->value;
     }
     if (p2->value == IDL_LUA_SEQ) {
       s2 = *(@(msg_typename)__Sequence*) p2->obj;
     } else {
-      // array, to Sequence object
+      /* array, to Sequence object */
       s2.data = p2->obj;
       s2.size = s2.capacity = p2->value;
     }
@@ -208,43 +214,46 @@ static int @(msg_prefix)__leq (lua_State* L) {
   return 1;
 }
 
-@# copy value
+/**
+ * Copy data.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int @(msg_prefix)__lcopy (lua_State* L) {
-  // check equality
-  lua_getmetatable(L, 1);
-  lua_getmetatable(L, 2);
+  /* check type equality */
+  lua_getmetatable(L, 1);  // push table
+  lua_getmetatable(L, 2);  // push table
   if (lua_isnil(L, -2) || !lua_rawequal(L, -1, -2)) {
-    // TODO(Mikhel) check type exactly
     lua_pushboolean(L, false);
   }
   lua_pop(L, 2);  // remove metatables
 
-  // data
+  /* data */
   idl_lua_msg_t* dst = lua_touserdata(L, 1);
   idl_lua_msg_t* src = lua_touserdata(L, 2);
   bool done = false;
 
   if (dst->value < IDL_LUA_SEQ && src->value < IDL_LUA_SEQ) {
-    // objects
+    /* objects */
     done = @(msg_typename)__copy(src->obj, dst->obj);
   } else if (IDL_LUA_SEQ == dst->value) {
-    // list
+    /* list */
     if (IDL_LUA_SEQ == src->value) {
       done = @(msg_typename)__Sequence__copy(src->obj, dst->obj);
     } else if (src->value > IDL_LUA_SEQ) {
-      // from array
+      /* from array */
       @(msg_typename)__Sequence tmp;
       tmp.data = src->obj;
       tmp.size = tmp.capacity = (size_t) src->value;
       done = @(msg_typename)__Sequence__copy(&tmp, dst->obj);
     }
   } else if (dst->value > IDL_LUA_SEQ) {
-    // array
+    /* array */
     @(msg_typename) *a = dst->obj, *b = NULL;
     if (src->value > IDL_LUA_SEQ && dst->value == src->value) {
       b = src->obj;
     } else if (src->value == IDL_LUA_SEQ) {
-      // from list
+      /* from list */
       @(msg_typename)__Sequence* seq = src->obj;
       if (seq->size == (size_t) dst->value) {
         b = seq->data;
@@ -257,31 +266,39 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
       }
     }
   }
-  lua_pushboolean(L, done);
 
+  lua_pushboolean(L, done);
   return 1;
 }
 
-@# get length
+/**
+ * Array length.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int @(msg_prefix)__llen (lua_State* L)
 {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
   if (ptr->value > IDL_LUA_SEQ) {
-    // array
+    /* array */
     lua_pushinteger(L, ptr->value);
   } else if (ptr->value == IDL_LUA_SEQ) {
-    // list
+    /* list */
     @(msg_typename)__Sequence* seq = ptr->obj;
     lua_pushinteger(L, seq->size);
   } else {
-    // scalar value
+    /* scalar value */
     lua_pushnil(L);
   }
 
   return 1;
 }
 
-@# to string
+/**
+ * String representation.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int @(msg_prefix)__lstr (lua_State* L)
 {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
@@ -297,46 +314,50 @@ static int @(msg_prefix)__lstr (lua_State* L)
   return 1;
 }
 
-@# resize sequence
+/**
+ * Change sequence size.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int @(msg_prefix)__lresize (lua_State* L)
 {
   idl_lua_msg_t* ptr = luaL_checkudata(L, 1, "@(msg_metatable)");
   if (ptr->value != IDL_LUA_SEQ) {
-    // only list can be resized
+    /* only list can be resized */
     lua_pushboolean(L, false);
     return 1;
   }
 
-  // new length
+  /* new length */
   lua_Integer len = luaL_checkinteger(L, 2);
   luaL_argcheck(L, len >= 0, 2, "wrong length");
   @(msg_typename)__Sequence* seq = ptr->obj;
   bool done = true;
 
   if (seq->capacity == 0) {
-    // empty object, make new
+    /* empty object, make new */
     done = @(msg_typename)__Sequence__init(seq, len);
   } else if (seq->capacity >= (size_t) len) {
-    // memory is enough
+    /* memory is enough */
     seq->size = (size_t) len;
   } else {
-    // allocate new memory and copy data
+    /* allocate new memory and copy data */
     @(msg_typename)__Sequence newseq;
     if (@(msg_typename)__Sequence__init(&newseq, len) &&
        @(msg_typename)__Sequence__copy(seq, &newseq))
     {
-      // swap
+      /* swap */
       @(msg_typename)__Sequence tmp = *seq;
       *seq = newseq;
       seq->size = len;
-      // remove old
+      /* remove old */
       @(msg_typename)__Sequence__fini(&tmp);
     } else {
       done = false;
     }
   }
-  lua_pushboolean(L, done);
 
+  lua_pushboolean(L, done);
   return 1;
 }
 
@@ -772,7 +793,7 @@ type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
   lua_setfield(L, -2, "__index");        // pop table
 
   // type support reference
-  const rosidl_message_type_support_t *ts = ROSIDL_GET_MSG_TYPE_SUPPORT( 
+  const rosidl_message_type_support_t *ts = ROSIDL_GET_MSG_TYPE_SUPPORT(
     @(', '.join(msg_components)));
   lua_pushlightuserdata(L, (void*) ts);
   lua_setfield(L, -2, "_type_support");
@@ -780,7 +801,7 @@ type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
   // metatable
   lua_pushliteral(L, "@(msg_metatable)");
   lua_setfield(L, -2, "_metatable");
-  
+
   // constructor
   lua_pushcfunction(L, @(msg_prefix)__lnew);  // push function
   lua_setfield(L, -2, "_new");         // pop function, add to table

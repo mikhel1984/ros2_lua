@@ -1,4 +1,6 @@
 # Copyright 2014-2018 Open Source Robotics Foundation, Inc.
+# Copyright 2025 Stanislav Mikhel
+#
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,10 +37,6 @@ set(_output_path
 set(_generated_c_files "")
 
 
-#foreach(_typesupport_impl ${_typesupport_impls})
-#  set(_generated_extension_${_typesupport_impl}_files "")
-#endforeach()
-
 # Collect files for each interface type
 set(_msg_list "")
 set(_srv_list "")
@@ -51,15 +49,15 @@ foreach(_abs_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   string_camel_case_to_lower_case_underscore("${_idl_name}" _module_name)
   set(_src_c "${_output_path}/${_parent_folder}/${_module_name}.c")
   list(APPEND _generated_c_files ${_src_c})
-  
+
   # separate msg / srv / action
   if(${_parent_folder} STREQUAL "msg")
-    list(APPEND _msg_list ${_src_c})  
+    list(APPEND _msg_list ${_src_c})
   elseif(${_parent_folder} STREQUAL "srv")
     list(APPEND _srv_list ${_src_c})
   else()
     list(APPEND _action_list ${_src_c})
-  endif()    
+  endif()
 endforeach()
 
 # Add lua binding
@@ -167,52 +165,42 @@ target_include_directories(${_target_name_lib}
 
 rosidl_get_typesupport_target(c_typesupport_target "${rosidl_generate_interfaces_TARGET}" "rosidl_typesupport_c")
 
-# Compile lua librariesy
+# Compile Lua msgs
 if(NOT _msg_list STREQUAL "")
   add_library(msg SHARED ${_msg_list})
-  set_target_properties(msg PROPERTIES 
+  set_target_properties(msg PROPERTIES
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY ${_output_path}
   )
   target_link_libraries(msg
-    #${rosidl_generate_interfaces_TARGET}__rosidl_generator_c
     ${c_typesupport_target}
-    )
-#  add_dependencies(
-#  msg
-#  ${rosidl_generate_interfaces_TARGET}${_target_suffix}
-#  ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
-#)
-  #target_include_directories(msg PRIVATE
-    #${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
-    #${_luacommon_dir}
-    #)
+  )
   ament_target_dependencies(msg
     "rosidl_runtime_c"
     "rosidl_luacommon"
   )
 endif()
+
+# Compile Lua srvs
 if(NOT _srv_list STREQUAL "")
   add_library(srv SHARED ${_srv_list})
-  set_target_properties(srv PROPERTIES 
+  set_target_properties(srv PROPERTIES
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY ${_output_path}
   )
   target_link_libraries(srv
-    #${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
     ${c_typesupport_target}
-    )
-  #target_include_directories(srv PRIVATE
-  #  ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
-  #  ${_luacommon_dir})
+  )
   ament_target_dependencies(srv
     "rosidl_runtime_c"
     "rosidl_luacommon"
   )
 endif()
+
+# Compile Lua actions
 if(NOT _action_list STREQUAL "")
   add_library(action SHARED ${_action_list})
-  set_target_properties(action PROPERTIES 
+  set_target_properties(action PROPERTIES
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY ${_output_path}
   )
@@ -230,11 +218,10 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
     rcllua_cmake_install_clib(${PROJECT_NAME} msg)
   endif()
   if(NOT _srv_list STREQUAL "")
-    rcllua_cmake_install_clib(${PROJECT_NAME} srv)  
+    rcllua_cmake_install_clib(${PROJECT_NAME} srv)
   endif()
   if(NOT _action_list STREQUAL "")
-    rcllua_cmake_install_clib(${PROJECT_NAME} action)  
+    rcllua_cmake_install_clib(${PROJECT_NAME} action)
   endif()
 endif()
-
 

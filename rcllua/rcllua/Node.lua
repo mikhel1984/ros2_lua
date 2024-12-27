@@ -31,7 +31,11 @@ Node.__index = Node
 --  @param qos QoS profile (optional).
 --  @return publisher (userdata).
 function Node.create_publisher (self, msg, topic, qos)
-  -- TODO qos depth from number
+  if type(qos) == 'number' then
+    local q = rclbind.new_qos()
+    q.depth = qos
+    qos = q
+  end
   return rclbind.new_publisher(self._node__object, msg, topic, qos)
 end
 
@@ -42,6 +46,11 @@ end
 --  @param qos QoS profile (optional).
 --  @return subscription (userdata).
 function Node.create_subscription (self, msg, topic, callback, qos)
+  if type(qos) == 'number' then
+    local q = rclbind.new_qos()
+    q.depth = qos
+    qos = q
+  end
   local sub = rclbind.new_subscription(self._node__object, msg, topic, callback, qos)
   table.insert(self._subscription__list, sub)
   return sub

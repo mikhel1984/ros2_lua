@@ -6,6 +6,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rcllua REQUIRED)
 find_package(rcllua_cmake REQUIRED)
 
+# rcllua examples
+rcllua_cmake_executable(rcllua_examples/publisher.lua simple_publisher)
+rcllua_cmake_executable(rcllua_examples/subscription.lua simple_subscription)
+
 # rclbind examples
 rcllua_cmake_executable(raw/timer.lua raw_timer)
 

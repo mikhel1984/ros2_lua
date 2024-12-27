@@ -456,7 +456,7 @@ nested_metatable = nested_type + '__mt'
   /* stack [..., function, dst] */
   lua_pushvalue(L, 3);                        // push argument (duplicate)
   lua_call(L, 2, 1);                          // copy(L-2, L-1)
-@[  elif isinstance(member.type, BasicType) and member.type.typename in ('char', 'octet')]@
+@[  elif isinstance(member.type, BasicType) and member.type.typename == 'char']@
 
   const char* value = luaL_checkstring(L, 3);
   ros_msg->@(member.name) = value[0];
@@ -485,6 +485,9 @@ type_dict = NUMERIC_LUA_TYPES[member.type.typename]
 
   const char* value = luaL_checkstring(L, 3);
   rosidl_runtime_c__String__assign(&ros_msg->@(member.name), value);
+@[  elif isinstance(member.type, AbstractWString)]@
+@# ignore
+    (void) ros_msg;
 @[  else]@
 @{
 assert False, ("unknown type " + member.type.typename)
@@ -555,13 +558,16 @@ mtbl = nested_type + '__mt'
 @[    end if]@
   luaL_getmetatable(L, "@(sequence_metatable(member.type.value_type))");  // push mt
   lua_setmetatable(L, -2);                    // pop metatable
-@[  elif isinstance(member.type, BasicType) and member.type.typename in ('char', 'octet')]@
+@[  elif isinstance(member.type, BasicType) and member.type.typename == 'char']@
 
   lua_pushinteger(L, ros_msg->@(member.name));
 @[  elif isinstance(member.type, AbstractString)]@
 
   rosidl_runtime_c__String str = ros_msg->@(member.name);
   lua_pushlstring(L, str.data, str.size);
+@[  elif isinstance(member.type, AbstractWString)]@
+@# ignore
+    (void) ros_msg;
 @[  elif isinstance(member.type, BasicType) and member.type.typename == 'boolean']@
 
   lua_pushboolean(L, ros_msg->@(member.name));
@@ -789,10 +795,16 @@ fn_name = name_parts[-1]
 
   /* add constants */
 @[for constant in message.constants]@
+@[  if isinstance(constant.type, BasicType) and constant.type.typename in NUMERIC_LUA_TYPES]@
 @{
 type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
 }@
-  @(type_dict['ifn'])(L, @(constant.value));  // push value
+  @(type_dict['ifn'])(L, @(constant.value));  // push value  
+@[  elif isinstance(member.type, BasicType) and constant.type.typename == 'boolean']@
+  lua_pushboolean(L, @('true' if constant.value else 'false'));  // push value
+@[  elif isinstance(member.type, AbstractString) or isinstance(member.type, AbstractWString)]@
+  lua_pushliteral(L, "@(constant.value)");
+@[  end if]@
   lua_setfield(L, -2, "@(constant.name)");   // pop value, add to table
 @[end for]@
 

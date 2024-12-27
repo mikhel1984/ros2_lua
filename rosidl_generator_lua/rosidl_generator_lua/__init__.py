@@ -52,13 +52,14 @@ NUMERIC_LUA_TYPES = {
     'uint64': {'min': '0', 'max': 'UINT64_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger',
                'ifn': 'lua_pushinteger', 'ctype': 'uint64_t'},
 }
+NUMERIC_LUA_TYPES['octet'] = NUMERIC_LUA_TYPES['uint8']
 
 
 def sequence_metatable(type_):
     if isinstance(type_, AbstractGenericString):
         return "ROS2.rosidl_sequence.String"
     if type_.typename in ('char', 'octet'):
-        return "ROS2.rosidl_sequence.int8"
+        return "ROS2.rosidl_sequence.uint8"
     return "ROS2.rosidl_sequence." + type_.typename
 
 

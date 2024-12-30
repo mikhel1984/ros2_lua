@@ -1,3 +1,5 @@
+// Created from rosidl_generator_lua/resource/msg_lib.c
+// Generated code does not contain a copyright notice
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -13,18 +15,14 @@ import sys
 nested_list = []
 nested_list.append(("rosidl_luacommon", "sequence"))  # TODO check if required
 for message in content:
-    #print(str(message.structure.namespaced_type.namespaced_name()), file=sys.stderr)
     for member in message.structure.members:
         type_ = member.type
         if isinstance(type_, AbstractNestedType):
             type_ = type_.value_type
         if isinstance(type_, NamespacedType):
-            #print(type_.namespaced_name(), file=sys.stderr)
             nested_type = tuple(map(str, type_.namespaced_name()[:2]))
-            #nested_type = str(type_.namespaced_name()[0])
             if nested_type[0] != package_name and nested_type not in nested_list:
                 nested_list.append(nested_type)
-# print(nested_list, file=sys.stderr)
 }@
 
 // prototypes

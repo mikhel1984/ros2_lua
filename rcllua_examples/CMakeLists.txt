@@ -7,28 +7,29 @@ find_package(rcllua REQUIRED)
 find_package(rcllua_cmake REQUIRED)
 
 # rcllua examples
-rcllua_cmake_executable(
-  rcllua_examples/publisher.lua simple_publisher)
-rcllua_cmake_executable(
-  rcllua_examples/subscription.lua simple_subscription)
-rcllua_cmake_executable(
-  rcllua_examples/service.lua simple_service)
-rcllua_cmake_executable(
-  rcllua_examples/client.lua simple_client)
+rcllua_cmake_executable(${PROJECT_NAME}/publisher.lua simple_publisher)
+rcllua_cmake_executable(${PROJECT_NAME}/subscription.lua simple_subscription)
+rcllua_cmake_executable(${PROJECT_NAME}/service.lua simple_service)
+rcllua_cmake_executable(${PROJECT_NAME}/client.lua simple_client)
 
 # rclbind examples
 rcllua_cmake_executable(raw/timer.lua raw_timer)
 
+# if need
+# copy files to install/lib directory, add to Lua path
+rcllua_cmake_install_lib(${PROJECT_NAME})
+
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  # apply tests
+  find_package(rcllua_unit REQUIRED)
+  rcllua_unit_tests(
+    tests/test_lib.lua
+  )
 endif()
 
 ament_package()

@@ -6,7 +6,7 @@ Most of the functionality is implemented in shared library **rclbind** with Lua 
 is used to define Executor and other objects not presented in **rcl** library, hide some data structures
 and make the code closer to the Python/C++ style.
 
-To avoid errors in working with table members, functions are always called with colon, other objects with dot.
+To avoid errors when work with table members, functions are always called with colon, other objects with dot.
 ```lua
 -- i.e.
 local t = {a = 1, b = function (self) return 'foo' end}

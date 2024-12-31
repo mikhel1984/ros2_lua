@@ -54,3 +54,4 @@ There are additional methods for convenience:
 - **eqlf(v1, v2, tol)** - compare floating point numbers with predefined toleratnce (0.001 by default)
 - **catch(fn, ...)** - call fn(...), raise error when the function is finished successfully
 
+The **rcllua_unit.testing** library is optional, you may use any other unit test library instead.

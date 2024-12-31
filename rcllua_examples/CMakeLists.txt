@@ -7,10 +7,14 @@ find_package(rcllua REQUIRED)
 find_package(rcllua_cmake REQUIRED)
 
 # rcllua examples
-rcllua_cmake_executable(${PROJECT_NAME}/publisher.lua simple_publisher)
-rcllua_cmake_executable(${PROJECT_NAME}/subscription.lua simple_subscription)
-rcllua_cmake_executable(${PROJECT_NAME}/service.lua simple_service)
-rcllua_cmake_executable(${PROJECT_NAME}/client.lua simple_client)
+rcllua_cmake_executable(${PROJECT_NAME}/publisher.lua
+  simple_publisher)
+rcllua_cmake_executable(${PROJECT_NAME}/subscription.lua
+  simple_subscription)
+rcllua_cmake_executable(${PROJECT_NAME}/service.lua
+  simple_service)
+rcllua_cmake_executable(${PROJECT_NAME}/client.lua
+  simple_client)
 
 # rclbind examples
 rcllua_cmake_executable(raw/timer.lua raw_timer)

@@ -51,7 +51,7 @@ macro(rcllua_cmake_install_clib proj_name src_name)
 endmacro()
 
 # Lua binary file
-set(LUA_EXEC /usr/local/bin/lua)
+set(RCLLUA_EXEC /usr/local/bin/lua)
 
 # Make executable file to call with 'ros2 run'
 # src_name - source file name in package directory
@@ -61,7 +61,7 @@ macro(rcllua_cmake_executable src_name exec_name)
   file(MAKE_DIRECTORY "${_out_dir}")
   # file content
   file(WRITE "${_out_dir}/${exec_name}"
-    "#!${LUA_EXEC}\n"
+    "#!${RCLLUA_EXEC}\n"
     "local script = loadfile('${CMAKE_SOURCE_DIR}/${src_name}')\n"
     "script()"
   )

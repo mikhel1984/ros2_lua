@@ -2,9 +2,7 @@
 
 The packages contains CMake components that can be used to simplify work with Lua packages in ROS2.
 
-## Elements
-
-Add Lua library.
+**Add Lua library**
 ```
 rcllua_cmake_install_lib(dir_name)
 ```
@@ -13,7 +11,7 @@ Copy files from *dir_name* to *install/package/lib/lua/dir_name*, make bash hook
 require('dir_name.script')
 ```
 
-Add C library.
+**Add C library**
 ```
 rcllua_cmake_install_clib(dir_name lib_name)
 ```
@@ -22,7 +20,7 @@ Install shared library *lib_name* to *install/package/lib/lua/dir_name*, make ba
 require('dir_name.lib_name')
 ```
 
-Make executable.
+**Make executable**
 ```
 rcllua_cmake_executable(path_to_file exec_name)
 ```
@@ -32,4 +30,11 @@ ros2 run package exec_name
 ```
 The operation is obligatory since scripts can be executed without 'ros2 run'. On the other hand,
 it makes the source file callable without updating the LUA_PATH.
+
+It is assumed that the Lua interpreter location is */usr/local/bin/lua*. It it is different, 
+update RCLLUA_EXEC variable first, e.g.
+```
+set(RCLLUA_EXEC /usr/local/bin/lua54)
+rcllua_cmake_executable(...)
+```
 

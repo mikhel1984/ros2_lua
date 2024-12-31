@@ -25,7 +25,7 @@ To work with the ROS interfaces (std_msgs etc.) bild them locally in your worksp
 . install/setup.bash
 cd src
 git clone -b humble https://github.com/ros2/common_interfaces.git
-git clone -b humble https://github.com/ros2/rcl_interfaces.git 
+git clone -b humble https://github.com/ros2/rcl_interfaces.git
 git clone -b humble https://github.com/ros2/test_interface_files.git
 colcon build --symlink-install
 ```
@@ -40,8 +40,8 @@ cd src
 ros2 pkg create --build-type ament_cmake project_name
 ```
 
-Lua scripts could be placed in any location inside the project directory, but it is recommended 
-to make _project_name_ subdirectory and keep files inside it. Later this subdirectory can be added 
+Lua scripts could be placed in any location inside the project directory, but it is recommended
+to make _project_name_ subdirectory and keep files inside it. Later this subdirectory can be added
 to LUA_PATH for sharing code with other scripts and writing unit tests.
 
 ### Write code
@@ -66,8 +66,8 @@ The library can be addedd to LUA_PATH with command
 rcllua_cmake_install_lib(project_name)
 ```
 
-If there is C/C++ Lua component inside the package, build it as usual shared library and add to 
-CPATH_LUA with command 
+If there is C/C++ Lua component inside the package, build it as a usual shared library and add to
+CPATH_LUA with command
 ```
 rcllua_cmake_install_clib(project_name lib_name)
 ```

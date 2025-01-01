@@ -12,6 +12,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+assert(_VERSION >= 'Lua 5.3', 'Lua 5.3+ expected')
+
 local rclbind = require("rcllua.rclbind")
 require("rcllua.Executor")
 

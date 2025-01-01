@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 local rclbind = require("rcllua.rclbind")
-local client_lib = require("rcllua.Client")
+local client_lib = require("rcllua.client")
 
 --- List of predefined Node keywords.
 local protected = {name=true, namespace=true, init=true, bind=true}
@@ -42,10 +42,10 @@ end
 --- Create subscription object.
 --  @param msg Message type.
 --  @param topic Topic name.
+--  @param qos QoS profile.
 --  @param callback Callback function fn(message) --> nil.
---  @param qos QoS profile (optional).
 --  @return subscription (userdata).
-function Node.create_subscription (self, msg, topic, callback, qos)
+function Node.create_subscription (self, msg, topic, qos, callback)
   if type(qos) == 'number' then
     local q = rclbind.new_qos()
     q.depth = qos

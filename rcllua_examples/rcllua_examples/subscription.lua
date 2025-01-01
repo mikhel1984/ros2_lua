@@ -17,8 +17,8 @@ local MinimalSubscriber = Node {
     self.subscription = self:create_subscription(
       std_msgs.String,
       'topic',
-      self:bind 'listener_callback',  -- define callback with Node.bind
-      10)
+      10,
+      self:bind 'listener_callback')  -- define callback with Node.bind
   end,
 
   -- callback method

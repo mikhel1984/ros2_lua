@@ -86,6 +86,7 @@ end
 function Node.create_timer (self, period, callback)
   local timer = rclbind.new_timer(self._clock__object, period, callback)
   table.insert(self._timer__list, timer)
+  timer:call()
   return timer
 end
 

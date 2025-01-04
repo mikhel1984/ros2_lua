@@ -30,11 +30,11 @@ end
 -- Make timer
 local clock = rclbind.new_clock()
 local timer = rclbind.new_timer(clock, 0.5, timer_cb)
+timer:call()
 
 -- Main loop
 while rclbind.context_ok() do
   -- prepare
-  timer:call()
   wait_set:clear()
   wait_set:add_service(srv)
   wait_set:add_timer(timer)
@@ -57,8 +57,9 @@ while rclbind.context_ok() do
   -- collect timers
   lst = wait_set:ready_timers()
   for i = 1, #lst do
-    local fn = lst[i][1]
+    local fn, ref = table.unpack(lst[i])
     fn()
+    rclbind.timer_call(ref)
   end
 end
 

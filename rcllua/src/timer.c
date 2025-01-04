@@ -25,6 +25,9 @@
 /* Check timer status. */
 static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer);
 
+/* Start timer */
+static int rcl_lua_timer_do_call (lua_State* L, rcl_timer_t* timer);
+
 /** Indices of output elements. */
 enum TmOut {
   /** callback function */
@@ -165,12 +168,24 @@ static int rcl_lua_timer_call (lua_State* L)
   /* arg1 - timer object */
   rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
 
-  rcl_ret_t ret = rcl_timer_call(timer);
-  if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to call timer");
-  }
+  return rcl_lua_timer_do_call(L, timer);
+}
 
-  return 0;
+/**
+ * Call timer, use lightuserdata as timer pointer.
+ *
+ * Arguments:
+ * - timer pointer
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_timer_call_ptr (lua_State* L)
+{
+  /* arg1 - light userdata */
+  rcl_timer_t* timer = (rcl_timer_t*) lua_topointer(L, 1);
+
+  return rcl_lua_timer_do_call(L, timer);
 }
 
 /**
@@ -383,8 +398,13 @@ void rcl_lua_add_timer_methods (lua_State* L)
   lua_pushcfunction(L, rcl_lua_timer_init);  // push function
   lua_setfield(L, -2, "new_timer");          // pop, lib['new_timer'] = function
 
+  /* check status (ptr) */
   lua_pushcfunction(L, rcl_lua_timer_is_ready_ptr);  // push function
   lua_setfield(L, -2, "is_timer_ready");     // pop, lib['is_timer_ready'] = fn
+
+  /* start timer (ptr) */
+  lua_pushcfunction(L, rcl_lua_timer_call_ptr);  // push function
+  lua_setfield(L, -2, "timer_call");         // pop, lib['timer_call'] = fn
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_TIMER, timer_methods);
@@ -408,6 +428,23 @@ static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer)
 
   lua_pushboolean(L, ready);
   return 1;
+}
+
+/**
+ * Call timer object.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] timer Timer object.
+ * \return number of outputs.
+ */
+static int rcl_lua_timer_do_call (lua_State* L, rcl_timer_t* timer)
+{
+  rcl_ret_t ret = rcl_timer_call(timer);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to call timer");
+  }
+
+  return 0;
 }
 
 /* Return table {callback, ref}. */

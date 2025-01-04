@@ -93,30 +93,37 @@ function Parameter.from_parameter_value (self, value)
   end
 end
 
-function Parameter.get_parameter_value (self, value)
+function Parameter.get_parameter_value (self)
   local t = self._type
   local msg = param_msg.ParameterValue()
   msg.type = t
   if t == Parameter.BOOL then
-    msg.bool_value = value
+    msg.bool_value = self._value
   elseif t == Parameter.INTEGER then
-    msg.integer_value = value
+    msg.integer_value = self._value
   elseif t == Parameter.DOUBLE then
-    msg.double_value = value
+    msg.double_value = self._value
   elseif t == Parameter.STRING then
-    msg.string_value = string
+    msg.string_value = self._value
   elseif t == Parameter.BYTE_ARRAY then
-    msg.byte_array_value(value)
+    msg.byte_array_value(self._value)
   elseif t == Parameter.BOOL_ARRAY then
-    msg.bool_array_value(value)
+    msg.bool_array_value(self._value)
   elseif t == Parameter.INTEGER_ARRAY then
-    msg.integer_array_value(value)
+    msg.integer_array_value(self._value)
   elseif t == Parameter.DOUBLE_ARRAY then
-    msg.double_array_value(value)
+    msg.double_array_value(self._value)
   elseif t == Parameter.STRING_ARRAY then
-    msg.string_array_value(string)
+    msg.string_array_value(self._value)
   end
   return msg
+end
+
+function Parameter.to_parameter_msg (self)
+  return param_msg.Parameter {
+    name = self._name,
+    value = self:get_parameter_value()
+  }
 end
 
 function Parameter.name (self)
@@ -134,5 +141,5 @@ end
 
 -- Module interface
 return {
-  new_parameter = new_parameter,
+  parameter = Parameter,
 }

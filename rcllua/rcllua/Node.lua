@@ -15,15 +15,24 @@
 local rclbind = require("rcllua.rclbind")
 local client_lib = require("rcllua.client")
 
+-- parameter methods
+local node_params = nil
+
 --- List of predefined Node keywords.
-local protected = {name=true, namespace=true, init=true, bind=true}
+local protected = {
+  name=true, namespace=true, init=true, bind=true,
+  allow_undeclared_parameters=true}
 
 --- Logger class.
 local Logger = {name='rcllua'}
 
 -- Node class.
 Node = {}           -- global
-Node.__index = Node
+
+--- Allow 'multiple inheritance'
+Node.__index = function (t, k)
+  return Node[k] or node_params and node_params[k] or nil
+end
 
 --- Create publisher object.
 --  @param msg Message type.
@@ -97,6 +106,24 @@ function Node.get_logger (self)
   return setmetatable(o, Logger)
 end
 
+--- Get node name.
+--  @return name string.
+function Node.get_name (self)
+  return self._node__object:get_name()
+end
+
+--- Get node namespace.
+--  @return node namespace string.
+function Node.get_namespace (self)
+  return self._node__object:get_namespace()
+end
+
+--- Get clock object.
+--  @return node clock.
+function Node.get_clock (self)
+  return self._clock__object
+end
+
 --- Update reference to Executor object.
 --  @param executor New reference or nil.
 function Node.set_executor (self, executor)
@@ -122,6 +149,41 @@ function Node.bind (self, name)
   end
 end
 
+--- Load table with parameters methods.
+function Node.load_parameter_methods (self)
+  if not node_params then
+    node_params = require('rcllua.node_parameters')
+    -- update object
+    self._parameter__overrides = {}
+  end
+end
+
+function Node.declare_parameter (self, name, value, descriptor, ignore_override)
+  Node.load_parameter_methods(self)
+  return node_params._declare_parameters(self, name, value, descriptor, ignore_override)
+end
+
+
+function Node.declare_parameters (self, namespace, params, ignore_override)
+  Node.load_parameter_methods(self)
+  return node_params._declare_parameters(self, namespace, params, ignore_override)
+end
+
+--- Set parameters.
+--  @param params The list of parameters to set.
+--  @return list of results for every set action.
+function Node.set_parameters (self, params)
+  Node.load_parameter_methods(self)
+  return node_params._set_parameters(self, params)
+end
+
+--- Check if the parameter is defined.
+--  @param name Parameter name.
+--  @return true if the parameter is found.
+function Node.has_parameter (self, name)
+  return self._parameter__list[name] ~= nil
+end
+
 --- Node object constructor.
 --  @param ... Additional parameters for passing to 'init' funciton.
 --  @return initialized object.
@@ -144,6 +206,10 @@ function Node.__call (self, ...)
   o._service__list = {}
   o._guard__list = {}
   o._event__list = {}
+  -- for parameters
+  o._parameter__list = {}
+  o._descriptor__list = {}
+  o._allow_undeclared_parameters = param.allow_undeclared_parameters
   -- copy other elements
   for k, v in pairs(param) do
     if not protected[k] then o[k] = v end

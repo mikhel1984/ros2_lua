@@ -53,5 +53,5 @@ while rclbind.context_ok() do
   end
 end
 
--- Free context
+-- Shutdown ROS context
 rclbind.context_shutdown()

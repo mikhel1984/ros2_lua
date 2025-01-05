@@ -47,7 +47,8 @@ function Parameter.new_parameter (name, tp, value)
   local vt = value and Parameter.from_parameter_value(value)
   if tp and vt then
     assert(tp == vt or
-      tp == Parameter.INTEGER_ARRAY and vt == Parameter.BYTE_ARRAY or
+      vt == Parameter.BYTE_ARRAY and (tp == Parameter.INTEGER_ARRAY or tp == Parameter.DOUBLE_ARRAY
+        or tp == Parameter.STRING_ARRAY or tp == Parameter.BOOL_ARRAY) or
       tp == Parameter.DOUBLE and vt == Parameter.INTEGER,
       "different type name and value")
   end
@@ -81,6 +82,9 @@ function Parameter.from_parameter_value (value)
     for k in pairs(tmp) do  -- find table length
       t, n = k, n+1
     end
+    if n == 0 then 
+      return Parameter.BYTE_ARRAY
+    end
     if n ~= 1 then error('Not a list of one allowed type') end
     -- get type
     if t == Parameter.BOOL then
@@ -90,13 +94,7 @@ function Parameter.from_parameter_value (value)
     elseif t == Parameter.DOUBLE then
       return Parameter.DOUBLE_ARRAY
     elseif t == Parameter.INTEGER then
-      -- check byte array
-      for _, v in ipairs(value) do
-        if v < 0 or v >= 256 then
-          return Parameter.INTEGER_ARRAY
-        end
-      end
-      return Parameter.BYTE_ARRAY
+      return Parameter.INTEGER_ARRAY
     end
   end
   error('Not allowed value type')
@@ -183,6 +181,23 @@ end
 function Parameter.value (self)
   return self._value
 end
+
+--- Print parameter object.
+function Parameter.__tostring (self)
+  local s, v = nil, self._value
+  if self._type == Parameter.BOOL_ARRAY then
+    v = {}
+    for i = 1, #self._value do 
+      v[i] = self._value[i] and 'true' or 'false' 
+    end
+  end
+  if type(v) == 'table' then
+    s = string.format('{%s}', table.concat(v, ','))
+  else
+    s = tostring(v)
+  end
+  return string.format("%s = %s", self._name, s)
+end 
 
 --    ParameterService
 

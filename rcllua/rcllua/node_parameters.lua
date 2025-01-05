@@ -363,7 +363,7 @@ end
 
 --- Declare a list of parameters.
 --  @param namespace Namespace for parameters.
---  @param params List of tuples {name, type|value, ParameterDescriptor}
+--  @param params List of tuples {name, value, type, ParameterDescriptor}
 --  @param ignore_override (=false) True if overrides should not be taken into account.
 --  @return parameter list.
 function node_param._declare_parameters (self, namespace, params, ignore_override)
@@ -411,7 +411,7 @@ function node_param._declare_parameters (self, namespace, params, ignore_overrid
              name  -- TODO validate?
     end
 
-    param_list[#param_list+1] = param_lib.parameter.new_parameter(name, nil, value)
+    param_list[#param_list+1] = param_lib.parameter.new_parameter(name, tp, value)
     descriptors[name] = descriptor
   end
 

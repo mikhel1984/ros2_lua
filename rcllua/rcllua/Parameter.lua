@@ -14,9 +14,10 @@
 
 -- https://docs.ros.org/en/rolling/Concepts/Basic/About-Parameters.html
 
+local rclbind = require("rcllua.rclbind")
+
 -- parameter definitions and interfaces
 local param_msg = require 'rcl_interfaces.msg'
-
 local ParameterType = param_msg.ParameterType
 
 --- Parameter class.
@@ -43,7 +44,7 @@ Parameter.__index = Parameter
 --  @param value (=nil) Parameter value.
 function Parameter.new_parameter (name, tp, value)
   -- compare type and value
-  local vt = value and Parameter.from_parameter_value(nil, value)
+  local vt = value and Parameter.from_parameter_value(value)
   if tp and vt then
     assert(tp == vt or
       tp == Parameter.INTEGER_ARRAY and vt == Parameter.BYTE_ARRAY or
@@ -53,7 +54,7 @@ function Parameter.new_parameter (name, tp, value)
   -- object
   local o = {
     _name = name,
-    _type = tp or vt or Parameter.from_parameter_value(nil, value),
+    _type = tp or vt or Parameter.from_parameter_value(value),
     _value = value,
   }
   return setmetatable(o, Parameter)
@@ -62,7 +63,7 @@ end
 --- Define type based on the given value.
 --  @param value Parameter value.
 --  @return type index.
-function Parameter.from_parameter_value (self, value)
+function Parameter.from_parameter_value (value)
   if value == nil then
     return Parameter.NOT_SET
   elseif type(value) == 'boolean' then
@@ -75,7 +76,7 @@ function Parameter.from_parameter_value (self, value)
     -- check types
     local tmp, n, t = {}, 0, nil
     for i = 1, #value do  -- collect
-      tmp[ Parameter.from_parameter_value(self, value[i]) ] = true
+      tmp[ Parameter.from_parameter_value(value[i]) ] = true
     end
     for k in pairs(tmp) do  -- find table length
       t, n = k, n+1
@@ -99,6 +100,33 @@ function Parameter.from_parameter_value (self, value)
     end
   end
   error('Not allowed value type')
+end
+
+--- Make Parameter object from Parameter message.
+--  @param msg Parameter message.
+--  @return Parameter object.
+function Parameter.from_parameter_message (msg)
+  local t, value = msg.value.type, nil
+  if t == Parameter.BOOL then
+    value = msg.value.bool_value
+  elseif t == Parameter.INTEGER then
+    value = msg.value.integer_value
+  elseif t == Parameter.DOUBLE then
+    value = msg.value.double_value
+  elseif t == Parameter.STRING then
+    value = msg.value.string_value
+  elseif t == Parameter.BYTE_ARRAY then
+    value = msg.value.byte_array_value
+  elseif t == Parameter.BOOL_ARRAY then
+    value = msg.value.bool_array_value
+  elseif t == Parameter.INTEGER_ARRAY then
+    value = msg.value.integer_array_value
+  elseif t == Parameter.DOUBLE_ARRAY then
+    value = msg.value.double_array_value
+  elseif t == Parameter.STRING_ARRAY then
+    value = msg.value.string_array_value
+  end
+  return Parameter.new_parameter(msg.name, t, value)
 end
 
 --- Fill ParameterValue message.
@@ -156,7 +184,183 @@ function Parameter.value (self)
   return self._value
 end
 
+--    ParameterService
+
+local parameter_service = {}
+
+function parameter_service.new_service (node)
+  local prefix = node:get_name() .. Parameter.PARAMETER_SEPARATOR_STRING
+  local qos_param = rclbind.new_qos('qos_profile_parameters')
+
+  node:create_service(
+    param_msg.DescribeParameters, 
+    prefix .. 'describe_parameters',
+    function (req, resp) parameter_service._describe_parameter_callback(node, req, resp) end, 
+    qos_param)
+
+  node:create_service(
+    param_msg.GetParameters,
+    prefix .. 'get_parameters',
+    function (req, resp) parameter_service._get_parameters_callback(node, req, resp) end,
+    qos_param)
+
+  node:create_service(
+    param_msg.GetParameterTypes,
+    prefix .. 'get_parameter_types',
+    function (req, resp) parameter_service._get_parameter_types_callback(node, req, resp) end,
+    qos_param)
+
+  node:create_service(
+    param_msg.ListParameters,
+    prefix .. 'list_parameters',
+    function (req, resp) parameter_service._list_parameters_callback(node, req, resp) end,
+    qos_param)
+
+  node:create_service(
+    param_msg.SetParameters,
+    prefix .. 'set_parameters',
+    function (req, resp) parameter_service._set_parameters_callback(node, req, resp) end,
+    qos_param)
+
+  node:create_service(
+    param_msg.SetParametersAtomically,
+    prefix .. 'set_parameters_atomically',
+    function (req, resp) parameter_service._set_parameters_atomically_callback(node, req, resp) end,
+    qos_param)
+end
+
+function parameter_service._describe_parameter_callback (node, req, resp)
+  local acc = {}
+  for i = 1, #req.names do
+    local ok, descriptor = pcall(node.describe_parameter, node, req.names[i])
+    if not ok then return end
+    acc[i] = descriptor
+  end
+  resp.descriptors(acc)
+end
+
+function parameter_service._get_parameters_callback (node, req, resp)
+  local acc = {}
+  for i = 1, #req.names do
+    local ok, param = pcall(node.get_parameter, node, req.names[i])
+    if not ok then return end
+    acc[i] = param
+  end
+  resp.values(acc)
+end
+
+function parameter_service._get_parameter_types_callback (node, req, resp)
+  local acc = {}
+  for i = 1, #names do
+    local ok, tp = pcall(node.get_parameter_type, node, name)
+    if not ok then return end
+    acc[i] = tp
+  end
+  resp.types(acc)
+end
+
+local function _sym_filtered (lst, depth)
+  local res = {}
+  for i = 1, #lst do
+    local name = lst[i]
+    -- calc repetition
+    local a, b, n = 1, 0, 0
+    while a do
+      a, b = string.find(name, Parameter.PARAMETER_SEPARATOR_STRING, b+1, true)
+      if a then 
+        n = n + 1
+      end
+    end
+    if n < depth then res[#res+1] = name end
+  end
+  return res
+end
+
+local function _max_prefix (name)
+  local a, b = 1, 0
+  local pa, pb = a, b
+  while a do
+    pa, pb = a, b
+    a, b = string.find(name, Parameter.PARAMETER_SEPARATOR_STRING, b+1, true)
+  end
+  return string.sub(name, 1, pa-1)
+end
+
+function parameter_service._list_parameters_callback (node, req, resp)
+  local acc, names_with_prefixes = {}, {}
+
+  for name, p in pairs(node._parameter__list) do
+    if string.find(name, Parameter.PARAMETER_SEPARATOR_STRING, 1, true) then
+      table.insert(names_with_prefixes, name)
+    elseif #req.prefixes > 0 then
+      -- select specific names
+      for i = 1, #req.prefixes do
+        local templ = '^' .. req.prefixes[i]
+        if string.find(name, templ) then
+          acc[#acc+1] = name
+        end
+      end
+    else
+      acc[#acc+1] = name
+    end
+  end
+
+  if req.depth == 1 then
+    resp.result.names(acc)
+    return
+  end
+
+  -- process prefixes
+  local pref_dict = {}
+  if req.depth == param_msg.ListParameters.DEPTH_RECURSIVE then
+    names_with_prefixes = _sym_filtered(names_with_prefixes, req.depth)
+  end
+  for _, name in ipairs(names_with_prefixes) do
+    if #req.prefixes > 0 then
+      for i = 1, #req.prefixes do
+        local templ = '^' .. req.prefixes[i] .. Parameter.PARAMETER_SEPARATOR_STRING
+        if string.find(name, templ) then
+          acc[#acc+1] = name
+          pref_dict[req.prefixes[i]] = true
+          pref_dict[_max_prefix(name)] = true
+        end
+      end
+    else
+      acc[#acc+1] = name
+      pref_dict[_max_prefix(name)] = true
+    end
+  end
+  local lst = {}
+  for k in pairs(pref_dict) do lst[#lst+1] = k end
+
+  resp.result.names(acc)
+  resp.result.prefixes(lst)
+end
+
+function parameter_service._set_parameters_callback (node, req, resp)
+  local acc = {}
+  for i = 1, #req.parameters do
+    local param = Parameter.from_parameter_message(req.parameters[i])
+    local ok, res = pcall(node.set_parameters_atomically, node, {param})
+    acc[i] = ok and res or param_msg.SetParametersResult {
+      successful = false,
+      reason = res,
+    }
+  end
+  resp.results(acc)
+end
+
+function parameter_service._set_parameters_atomically_callback (node, req, resp)
+  local lst = {}
+  for i = 1, #req.parameters do
+    lst[i] = Parameter.from_parameter_message(req.parameters[i])
+  end
+  local ok, res = pcall(node.set_parameters_atomically, node, lst)
+  resp.result = res
+end
+
 -- interface
 return {
   parameter = Parameter,
+  new_parameter_service = parameter_service.new_parameter_service
 }

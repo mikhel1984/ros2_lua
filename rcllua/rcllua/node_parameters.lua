@@ -251,8 +251,9 @@ end
 
 --- Set all the given parameters.
 --  @param params List of parameters to set.
---  @param descriptors (optional) New descriptors to apply.
---  @param allow_not_set_type (optional, false) False if NOT_SET should be undeclared.
+--  @param descriptors (=nil) New descriptors to apply.
+--  @param allow_not_set_type (=false) False if NOT_SET should be undeclared.
+--  @return SetParametersResult object.
 function node_param._set_parameters_atomically (self, params, descriptors, allow_not_set_type)
   -- apply new or old descriptors
   local res = node_param._apply_descriptors(
@@ -326,6 +327,14 @@ function node_param._check_undeclared_parameters (self, params)
   end
 end
 
+--- Check parameters and set.
+--  @param params List of parameters to set.
+--  @return SetParametersResult object.
+function node_param.set_parameters_atomically (self, params)
+  node_param._check_undeclared_parameters(self, params)
+  return node_param._set_parameters_atomically(self, params)
+end
+
 --- Set parameters and get result for the set action.
 --  @param params List of parameters.
 --  @param descriptors (=nil) List of descriptors to set.
@@ -387,7 +396,7 @@ function node_param._declare_parameters (self, namespace, params, ignore_overrid
           assert(value.type ~= Type.NOT_SET, 'cannot declare as statically typed')
           descriptor.type = value.type
         else
-          descriptor.type = Type.from_parameter_value(self, value)
+          descriptor.type = Type.from_parameter_value(value)
         end
       end
     end

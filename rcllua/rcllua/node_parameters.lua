@@ -51,7 +51,7 @@ end
 function node_param.get_parameter (self, name)
   local p = self._parameter__list[name]
   if p then
-    if p:type() ~= Type.NOT_SET or self._descriptor__list[name].dynamic_type then
+    if p:type() ~= Type.NOT_SET or self._descriptor__list[name].dynamic_typing then
       return p
     end
     error(name..' not declared')
@@ -263,7 +263,7 @@ function node_param._set_parameters_atomically (self, params, descriptors, allow
       end
     end
 
-    if Type.NOT_SET == node_param.get_parameter_or(nm):type() then
+    if Type.NOT_SET == node_param.get_parameter_or(self, nm):type() then
       new[#new+1] = p:to_parameter_msg()
     else
       change[#change+1] = p:to_parameter_msg()
@@ -280,7 +280,8 @@ function node_param._set_parameters_atomically (self, params, descriptors, allow
     sec = now.sec,
     nsec = now.nsec
   }
-  self._parameter_event__publisher.publish(param_event)
+  --self._parameter_event__publisher.publish(param_event)
+  return param_msg.SetParametersResult {successful=true}
 end
 
 function node_param._check_undeclared_parameters (self, params)
@@ -321,19 +322,19 @@ function node_param._declare_parameters (self, namespace, params, ignore_overrid
   descriptors = {}
   for i, tuple in ipairs(params) do
     local value
-    assert(1 <= #tuple and #tuple <= 3, "invalid parameter tuple length")
-    local name, second_arg, descriptor = table.unpack(tuple)
+    assert(0 < #tuple and #tuple <= 3, "invalid parameter tuple length")
+    local name, second_arg, descriptor = tuple[1], tuple[2], tuple[3]
     descriptor = descriptor or param_msg.ParameterDescriptor()
     assert(type(name) == 'string', 'first element is not a string')
-    assert(descriptor.__name == param_msg.ParameterDescriptor._metatable, 
+    assert(getmetatable(descriptor).__name == param_msg.ParameterDescriptor._metatable, 
            'not a ParameterDescriptor')
-    if #tuple == 1 then
+    if second_arg == nil then
       descriptor.dynamic_typing = true
     end
     if type(second_arg) == 'number' then
       value = second_arg
       if not descriptor.dynamic_typing then
-        descriptor.type = Type.from_parameter_value(second_arg).value
+        descriptor.type = Type.from_parameter_value(self, second_arg)
       end
     elseif second_arg ~= nil then  -- assume message type
       assert(second_arg.value ~= Type.NOT_SET, 'cannot declare as statically typed')

@@ -37,7 +37,7 @@ Parameter = {
 Parameter.__index = Parameter
 
 function Parameter.new_parameter (name, tp, value)
-  local vt = value and Parameter.from_parameter_value(value)
+  local vt = value and Parameter.from_parameter_value(nil, value)
   if tp and vt then
     assert(tp == vt or
       tp == Parameter.INTEGER_ARRAY and vt == Parameter.BYTE_ARRAY or
@@ -47,7 +47,7 @@ function Parameter.new_parameter (name, tp, value)
 
   local o = {
     _name = name,
-    _type = tp or vt or Parameter.from_parameter_value(value),
+    _type = tp or vt or Parameter.from_parameter_value(nil, value),
     _value = value,
   }
   return setmetatable(o, Parameter)

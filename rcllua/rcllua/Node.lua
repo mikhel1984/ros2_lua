@@ -160,7 +160,7 @@ end
 
 function Node.declare_parameter (self, name, value, descriptor, ignore_override)
   Node.load_parameter_methods(self)
-  return node_params._declare_parameters(self, name, value, descriptor, ignore_override)
+  return node_params._declare_parameter(self, name, value, descriptor, ignore_override)
 end
 
 

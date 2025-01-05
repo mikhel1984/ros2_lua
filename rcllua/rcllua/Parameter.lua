@@ -199,6 +199,13 @@ function Parameter.__tostring (self)
   return string.format("%s = %s", self._name, s)
 end 
 
+-- Make object as Parameter(...).
+setmetatable(Parameter, {
+__call = function (self, name, type_, value)
+  return Parameter.new_parameter(name, type_, value)  
+end
+})
+
 --    ParameterService
 
 local parameter_service = {}

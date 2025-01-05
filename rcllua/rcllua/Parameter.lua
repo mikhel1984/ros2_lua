@@ -23,6 +23,7 @@ local ParameterType = param_msg.ParameterType
 Parameter = {
   PARAMETER_SEPARATOR_STRING = '.',
 
+  -- parameter types
   NOT_SET = ParameterType.PARAMETER_NOT_SET,
   BOOL = ParameterType.PARAMETER_BOOL,
   INTEGER = ParameterType.PARAMETER_INTEGER,
@@ -36,7 +37,12 @@ Parameter = {
 }
 Parameter.__index = Parameter
 
+--- Parameter constructor.
+--  @param name Name string.
+--  @param tp (=nil) Type index.
+--  @param value (=nil) Parameter value.
 function Parameter.new_parameter (name, tp, value)
+  -- compare type and value
   local vt = value and Parameter.from_parameter_value(nil, value)
   if tp and vt then
     assert(tp == vt or
@@ -44,7 +50,7 @@ function Parameter.new_parameter (name, tp, value)
       tp == Parameter.DOUBLE and vt == Parameter.INTEGER,
       "different type name and value")
   end
-
+  -- object
   local o = {
     _name = name,
     _type = tp or vt or Parameter.from_parameter_value(nil, value),
@@ -53,7 +59,9 @@ function Parameter.new_parameter (name, tp, value)
   return setmetatable(o, Parameter)
 end
 
-
+--- Define type based on the given value.
+--  @param value Parameter value.
+--  @return type index.
 function Parameter.from_parameter_value (self, value)
   if value == nil then
     return Parameter.NOT_SET
@@ -66,13 +74,14 @@ function Parameter.from_parameter_value (self, value)
   elseif type(value) == 'table' then
     -- check types
     local tmp, n, t = {}, 0, nil
-    for i = 1, #value do
+    for i = 1, #value do  -- collect
       tmp[ Parameter.from_parameter_value(self, value[i]) ] = true
     end
-    for k in pairs(tmp) do
+    for k in pairs(tmp) do  -- find table length
       t, n = k, n+1
     end
     if n ~= 1 then error('Not a list of one allowed type') end
+    -- get type
     if t == Parameter.BOOL then
       return Parameter.BOOL_ARRAY
     elseif t == Parameter.STRING then
@@ -88,11 +97,12 @@ function Parameter.from_parameter_value (self, value)
       end
       return Parameter.BYTE_ARRAY
     end
-  else
-    error('Not allowed value type')
   end
+  error('Not allowed value type')
 end
 
+--- Fill ParameterValue message.
+--  @return ParameterValue object.
 function Parameter.get_parameter_value (self)
   local t = self._type
   local msg = param_msg.ParameterValue()
@@ -119,6 +129,8 @@ function Parameter.get_parameter_value (self)
   return msg
 end
 
+--- Fill Parameter message.
+--  @return Parameter object.
 function Parameter.to_parameter_msg (self)
   return param_msg.Parameter {
     name = self._name,
@@ -126,20 +138,25 @@ function Parameter.to_parameter_msg (self)
   }
 end
 
+--- Get parameter name.
+--  @return name.
 function Parameter.name (self)
   return self._name
 end
 
+--- Get parameter type.
+--  @return type index.
 function Parameter.type (self)
   return self._type
 end
 
+--- Get parameter value.
+--  @return value.
 function Parameter.value (self)
   return self._value
 end
 
-
--- Module interface
+-- interface
 return {
   parameter = Parameter,
 }

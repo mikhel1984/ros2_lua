@@ -167,12 +167,22 @@ function Node.load_parameter_methods (self)
   end
 end
 
+--- Declare and initialize parameter.
+--  @param name Fully-qualified name of the parameter.
+--  @param value (=nil) Value of the parameter to declare.
+--  @param descriptor (=nil) Descriptor of the parameter to declare.
+--  @param ignore_override (=false) True if overrides should ot be taken into account.
+--  @return parameter with assigned value.
 function Node.declare_parameter (self, name, value, descriptor, ignore_override)
   Node.load_parameter_methods(self)
   return node_params._declare_parameter(self, name, value, descriptor, ignore_override)
 end
 
-
+--- Declare a list of parameters.
+--  @param namespace Namespace for parameters.
+--  @param params List of tuples {name, value, type, ParameterDescriptor}
+--  @param ignore_override (=false) True if overrides should not be taken into account.
+--  @return parameter list.
 function Node.declare_parameters (self, namespace, params, ignore_override)
   Node.load_parameter_methods(self)
   return node_params._declare_parameters(self, namespace, params, ignore_override)

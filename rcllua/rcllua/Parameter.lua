@@ -188,6 +188,7 @@ function Parameter.value (self)
 end
 
 --- Print parameter object.
+--  @return string representation.
 function Parameter.__tostring (self)
   local s, v = nil, self._value
   if self._type == Parameter.BOOL_ARRAY then
@@ -206,7 +207,12 @@ end
 
 -- Make object as Parameter(...).
 setmetatable(Parameter, {
-__call = function (self, name, type_, value)
+--- Call parameter constructor.
+--  @param name Parameter name.
+--  @param value (=nil) Initial value.
+--  @param type_ (=nil) Parameter type.
+--  @return Parameter object.
+__call = function (self, name, value, type_)
   return Parameter.new_parameter(name, type_, value)  
 end
 })
@@ -216,6 +222,8 @@ end
 --- ParameterService class.
 local parameter_service = {}
 
+--- Initialize parameter services.
+--  @param node Node object.
 function parameter_service.new_service (node)
   local prefix = node:get_name() .. TOPIC_SEPARATOR_STRING
   local qos_param = rclbind.new_qos('qos_profile_parameters')
@@ -257,6 +265,10 @@ function parameter_service.new_service (node)
     qos_param)
 end
 
+--- Method for parameter description.
+--  @param node Node object.
+--  @param req Request with list of names.
+--  @param resp Response with list of descriptors.
 function parameter_service._describe_parameter_callback (node, req, resp)
   local acc = {}
   for i = 1, #req.names do
@@ -267,26 +279,38 @@ function parameter_service._describe_parameter_callback (node, req, resp)
   resp.descriptors(acc)
 end
 
+--- Method for getting parameter list.
+--  @param node Node object.
+--  @param req Request with list of names.
+--  @param resp Response with list of parameters.
 function parameter_service._get_parameters_callback (node, req, resp)
   local acc = {}
   for i = 1, #req.names do
     local ok, param = pcall(node.get_parameter, node, req.names[i])
     if not ok then return end
-    acc[i] = param
+    acc[i] = param:get_parameter_value()
   end
   resp.values(acc)
 end
 
+--- Method for getting parameter types.
+--  @param node Node object.
+--  @param req Request with list of names.
+--  @param resp Response with list of types.
 function parameter_service._get_parameter_types_callback (node, req, resp)
   local acc = {}
-  for i = 1, #names do
-    local ok, tp = pcall(node.get_parameter_type, node, name)
+  for i = 1, #req.names do
+    local ok, tp = pcall(node.get_parameter_type, node, req.names[i])
     if not ok then return end
     acc[i] = tp
   end
   resp.types(acc)
 end
 
+--- Find names with specific number of parameter separators.
+--  @param lst List with parameter names.
+--  @param depth Maximal number of separators.
+--  @return list with names where number of separators less then depth.
 local function _sym_filtered (lst, depth)
   local res = {}
   for i = 1, #lst do
@@ -295,15 +319,16 @@ local function _sym_filtered (lst, depth)
     local a, b, n = 1, 0, 0
     while a do
       a, b = string.find(name, Parameter.PARAMETER_SEPARATOR_STRING, b+1, true)
-      if a then 
-        n = n + 1
-      end
+      if a then n = n + 1 end
     end
     if n < depth then res[#res+1] = name end
   end
   return res
 end
 
+--- Find string prefix before the last separator.
+--  @param name Parameter name.
+--  @return prefix string.
 local function _max_prefix (name)
   local a, b = 1, 0
   local pa, pb = a, b
@@ -314,9 +339,14 @@ local function _max_prefix (name)
   return string.sub(name, 1, pa-1)
 end
 
+--- Get parameters with specific prefix.
+--  @param node Node object.
+--  @param req Request with the prefix list.
+--  @param resp Response with names and prefixes.
 function parameter_service._list_parameters_callback (node, req, resp)
   local acc, names_with_prefixes = {}, {}
 
+  -- collect parameters
   for name, p in pairs(node._parameter__list) do
     if string.find(name, Parameter.PARAMETER_SEPARATOR_STRING, 1, true) then
       table.insert(names_with_prefixes, name)
@@ -332,7 +362,6 @@ function parameter_service._list_parameters_callback (node, req, resp)
       acc[#acc+1] = name
     end
   end
-
   if req.depth == 1 then
     resp.result.names(acc)
     return
@@ -365,6 +394,10 @@ function parameter_service._list_parameters_callback (node, req, resp)
   resp.result.prefixes(lst)
 end
 
+--- Update parameters.
+--  @param node Node object.
+--  @param req Request with new parameters.
+--  @param resp Response with result of operation.
 function parameter_service._set_parameters_callback (node, req, resp)
   local acc = {}
   for i = 1, #req.parameters do
@@ -378,6 +411,10 @@ function parameter_service._set_parameters_callback (node, req, resp)
   resp.results(acc)
 end
 
+--- Update parameters atomically.
+--  @param node Node object.
+--  @param req Request with new parameters.
+--  @param resp Response with result of operation.
 function parameter_service._set_parameters_atomically_callback (node, req, resp)
   local lst = {}
   for i = 1, #req.parameters do
@@ -387,7 +424,7 @@ function parameter_service._set_parameters_atomically_callback (node, req, resp)
   resp.result = res
 end
 
--- interface
+-- Interface.
 return {
   parameter = Parameter,
   new_parameter_service = parameter_service.new_service

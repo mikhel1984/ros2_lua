@@ -448,6 +448,8 @@ function node_param._declare_parameter (self, name, value, descriptor, ignore_ov
   return node_param._declare_parameters(self, '', {args}, ignore_override)[1]
 end
 
+--- Create event publisher, save to node.
+--  @param node Node object.
 function node_param._add_event_publisher (node)
   node._parameter_event__publisher = node:create_publisher(
     param_msg.ParameterEvent, 

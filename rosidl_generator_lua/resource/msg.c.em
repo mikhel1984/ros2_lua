@@ -297,17 +297,7 @@ static int @(msg_prefix)__llen (lua_State* L)
  */
 static int @(msg_prefix)__lstr (lua_State* L)
 {
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
-  if (ptr->value > IDL_LUA_SEQ) {
-    lua_pushfstring(L, "@(msg_typename) array of size %d", ptr->value);
-  } else if (ptr->value == IDL_LUA_SEQ) {
-    @(msg_typename)__Sequence* seq = ptr->obj;
-    lua_pushfstring(L, "@(msg_typename) sequence of size %d", seq->size);
-  } else {
-    lua_pushfstring(L, "@(msg_typename)");
-  }
-
-  return 1;
+  return rosidl_luacommon_push_msg_string(L, "@(msg_typename)");
 }
 
 /**

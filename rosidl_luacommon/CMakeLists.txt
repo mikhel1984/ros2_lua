@@ -17,7 +17,7 @@ find_package(rcllua_cmake REQUIRED)
 
 include_directories(include)
 
-# messages
+# MESSAGES (shared library)
 
 set(LIB_NAME sequence)
 
@@ -44,7 +44,7 @@ ament_export_include_directories("include")
 # library access
 rcllua_cmake_install_clib(${PROJECT_NAME} ${LIB_NAME})
 
-# functions 
+# FUNCTIONS (static library) 
 
 set(UTILITY_LIB rosidl_utility)
 

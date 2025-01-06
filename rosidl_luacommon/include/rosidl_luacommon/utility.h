@@ -21,5 +21,7 @@
 
 int rosidl_luacommon_push_length (lua_State* L);
 
+int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix);
+
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
 

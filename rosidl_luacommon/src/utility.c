@@ -35,3 +35,19 @@ int rosidl_luacommon_push_length (lua_State* L)
 
   return 1;
 }
+
+int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix)
+{
+  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
+  if (ptr->value > IDL_LUA_SEQ) {
+    lua_pushfstring(L, "%s array of size %d", prefix, ptr->value);
+  } else if (ptr->value == IDL_LUA_SEQ) {
+    /* list, assume message structure is the same for all types */
+    rosidl_runtime_c__boolean__Sequence* seq = ptr->obj;
+    lua_pushfstring(L, "%s sequence of size %d", prefix, seq->size);
+  } else {
+    lua_pushfstring(L, "%s", prefix);
+  }
+
+  return 1;
+}

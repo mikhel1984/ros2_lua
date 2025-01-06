@@ -12,8 +12,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-local param_lib = require 'rcllua.Parameter'
-local param_msg = require 'rcl_interfaces.msg'
+local rclbind = require("rcllua.rclbind")
+
+local param_lib = require('rcllua.Parameter')
+local param_msg = require('rcl_interfaces.msg')
 
 local PARAM_REL_TOL = 1E-6
 local Type = param_lib.parameter
@@ -307,7 +309,7 @@ function node_param._set_parameters_atomically (self, params, descriptors, allow
     sec = now.sec,
     nsec = now.nsec
   }
-  --self._parameter_event__publisher.publish(param_event)
+  self._parameter_event__publisher:publish(param_event)
 
   return param_msg.SetParametersResult {successful=true}
 end
@@ -444,6 +446,13 @@ function node_param._declare_parameter (self, name, value, descriptor, ignore_ov
     args = {name, value, nil, descriptor or param_msg.ParameterDescriptor()}
   end
   return node_param._declare_parameters(self, '', {args}, ignore_override)[1]
+end
+
+function node_param._add_event_publisher (node)
+  node._parameter_event__publisher = node:create_publisher(
+    param_msg.ParameterEvent, 
+    "/parameter_events",
+    rclbind.new_qos('qos_profile_parameter_events'))
 end
 
 return node_param

@@ -21,10 +21,14 @@ local node_params = nil
 --- List of predefined Node keywords.
 local protected = {
   name=true, namespace=true, init=true, bind=true,
-  allow_undeclared_parameters=true}
+  allow_undeclared_parameters=true,
+  parameter_overrides=true,
+  start_parameter_services=true}
 
 --- Logger class.
 local Logger = {name='rcllua'}
+
+--    NODE
 
 -- Node class.
 Node = {}           -- global
@@ -152,9 +156,14 @@ end
 --- Load table with parameters methods.
 function Node.load_parameter_methods (self)
   if not node_params then
+    -- add parameter methods
     node_params = require('rcllua.node_parameters')
-    -- update object
-    self._parameter__overrides = {}
+    node_params._add_event_publisher(self)
+    if self._start_parameter_services ~= false then
+      -- add parameter service
+      local lib_param = require('rcllua.Parameter')
+      lib_param.new_parameter_service(self)
+    end
   end
 end
 
@@ -210,6 +219,8 @@ function Node.__call (self, ...)
   o._parameter__list = {}
   o._descriptor__list = {}
   o._allow_undeclared_parameters = param.allow_undeclared_parameters
+  o._start_parameter_services = param.start_parameter_services
+  o._parameter__overrides = param.parameter_overrides or {}
   -- copy other elements
   for k, v in pairs(param) do
     if not protected[k] then o[k] = v end
@@ -222,6 +233,10 @@ function Node.__call (self, ...)
   -- call initialization
   if param.init then
     param.init(o, ...)
+  end
+  -- add parameter service
+  if param.start_parameter_services then
+    Node.load_parameter_methods(o)
   end
   return o
 end
@@ -236,6 +251,8 @@ __call = function (self, param)
   local o = {_init__param=param}
   return setmetatable(o, self)
 end })
+
+--    LOGGER
 
 --- List of log levels
 local LogLevel = rclbind.LogLevel

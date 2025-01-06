@@ -17,8 +17,13 @@
 local rclbind = require("rcllua.rclbind")
 
 -- parameter definitions and interfaces
-local param_msg = require 'rcl_interfaces.msg'
+local param_msg = require('rcl_interfaces.msg')
+local param_srv = require('rcl_interfaces.srv')
 local ParameterType = param_msg.ParameterType
+
+local TOPIC_SEPARATOR_STRING = '/'
+
+--    PARAMETER
 
 --- Parameter class.
 Parameter = {
@@ -206,46 +211,47 @@ __call = function (self, name, type_, value)
 end
 })
 
---    ParameterService
+--    PARAMETER SERVICE
 
+--- ParameterService class.
 local parameter_service = {}
 
 function parameter_service.new_service (node)
-  local prefix = node:get_name() .. Parameter.PARAMETER_SEPARATOR_STRING
+  local prefix = node:get_name() .. TOPIC_SEPARATOR_STRING
   local qos_param = rclbind.new_qos('qos_profile_parameters')
 
   node:create_service(
-    param_msg.DescribeParameters, 
+    param_srv.DescribeParameters, 
     prefix .. 'describe_parameters',
     function (req, resp) parameter_service._describe_parameter_callback(node, req, resp) end, 
     qos_param)
 
   node:create_service(
-    param_msg.GetParameters,
+    param_srv.GetParameters,
     prefix .. 'get_parameters',
     function (req, resp) parameter_service._get_parameters_callback(node, req, resp) end,
     qos_param)
 
   node:create_service(
-    param_msg.GetParameterTypes,
+    param_srv.GetParameterTypes,
     prefix .. 'get_parameter_types',
     function (req, resp) parameter_service._get_parameter_types_callback(node, req, resp) end,
     qos_param)
 
   node:create_service(
-    param_msg.ListParameters,
+    param_srv.ListParameters,
     prefix .. 'list_parameters',
     function (req, resp) parameter_service._list_parameters_callback(node, req, resp) end,
     qos_param)
 
   node:create_service(
-    param_msg.SetParameters,
+    param_srv.SetParameters,
     prefix .. 'set_parameters',
     function (req, resp) parameter_service._set_parameters_callback(node, req, resp) end,
     qos_param)
 
   node:create_service(
-    param_msg.SetParametersAtomically,
+    param_srv.SetParametersAtomically,
     prefix .. 'set_parameters_atomically',
     function (req, resp) parameter_service._set_parameters_atomically_callback(node, req, resp) end,
     qos_param)
@@ -334,7 +340,7 @@ function parameter_service._list_parameters_callback (node, req, resp)
 
   -- process prefixes
   local pref_dict = {}
-  if req.depth == param_msg.ListParameters.DEPTH_RECURSIVE then
+  if req.depth == param_srv.ListParameters.Request.DEPTH_RECURSIVE then
     names_with_prefixes = _sym_filtered(names_with_prefixes, req.depth)
   end
   for _, name in ipairs(names_with_prefixes) do
@@ -384,5 +390,5 @@ end
 -- interface
 return {
   parameter = Parameter,
-  new_parameter_service = parameter_service.new_parameter_service
+  new_parameter_service = parameter_service.new_service
 }

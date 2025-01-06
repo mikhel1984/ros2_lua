@@ -15,8 +15,9 @@
 local rclbind = require("rcllua.rclbind")
 local client_lib = require("rcllua.client")
 
--- parameter methods
-local node_params = nil
+-- "Lazy" access
+local node_params = nil  -- parameter methods
+local builtin_msg = nil  -- builtin interfaces
 
 --- List of predefined Node keywords.
 local protected = {
@@ -151,6 +152,19 @@ function Node.bind (self, name)
   return function (...)
     return self[name](self, ...)
   end
+end
+
+--- Get time as builtin_interfaces.Time object.
+--  Try to load interface first. Return get_clock():now() by default.
+--  @param t (=nil) rcllua time object.
+--  @return time representation in form of builtin_interfaces.Time object.
+function Node.get_time_msg (self, t)
+  builtin_msg = builtin_msg or require('builtin_interfaces.msg')
+  t = t or self._clock__object:now()
+  local msg = builtin_msg.Time()
+  msg.sec = t.sec
+  msg.nanosec = t.nanosec
+  return msg
 end
 
 --- Load table with parameters methods.

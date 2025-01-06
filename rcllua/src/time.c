@@ -100,7 +100,7 @@ static int rcl_lua_time_init_dur (lua_State* L)
 }
 
 /**
- * Get time field value (sec, nsec, clock).
+ * Get time field value (sec, nanosec, clock).
  *
  * Arguments:
  * - time object
@@ -122,7 +122,7 @@ static int rcl_lua_time_index (lua_State* L)
   /* get */
   if (0 == strcmp(field, "sec")) {
     lua_pushinteger(L, time->nanoseconds / NSEC_IN_SEC);
-  } else if (0 == strcmp(field, "nsec")) {
+  } else if (0 == strcmp(field, "nanosec")) {
     lua_pushinteger(L, time->nanoseconds % NSEC_IN_SEC);
   } else if (0 == strcmp(field, "clock_type")) {
     lua_pushinteger(L, time->clock_type);
@@ -134,7 +134,7 @@ static int rcl_lua_time_index (lua_State* L)
 }
 
 /**
- * Get duration field value (sec, nsec).
+ * Get duration field value (sec, nanosec).
  *
  * Arguments:
  * - duration object
@@ -156,7 +156,7 @@ static int rcl_lua_time_index_dur (lua_State* L)
   /* get */
   if (0 == strcmp(field, "sec")) {
     lua_pushinteger(L, dur->nanoseconds / NSEC_IN_SEC);
-  } else if (0 == strcmp(field, "nsec")) {
+  } else if (0 == strcmp(field, "nanosec")) {
     lua_pushinteger(L, dur->nanoseconds % NSEC_IN_SEC);
   } else if (LUA_TNIL == luaL_getmetafield(L, 1, field)) {
     luaL_error(L, "unknown field '%s'", field);

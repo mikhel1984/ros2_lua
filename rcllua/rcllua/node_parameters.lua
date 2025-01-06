@@ -304,11 +304,7 @@ function node_param._set_parameters_atomically (self, params, descriptors, allow
   param_event.deleted_parameters(del)
   param_event.changed_parameters(change)
 
-  local now = self:get_clock():now()
-  param_event.stamp {
-    sec = now.sec,
-    nsec = now.nsec
-  }
+  param_event.stamp = self:get_time_msg()
   self._parameter_event__publisher:publish(param_event)
 
   return param_msg.SetParametersResult {successful=true}

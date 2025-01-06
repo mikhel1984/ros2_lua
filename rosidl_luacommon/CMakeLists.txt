@@ -17,6 +17,8 @@ find_package(rcllua_cmake REQUIRED)
 
 include_directories(include)
 
+# messages
+
 set(LIB_NAME sequence)
 
 add_library(${LIB_NAME} SHARED
@@ -26,10 +28,7 @@ add_library(${LIB_NAME} SHARED
   src/boolean_sequence.c
   src/string_sequence.c
 )
-
-ament_target_dependencies(${LIB_NAME}
-  rosidl_runtime_c
-)
+ament_target_dependencies(${LIB_NAME} rosidl_runtime_c)
 
 set_target_properties(${LIB_NAME} PROPERTIES
   PREFIX ""
@@ -44,6 +43,25 @@ ament_export_include_directories("include")
 
 # library access
 rcllua_cmake_install_clib(${PROJECT_NAME} ${LIB_NAME})
+
+# functions 
+
+set(UTILITY_LIB rosidl_utility)
+
+add_library(${UTILITY_LIB}
+  src/utility.c
+)
+ament_target_dependencies(${UTILITY_LIB} rosidl_runtime_c)
+
+install(
+  TARGETS ${UTILITY_LIB}
+  EXPORT ${UTILITY_LIB}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
+ament_export_targets(${UTILITY_LIB} HAS_LIBRARY_TARGET)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -24,7 +24,8 @@ header_files = [
     include_base + '__struct.h',
     include_base + '__functions.h',
     include_base + '__type_support.h',
-    'rosidl_luacommon/definition.h']
+    'rosidl_luacommon/definition.h',
+    'rosidl_luacommon/utility.h']
 }@
 
 @[for header_file in header_files]@
@@ -285,20 +286,7 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
  */
 static int @(msg_prefix)__llen (lua_State* L)
 {
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
-  if (ptr->value > IDL_LUA_SEQ) {
-    /* array */
-    lua_pushinteger(L, ptr->value);
-  } else if (ptr->value == IDL_LUA_SEQ) {
-    /* list */
-    @(msg_typename)__Sequence* seq = ptr->obj;
-    lua_pushinteger(L, seq->size);
-  } else {
-    /* scalar value */
-    lua_pushnil(L);
-  }
-
-  return 1;
+  return rosidl_luacommon_push_length(L);
 }
 
 /**

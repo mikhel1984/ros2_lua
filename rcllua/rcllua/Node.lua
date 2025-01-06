@@ -207,15 +207,14 @@ end
 --  @param ... Additional parameters for passing to 'init' funciton.
 --  @return initialized object.
 function Node.__call (self, ...)
-  local param = self._init__param
   -- make instance
   local o = {}
   -- create node object
-  o._node__object = rclbind.new_node(param.name, param.namespace)
+  o._node__object = rclbind.new_node(self.name, self.namespace)
   -- add default clock
   o._clock__object = rclbind.new_clock()
   -- save name for quick access
-  o._node__name = param.name
+  o._node__name = self.name
   -- save executor later
   o._executor__weak = setmetatable({ref=nil}, {__mode='v'})
   -- references
@@ -228,39 +227,37 @@ function Node.__call (self, ...)
   -- for parameters
   o._parameter__list = {}
   o._descriptor__list = {}
-  o._allow_undeclared_parameters = param.allow_undeclared_parameters
-  o._start_parameter_services = param.start_parameter_services
-  o._parameter__overrides = param.parameter_overrides or {}
+  o._allow_undeclared_parameters = self.allow_undeclared_parameters
+  o._start_parameter_services = self.start_parameter_services
+  o._parameter__overrides = self.parameter_overrides or {}
   -- copy other elements
-  for k, v in pairs(param) do
-    if not protected[k] then o[k] = v end
-  end
   for k, v in pairs(self) do
-    if v ~= param then o[k] = v end
+    if not protected[k] then o[k] = v end
   end
   -- add Node methods
   setmetatable(o, Node)
   -- call initialization
-  if param.init then
-    param.init(o, ...)
+  if self.init then
+    self.init(o, ...)
   end
   -- add parameter service
-  if param.start_parameter_services then
+  if self.start_parameter_services then
     Node.load_parameter_methods(o)
   end
   return o
 end
 
 -- Allow to call Node table.
-setmetatable(Node, {
+setmetatable(Node, 
+{
 --- Node class constructor.
 --  @param param Table with initialization parameters.
 __call = function (self, param)
   assert(param and param.name, "'name' must be defined")
-  -- save init parameters
-  local o = {_init__param=param}
-  return setmetatable(o, self)
-end })
+  -- save as init parameters
+  return setmetatable(param, self)
+end 
+})
 
 --    LOGGER
 

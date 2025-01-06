@@ -206,7 +206,8 @@ function Parameter.__tostring (self)
 end 
 
 -- Make object as Parameter(...).
-setmetatable(Parameter, {
+setmetatable(Parameter, 
+{
 --- Call parameter constructor.
 --  @param name Parameter name.
 --  @param value (=nil) Initial value.

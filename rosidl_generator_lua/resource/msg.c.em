@@ -177,14 +177,9 @@ static int @(msg_prefix)__lgc (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__leq (lua_State* L) {
-  /* check type equality */
-  lua_getmetatable(L, 1);  // push table
-  lua_getmetatable(L, 2);  // push table
-  if (lua_isnil(L, -2) || !lua_rawequal(L, -1, -2)) {
-    lua_pushboolean(L, false);
+  if (!rosidl_luacommon_push_wrong_args(L)) {
     return 1;
   }
-  lua_pop(L, 2);           // pop, remove metatables
 
   /* compare data */
   idl_lua_msg_t* p1 = lua_touserdata(L, 1);
@@ -226,13 +221,9 @@ static int @(msg_prefix)__leq (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__lcopy (lua_State* L) {
-  /* check type equality */
-  lua_getmetatable(L, 1);  // push table
-  lua_getmetatable(L, 2);  // push table
-  if (lua_isnil(L, -2) || !lua_rawequal(L, -1, -2)) {
-    lua_pushboolean(L, false);
+  if (!rosidl_luacommon_push_wrong_args(L)) {
+    return 1;
   }
-  lua_pop(L, 2);  // remove metatables
 
   /* data */
   idl_lua_msg_t* dst = lua_touserdata(L, 1);
@@ -638,9 +629,7 @@ static int @(msg_prefix)__lcall (lua_State* L) {
     return @(msg_prefix)__lresize(L);
 
   } else if (LUA_TTABLE == tp) {    
-    lua_len(L, 2);        // push table length
-    int len = luaL_checkinteger(L, -1);
-    lua_pop(L, 1);        // remove table length
+    int len = luaL_len(L, 2);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
     
     if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {

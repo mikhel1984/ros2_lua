@@ -148,3 +148,16 @@ bool rosidl_luacommon_fill_from_table (lua_State* L)
   
   return true;
 }
+
+bool rosidl_luacommon_push_wrong_args (lua_State* L)
+{
+  lua_getmetatable(L, 1);  // push table
+  lua_getmetatable(L, 2);  // push table
+  bool eql = !lua_isnil(L, -2) && lua_rawequal(L, -1, -2);
+  lua_pop(L, 2);           // remove metables
+  if (!eql) {
+    lua_pushboolean(L, false);
+  }
+  
+  return eql;       
+}

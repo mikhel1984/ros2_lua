@@ -27,5 +27,9 @@ int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix);
 
 int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn);
 
+void* rosidl_luacommon_array_check_ind (idl_lua_msg_t* msg, int ind);
+
+void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top);
+
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
 

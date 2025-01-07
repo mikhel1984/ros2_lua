@@ -570,19 +570,10 @@ static int @(msg_prefix)__lindex (lua_State* L) {
   idl_lua_msg_t* msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
-    /* object list, same metatable, get by index */
-    @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
-    if (msg->value > IDL_LUA_SEQ) {
-      if (0 < n && n <= msg->value) {
-        lst = msg->obj;
-      }
-    } else {
-      @(msg_typename)__Sequence *seq = msg->obj;
-      if (0 < n && ((size_t) n) <= seq->size) {
-        lst = seq->data;
-      }
-    }
+    /* object list, same metatable, get by index */
+    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);    
+    
     if (lst) {
       idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
       res->obj = &(lst[n-1]);                   // index from 1
@@ -593,18 +584,7 @@ static int @(msg_prefix)__lindex (lua_State* L) {
       lua_pushnil(L);
     }
   } else {
-    /* nested object, other metatable, get by name */
-    if (luaL_getmetafield(L, 1, "getters") != LUA_TTABLE) {  // push table
-      luaL_error(L, "wrong metatable");
-    }
-    lua_pushvalue(L, 2);                      // push key (duplicate)
-    lua_gettable(L, -2);                      // pop key, push function
-    lua_CFunction fn = lua_tocfunction(L, -1);
-    if (NULL == fn) {
-      luaL_error(L, "unknown field '%s'", lua_tostring(L, 2));
-    }
-    lua_settop(L, 2);                         // stack [object, key]
-    fn(L);                                    // push result
+    rosidl_luacommon_field_apply(L, "getters", 2);
   }
 
   return 1;
@@ -620,19 +600,10 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
   idl_lua_msg_t* msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
-    /* object list, same metatable, by index */
-    @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
-    if (msg->value > IDL_LUA_SEQ) {
-      if (0 < n && n <= msg->value) {
-        lst = msg->obj;
-      }
-    } else {
-      @(msg_typename)__Sequence *seq = msg->obj;
-      if (0 < n && ((size_t) n) <= seq->size) {
-        lst = seq->data;
-      }
-    }
+    /* object list, same metatable, by index */
+    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);    
+    
     /* right part */
     idl_lua_msg_t* src = luaL_checkudata(L, 3, "@(msg_metatable)");
     if (src->value >= IDL_LUA_SEQ) {
@@ -642,17 +613,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
       @(msg_typename)__copy(src->obj, &(lst[n-1]));
     }
   } else {
-    /* nested object, other metatable, get by name */
-    if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {  // push table
-      luaL_error(L, "wrong metatable");
-    }
-    lua_pushvalue(L, 2);                      // push key (duplicate)
-    lua_gettable(L, -2);                      // pop key, push function
-    lua_CFunction fn = lua_tocfunction(L, -1);
-    if (NULL == fn) {
-      luaL_error(L, "unknown field '%s", lua_tostring(L, 2));
-    }
-    fn(L);
+    rosidl_luacommon_field_apply(L, "setters", 3);    
   }
 
   return 0;

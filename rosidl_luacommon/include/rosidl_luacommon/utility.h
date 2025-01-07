@@ -19,9 +19,13 @@
 
 #include "rosidl_luacommon/definition.h"
 
+typedef bool (*msg_mem_realloc)(idl_lua_msg_t*, size_t, bool);
+
 int rosidl_luacommon_push_length (lua_State* L);
 
 int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix);
+
+int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn);
 
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
 

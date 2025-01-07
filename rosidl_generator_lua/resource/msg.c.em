@@ -300,6 +300,35 @@ static int @(msg_prefix)__lstr (lua_State* L)
   return rosidl_luacommon_push_msg_string(L, "@(msg_typename)");
 }
 
+bool @(msg_prefix)__do_resize (idl_lua_msg_t* ptr, size_t n, bool copy)
+{
+  @(msg_typename)__Sequence* seq = ptr->obj;
+  bool done = true;
+  
+  if (copy) {
+    @(msg_typename)__Sequence newseq;
+    if (@(msg_typename)__Sequence__init(&newseq, n) &&
+        @(msg_typename)__Sequence__copy(seq, &newseq))
+    {
+      /* swap */
+      @(msg_typename)__Sequence tmp = *seq;
+      *seq = newseq;
+      seq->size = n;   // size become reduced after copy 
+      /* remove old */
+      @(msg_typename)__Sequence__fini(&tmp);
+    } else {
+      done = false;
+    }  
+  } else {
+    if (seq->capacity) {
+      /* free old memory */
+      @(msg_typename)__Sequence__fini(seq);
+    }
+    done = @(msg_typename)__Sequence__init(seq, n);    
+  }
+  return done;
+}
+
 /**
  * Change sequence size.
  * in: new_size
@@ -309,44 +338,7 @@ static int @(msg_prefix)__lstr (lua_State* L)
  */
 static int @(msg_prefix)__lresize (lua_State* L)
 {
-  idl_lua_msg_t* ptr = luaL_checkudata(L, 1, "@(msg_metatable)");
-  if (ptr->value != IDL_LUA_SEQ) {
-    /* only list can be resized */
-    lua_pushboolean(L, false);
-    return 1;
-  }
-
-  /* new length */
-  lua_Integer len = luaL_checkinteger(L, 2);
-  luaL_argcheck(L, len >= 0, 2, "wrong length");
-  @(msg_typename)__Sequence* seq = ptr->obj;
-  bool done = true;
-
-  if (seq->capacity == 0) {
-    /* empty object, make new */
-    done = @(msg_typename)__Sequence__init(seq, len);
-  } else if (seq->capacity >= (size_t) len) {
-    /* memory is enough */
-    seq->size = (size_t) len;
-  } else {
-    /* allocate new memory and copy data */
-    @(msg_typename)__Sequence newseq;
-    if (@(msg_typename)__Sequence__init(&newseq, len) &&
-       @(msg_typename)__Sequence__copy(seq, &newseq))
-    {
-      /* swap */
-      @(msg_typename)__Sequence tmp = *seq;
-      *seq = newseq;
-      seq->size = len;
-      /* remove old */
-      @(msg_typename)__Sequence__fini(&tmp);
-    } else {
-      done = false;
-    }
-  }
-
-  lua_pushboolean(L, done);
-  return 1;
+  return rosidl_luacommon_push_realloc(L, @(msg_prefix)__do_resize);
 }
 
 @# setters

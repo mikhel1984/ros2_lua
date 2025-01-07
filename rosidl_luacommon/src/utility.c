@@ -51,3 +51,34 @@ int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix)
 
   return 1;
 }
+
+int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn)
+{
+  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
+  if (ptr->value != IDL_LUA_SEQ) {
+    /* only list can be resized */
+    lua_pushboolean(L, false);
+    return 1;
+  }
+
+  /* new length */
+  lua_Integer len = luaL_checkinteger(L, 2);
+  luaL_argcheck(L, len >= 0, 2, "wrong length");
+  /* list, assume message structure is the same for all types */
+  rosidl_runtime_c__boolean__Sequence* seq = ptr->obj;
+  bool done = true;
+  
+  if (seq->capacity >= (size_t) len) {
+    /* memory is enough */
+    seq->size = (size_t) len;
+  } else if (seq->capacity == 0 || seq->size == 0) {
+    /* empty object, make new */
+    done = fn(ptr, (size_t) len, false);
+  } else {
+    /* resize and copy data */
+    done = fn(ptr, (size_t) len, true);    
+  }
+
+  lua_pushboolean(L, done);
+  return 1;
+}

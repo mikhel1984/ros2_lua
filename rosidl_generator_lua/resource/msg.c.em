@@ -626,7 +626,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__lcall (lua_State* L) {
-  bool done = true;
+  bool done = false;
   int tp = lua_type(L, 2);
 
   if (LUA_TUSERDATA == tp) {
@@ -637,24 +637,25 @@ static int @(msg_prefix)__lcall (lua_State* L) {
     /* resize object */
     return @(msg_prefix)__lresize(L);
 
-  } else if (LUA_TTABLE == tp) {
-    /* element-wise copy */
-    lua_len(L, 2);
+  } else if (LUA_TTABLE == tp) {    
+    lua_len(L, 2);        // push table length
     int len = luaL_checkinteger(L, -1);
+    lua_pop(L, 1);        // remove table length
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
+    
     if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
-      lua_insert(L, 2);   // stack [userdata, len, input table]
+      /* element-wise copy */
       @(msg_typename)* lst = msg->obj;
       if (IDL_LUA_SEQ == msg->value) {
-        /* resize */
-        @(msg_prefix)__lresize(L);
-        if (lua_toboolean(L, -1)) {
-          lua_pop(L, 1);   // success, remove result
-        } else {
-          return 1;        // failed
-        }
         @(msg_typename)__Sequence *seq = msg->obj;
-        lst = seq->data;
+        if ((size_t) len > seq->capacity) {
+          if (!@(msg_prefix)__do_resize(msg, (size_t) len, false)) {
+            goto lcall_failed;
+          }
+        } else {
+          seq->size = (size_t) len;
+        }
+        lst = ((@(msg_typename)__Sequence*) msg->obj)->data;
       }
       /* copy members */
       idl_lua_msg_t* src = NULL;
@@ -662,24 +663,21 @@ static int @(msg_prefix)__lcall (lua_State* L) {
         lua_pushinteger(L, i+1);  // push index
         lua_gettable(L, -2);      // pop index, push value
         src = luaL_checkudata(L, -1, "@(msg_metatable)");
-        if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, &(lst[i]))) {
-          goto lcall_failed;      // exit
+        if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, lst++)) {
+          goto lcall_failed; 
         }
         lua_pop(L, 1);            // pop value
-      }
+      } 
+      done = true;
+           
     } else if (len == 0 && msg->value < IDL_LUA_SEQ) {
-      lua_pop(L, 1);  // remove length
-      done = rosidl_luacommon_fill_from_table(L);      
-    } else {
-      done = false;
-    }
+      /* dictionary */      
+      done = rosidl_luacommon_fill_from_table(L);                  
+    } 
+  } 
+lcall_failed:  // false by default
 
-  } else {
-lcall_failed:
-    done = false;
-  }
   lua_pushboolean(L, done);
-
   return 1;
 }
 

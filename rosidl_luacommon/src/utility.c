@@ -117,3 +117,34 @@ void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top)
   lua_settop(L, top);                       // stack [object, key, value]
   fn(L);                                    // execute, push result if need
 }
+
+bool rosidl_luacommon_fill_from_table (lua_State* L)
+{
+  /* stack [userdata, input table], update it */
+  if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {
+    return false;    
+  }
+  lua_pushnil(L);
+  lua_pushnil(L);
+  lua_rotate(L, 2, 2);      // stack [userdata, nil, nil, input table, setters]
+  
+  /* copy members */
+  lua_pushnil(L);            // push initial key
+  while (lua_next(L, 4) != 0) {
+    /* stack [userdata, nil, nil, input table, setters, key, value] */
+    lua_replace(L, 3);       // pop value, prepare for function call
+    lua_copy(L, -1, 2);      // stack [userdata, key, value, ... ]
+    lua_gettable(L, 5);      // pop key, push value from setters
+    lua_CFunction fn = lua_tocfunction(L, -1);
+    if (NULL == fn) {
+      return false;
+    }
+    int top = lua_gettop(L);   // save stack size
+    fn(L);
+    lua_settop(L, top);     // restore stack
+    lua_copy(L, 2, -1);     // set key for next iteration
+    /* stack [userdata, key, value, input table, setters, key] */
+  }
+  
+  return true;
+}

@@ -31,5 +31,7 @@ void* rosidl_luacommon_array_check_ind (idl_lua_msg_t* msg, int ind);
 
 void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top);
 
+bool rosidl_luacommon_fill_from_table (lua_State* L);
+
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
 

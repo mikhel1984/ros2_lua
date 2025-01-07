@@ -145,9 +145,8 @@ static int @(msg_prefix)__lnew (lua_State* L) {
 
   /* table based initialization */
   if (LUA_TTABLE == lua_type(L, 2)) {
-    // initialize
     lua_replace(L, 1);         // pop, move userdata to first place
-    @(msg_prefix)__lcall(L);   // call initialization
+    rosidl_luacommon_fill_from_table(L);
     lua_settop(L, 1);          // pop, remove call result
   }
 
@@ -670,30 +669,7 @@ static int @(msg_prefix)__lcall (lua_State* L) {
       }
     } else if (len == 0 && msg->value < IDL_LUA_SEQ) {
       lua_pop(L, 1);  // remove length
-      /* get setters */
-      if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {
-        goto lcall_failed;       // exit
-      }
-      lua_pushnil(L);
-      lua_pushnil(L);
-      lua_rotate(L, 2, 2);      // stack [userdata, nil, nil, input table, setters]
-      /* copy members */
-      lua_pushnil(L);            // push initial key
-      while (lua_next(L, 4) != 0) {
-        /* stack [userdata, nil, nil, input table, setters, key, value] */
-        lua_replace(L, 3);       // pop value, prepare for function call
-        lua_copy(L, -1, 2);      // stack [userdata, key, value, ... ]
-        lua_gettable(L, 5);      // pop key, push value from setters
-        lua_CFunction fn = lua_tocfunction(L, -1);
-        if (NULL == fn) {
-          goto lcall_failed;     // exit
-        }
-        int top = lua_gettop(L);   // save stack size
-        fn(L);
-        lua_settop(L, top);     // restore stack
-        lua_copy(L, 2, -1);     // set key for next iteration
-        /* stack [userdata, key, value, input table, setters, key] */
-      }
+      done = rosidl_luacommon_fill_from_table(L);      
     } else {
       done = false;
     }

@@ -256,10 +256,10 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
         b = seq->data;
       }
     }
-    if (b != NULL) {
+    if (b) {
       done = true;
       for (int i = 0; i < dst->value; i++) {
-        done = @(msg_typename)__copy(b+i, a+i) && done;
+        done = done && @(msg_typename)__copy(b++, a++);
       }
     }
   }
@@ -632,20 +632,22 @@ static int @(msg_prefix)__lcall (lua_State* L) {
     int len = luaL_len(L, 2);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
     
-    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
+    if (len > 0 && msg->value >= IDL_LUA_SEQ) {
       /* element-wise copy */
-      @(msg_typename)* lst = msg->obj;
-      if (IDL_LUA_SEQ == msg->value) {
-        @(msg_typename)__Sequence *seq = msg->obj;
-        if ((size_t) len > seq->capacity) {
-          if (!@(msg_prefix)__do_resize(msg, (size_t) len, false)) {
-            goto lcall_failed;
+      size_t arr_len = 0, arr_cap = 0;
+      @(msg_typename)* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      if (arr_len != (size_t) len) {
+        if (IDL_LUA_SEQ == msg->value) {
+          if ((size_t) len <= arr_cap) {
+            ((@(msg_typename)__Sequence*) msg->obj)->size = (size_t) len;
+          } else if (!@(msg_prefix)__do_resize(msg, (size_t) len, false)) {
+            goto failed;
           }
+          lst = ((@(msg_typename)__Sequence*) msg->obj)->data;
         } else {
-          seq->size = (size_t) len;
+          goto failed;
         }
-        lst = ((@(msg_typename)__Sequence*) msg->obj)->data;
-      }
+      }      
       /* copy members */
       idl_lua_msg_t* src = NULL;
       for (int i = 0; i < len; i++) {
@@ -653,7 +655,7 @@ static int @(msg_prefix)__lcall (lua_State* L) {
         lua_gettable(L, -2);      // pop index, push value
         src = luaL_checkudata(L, -1, "@(msg_metatable)");
         if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, lst++)) {
-          goto lcall_failed; 
+          goto failed; 
         }
         lua_pop(L, 1);            // pop value
       } 
@@ -664,7 +666,7 @@ static int @(msg_prefix)__lcall (lua_State* L) {
       done = rosidl_luacommon_fill_from_table(L);                  
     } 
   } 
-lcall_failed:  // false by default
+failed:  // false by default
 
   lua_pushboolean(L, done);
   return 1;

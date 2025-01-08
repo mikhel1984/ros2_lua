@@ -86,10 +86,9 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
   } else if (LUA_TTABLE == tp) { \
     idl_lua_msg_t* msg = lua_touserdata(L, 1); \
     int len = luaL_len(L, 2); \
-    size_t arr_len = 0, arr_cap = 0; \
-    bool is_list = false; \
-    TYPE_NAME* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap, &is_list); \
-    if (len && is_list) { \
+    if (len > 0 && msg->value >= IDL_LUA_SEQ) { \
+      size_t arr_len = 0, arr_cap = 0; \
+      TYPE_NAME* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
       if (arr_len != (size_t) len) { \
         if (IDL_LUA_SEQ == msg->value) { \
           if ((size_t) len <= arr_cap) { \

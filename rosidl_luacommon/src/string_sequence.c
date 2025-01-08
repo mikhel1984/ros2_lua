@@ -185,12 +185,11 @@ static int String_seq_call (lua_State* L)
   } else if (LUA_TTABLE == tp) {
     /* arg2 - table */
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
-    int len = luaL_len(L, 2);
-    
-    size_t arr_len = 0, arr_cap = 0;
-    bool is_list = false;
-    rosidl_runtime_c__String* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap, &is_list);    
-    if (len && is_list) {
+    int len = luaL_len(L, 2);    
+       
+    if (len > 0 && msg->value >= IDL_LUA_SEQ) {
+      size_t arr_len = 0, arr_cap = 0;
+      rosidl_runtime_c__String* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); 
       /* check array */
       if (arr_len != (size_t) len) {
         if (IDL_LUA_SEQ == msg->value) {

@@ -185,3 +185,36 @@ bool rosidl_luacommon_push_wrong_args (lua_State* L)
 
   return !eql;
 }
+
+/* Get list of keys or element type, push result to stack. */
+int rosidl_luacommon_push_msg_keys (lua_State* L, const char* table)
+{
+  idl_lua_msg_t* msg = lua_touserdata(L, 1);
+  if (msg->value == IDL_LUA_SEQ) {
+    /* sequence */
+    lua_pushliteral(L, "dynamic");   // push string
+
+  } else if (msg->value > IDL_LUA_SEQ) {
+    /* array */
+    lua_pushliteral(L, "static");    // push string
+
+  } else {
+    /* structure */
+    lua_newtable(L);       // push table
+    if (luaL_getmetafield(L, 1, table) != LUA_TTABLE) {
+      return 1;
+    }
+    lua_pushnil(L);        // push initial key
+    int i = 1;
+    while (lua_next(L, -2) != 0) {  // pop key, push key and value
+      /* stack [..., dst table, src table, key, value] */
+      lua_pushvalue(L, -2);         // push copy of the key
+      lua_rawseti(L, -5, i++);      // pop copy of the key, save to dst table
+      lua_pop(L, 1);                // pop value
+    }
+    lua_pop(L, 1);         // src table
+    /* stack [..., dst table] */
+  }
+
+  return 1;
+}

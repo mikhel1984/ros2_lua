@@ -121,7 +121,7 @@ static int STRUCT_NAME ## _seq_copy (lua_State* L) \
 
 /**
  * Update sequence size with message-specific functions.
- * 
+ *
  * \param STRUCT_NAME rosidl structure name.
  * \return function for message resize.
  */
@@ -152,6 +152,18 @@ bool STRUCT_NAME ## _do_resize (idl_lua_msg_t* ptr, size_t n, bool copy) \
 }
 
 /**
+ * Get array type.
+ *
+ * \param STRUCT_NAME rosidl structure name.
+ * \param function to get type.
+ */
+#define OBJ_SEQ_BNOT(STRUCT_NAME) \
+static int STRUCT_NAME ## _seq_bnot (lua_State* L) \
+{ \
+  return rosidl_luacommon_push_msg_keys(L, ""); \
+}
+
+/**
  * Resize sequence.
  *
  * \param STRUCT_NAME rosidl structure name.
@@ -178,6 +190,7 @@ static const struct luaL_Reg STRUCT_NAME ## _seq_methods[] = {\
   {"__len", LEN_METHOD}, \
   {"__tostring", STRUCT_NAME ## _seq_str}, \
   {"__call", STRUCT_NAME ## _seq_call}, \
+  {"__bnot", STRUCT_NAME ## _seq_bnot}, \
   {"copy", STRUCT_NAME ## _seq_copy}, \
   {"resize", STRUCT_NAME ## _seq_resize}, \
   {NULL, NULL} \

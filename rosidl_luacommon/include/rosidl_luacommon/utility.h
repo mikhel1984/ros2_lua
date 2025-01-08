@@ -93,5 +93,14 @@ bool rosidl_luacommon_push_wrong_args (lua_State* L);
  */
 void* rosidl_luacommon_list_info (const idl_lua_msg_t* msg, size_t* size, size_t* capacity);
 
+/**
+ * Get list of keys or element type, push result to stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] table Table name with fields.
+ * \return number of outputs.
+ */
+int rosidl_luacommon_push_msg_keys (lua_State* L, const char* table);
+
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
 

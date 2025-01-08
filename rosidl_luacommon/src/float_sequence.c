@@ -121,7 +121,7 @@ failed: \
 }
 
 /** Float sequence metatable name. */
-const char* MT_SEQ_FLOAT = "ROS2.rosidl_sequence.float";
+const char* MT_SEQ_FLOAT = "primitives_sequence__msg__float__mt";
 
 FLOAT_SEQ_SET (float, float, FLT_MAX)
 FLOAT_SEQ_GET (float, float)
@@ -129,6 +129,7 @@ OBJ_SEQ_EQ (float, MT_SEQ_FLOAT)
 OBJ_SEQ_LEN (float)
 OBJ_SEQ_STR (float)
 OBJ_SEQ_COPY (float, float, MT_SEQ_FLOAT)
+OBJ_SEQ_BNOT (float)
 OBJ_SEQ_DO_RESIZE(float)
 OBJ_SEQ_RESIZE (float)
 FLOAT_SEQ_CALL (float, float, FLT_MAX)
@@ -137,13 +138,14 @@ OBJ_METHODS(float, float_seq_len)
 OBJ_ADD_TABLE (float, MT_SEQ_FLOAT)
 
 /** Double sequence metatable name. */
-const char* MT_SEQ_DOUBLE = "ROS2.rosidl_sequence.double";
+const char* MT_SEQ_DOUBLE = "primitives_sequence__msg__double__mt";
 
 FLOAT_SEQ_SET (double, double, DBL_MAX)
 FLOAT_SEQ_GET (double, double)
 OBJ_SEQ_EQ (double, MT_SEQ_DOUBLE)
 OBJ_SEQ_STR (double)
 OBJ_SEQ_COPY (double, double, MT_SEQ_DOUBLE)
+OBJ_SEQ_BNOT (double)
 OBJ_SEQ_DO_RESIZE(double)
 OBJ_SEQ_RESIZE (double)
 FLOAT_SEQ_CALL (double, double, DBL_MAX)
@@ -152,13 +154,14 @@ OBJ_METHODS(double, float_seq_len)
 OBJ_ADD_TABLE (double, MT_SEQ_DOUBLE)
 
 /** Long double metatable name. */
-const char* MT_SEQ_LDOUBLE = "ROS2.rosidl_sequence.ldouble";
+const char* MT_SEQ_LDOUBLE = "primitives_sequence__msg__long_double__mt";
 
 FLOAT_SEQ_SET (long_double, long double, LDBL_MAX)
 FLOAT_SEQ_GET (long_double, long double)
 OBJ_SEQ_EQ (long_double, MT_SEQ_LDOUBLE)
 OBJ_SEQ_STR (long_double)
 OBJ_SEQ_COPY (long_double, long double, MT_SEQ_LDOUBLE)
+OBJ_SEQ_BNOT (long_double)
 OBJ_SEQ_DO_RESIZE(long_double)
 OBJ_SEQ_RESIZE (long_double)
 FLOAT_SEQ_CALL (long_double, long double, LDBL_MAX)

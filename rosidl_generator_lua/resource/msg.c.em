@@ -291,6 +291,17 @@ static int @(msg_prefix)__lstr (lua_State* L)
 }
 
 /**
+ * Get object fields or array type.
+ * out: "static"/"dynamic" for array or {"field1", "field2", ..} for message.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int @(msg_prefix)__lbnot (lua_State* L)
+{
+  return rosidl_luacommon_push_msg_keys(L, "getters");
+}
+
+/**
  * Reallocate memory. Copy old data if need.
  * It is assumed that new size is greater then the previous one.
  * \param[inout] ptr Pointer to Lua message structure.
@@ -755,6 +766,7 @@ static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"__eq", @(msg_prefix)__leq},
   {"__len", @(msg_prefix)__llen},
   {"__tostring", @(msg_prefix)__lstr},
+  {"__bnot", @(msg_prefix)__lbnot},
   {"__index", @(msg_prefix)__lindex},
   {"__newindex", @(msg_prefix)__lnewindex},
   {"__call", @(msg_prefix)__lcall},

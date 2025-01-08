@@ -20,7 +20,7 @@
 #include "rosidl_luacommon/utility.h"
 
 /* Boolean sequence metatable name. */
-const char* MT_SEQ_BOOLEAN = "ROS2.rosidl_sequence.boolean";
+const char* MT_SEQ_BOOLEAN = "primitives_sequence__msg__boolean__mt";
 
 /**
  * Set boolean value by index.
@@ -167,6 +167,7 @@ OBJ_SEQ_LEN (boolean)
 
 OBJ_SEQ_EQ (boolean, MT_SEQ_BOOLEAN)
 OBJ_SEQ_STR (boolean)
+OBJ_SEQ_BNOT (boolean)
 
 OBJ_METHODS(boolean, boolean_seq_len)
 OBJ_ADD_TABLE (boolean, MT_SEQ_BOOLEAN)

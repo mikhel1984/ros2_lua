@@ -21,7 +21,7 @@
 #include "rosidl_luacommon/utility.h"
 
 /** String sequence metatable name. */
-const char* MT_SEQ_STRING = "ROS2.rosidl_sequence.String";
+const char* MT_SEQ_STRING = "primitives_sequence__msg__String__mt";
 
 /**
  * Set string by index.
@@ -228,6 +228,7 @@ failed:
 
 OBJ_SEQ_EQ (String, MT_SEQ_STRING)
 OBJ_SEQ_LEN (String)
+OBJ_SEQ_BNOT (String)
 OBJ_SEQ_STR (String)
 
 OBJ_METHODS (String, String_seq_len)

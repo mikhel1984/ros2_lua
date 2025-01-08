@@ -177,7 +177,7 @@ static int @(msg_prefix)__lgc (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__leq (lua_State* L) {
-  if (!rosidl_luacommon_push_wrong_args(L)) {
+  if (rosidl_luacommon_push_wrong_args(L)) {
     return 1;
   }
 
@@ -221,7 +221,7 @@ static int @(msg_prefix)__leq (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__lcopy (lua_State* L) {
-  if (!rosidl_luacommon_push_wrong_args(L)) {
+  if (rosidl_luacommon_push_wrong_args(L)) {
     return 1;
   }
 
@@ -290,11 +290,19 @@ static int @(msg_prefix)__lstr (lua_State* L)
   return rosidl_luacommon_push_msg_string(L, "@(msg_typename)");
 }
 
+/**
+ * Reallocate memory. Copy old data if need.
+ * It is assumed that new size is greater then the previous one.
+ * \param[inout] ptr Pointer to Lua message structure.
+ * \param[in] n New size.
+ * \param[in] copy Flag to make copy of the stored data.
+ * \return true in case of success.
+ */
 bool @(msg_prefix)__do_resize (idl_lua_msg_t* ptr, size_t n, bool copy)
 {
   @(msg_typename)__Sequence* seq = ptr->obj;
   bool done = true;
-  
+
   if (copy) {
     @(msg_typename)__Sequence newseq;
     if (@(msg_typename)__Sequence__init(&newseq, n) &&
@@ -303,18 +311,18 @@ bool @(msg_prefix)__do_resize (idl_lua_msg_t* ptr, size_t n, bool copy)
       /* swap */
       @(msg_typename)__Sequence tmp = *seq;
       *seq = newseq;
-      seq->size = n;   // size become reduced after copy 
+      seq->size = n;   // size become reduced after copy
       /* remove old */
       @(msg_typename)__Sequence__fini(&tmp);
     } else {
       done = false;
-    }  
+    }
   } else {
     if (seq->capacity) {
       /* free old memory */
       @(msg_typename)__Sequence__fini(seq);
     }
-    done = @(msg_typename)__Sequence__init(seq, n);    
+    done = @(msg_typename)__Sequence__init(seq, n);
   }
   return done;
 }
@@ -562,8 +570,8 @@ static int @(msg_prefix)__lindex (lua_State* L) {
   if (msg->value >= IDL_LUA_SEQ) {
     lua_Integer n = luaL_checkinteger(L, 2);
     /* object list, same metatable, get by index */
-    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);    
-    
+    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);
+
     if (lst) {
       idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
       res->obj = &(lst[n-1]);                   // index from 1
@@ -592,8 +600,8 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
   if (msg->value >= IDL_LUA_SEQ) {
     lua_Integer n = luaL_checkinteger(L, 2);
     /* object list, same metatable, by index */
-    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);    
-    
+    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);
+
     /* right part */
     idl_lua_msg_t* src = luaL_checkudata(L, 3, "@(msg_metatable)");
     if (src->value >= IDL_LUA_SEQ) {
@@ -603,7 +611,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
       @(msg_typename)__copy(src->obj, &(lst[n-1]));
     }
   } else {
-    rosidl_luacommon_field_apply(L, "setters", 3);    
+    rosidl_luacommon_field_apply(L, "setters", 3);
   }
 
   return 0;
@@ -628,10 +636,10 @@ static int @(msg_prefix)__lcall (lua_State* L) {
     /* resize object */
     return @(msg_prefix)__lresize(L);
 
-  } else if (LUA_TTABLE == tp) {    
+  } else if (LUA_TTABLE == tp) {
     int len = luaL_len(L, 2);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
-    
+
     if (len > 0 && msg->value >= IDL_LUA_SEQ) {
       /* element-wise copy */
       size_t arr_len = 0, arr_cap = 0;
@@ -647,7 +655,7 @@ static int @(msg_prefix)__lcall (lua_State* L) {
         } else {
           goto failed;
         }
-      }      
+      }
       /* copy members */
       idl_lua_msg_t* src = NULL;
       for (int i = 0; i < len; i++) {
@@ -655,17 +663,17 @@ static int @(msg_prefix)__lcall (lua_State* L) {
         lua_gettable(L, -2);      // pop index, push value
         src = luaL_checkudata(L, -1, "@(msg_metatable)");
         if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, lst++)) {
-          goto failed; 
+          goto failed;
         }
         lua_pop(L, 1);            // pop value
-      } 
+      }
       done = true;
-           
+
     } else if (len == 0 && msg->value < IDL_LUA_SEQ) {
-      /* dictionary */      
-      done = rosidl_luacommon_fill_from_table(L);                  
-    } 
-  } 
+      /* dictionary */
+      done = rosidl_luacommon_fill_from_table(L);
+    }
+  }
 failed:  // false by default
 
   lua_pushboolean(L, done);
@@ -695,7 +703,7 @@ fn_name = name_parts[-1]
 @{
 type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
 }@
-  @(type_dict['ifn'])(L, @(constant.value));  // push value  
+  @(type_dict['ifn'])(L, @(constant.value));  // push value
 @[  elif isinstance(member.type, BasicType) and constant.type.typename == 'boolean']@
   lua_pushboolean(L, @('true' if constant.value else 'false'));  // push value
 @[  elif isinstance(member.type, AbstractString) or isinstance(member.type, AbstractWString)]@

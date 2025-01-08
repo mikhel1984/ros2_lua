@@ -185,11 +185,11 @@ static int String_seq_call (lua_State* L)
   } else if (LUA_TTABLE == tp) {
     /* arg2 - table */
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
-    int len = luaL_len(L, 2);    
-       
+    int len = luaL_len(L, 2);
+
     if (len > 0 && msg->value >= IDL_LUA_SEQ) {
       size_t arr_len = 0, arr_cap = 0;
-      rosidl_runtime_c__String* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); 
+      rosidl_runtime_c__String* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
       /* check array */
       if (arr_len != (size_t) len) {
         if (IDL_LUA_SEQ == msg->value) {
@@ -198,11 +198,11 @@ static int String_seq_call (lua_State* L)
           } else if (!String_do_resize(msg, (size_t) len, false)) {
             goto failed;
           }
-          lst = ((rosidl_runtime_c__String__Sequence*)msg->obj)->data;        
+          lst = ((rosidl_runtime_c__String__Sequence*)msg->obj)->data;
         } else {
           goto failed;
         }
-      }           
+      }
       /* copy */
       for (int i = 0; i < len; i++) {
         lua_pushinteger(L, i+1);   // push index
@@ -217,10 +217,10 @@ static int String_seq_call (lua_State* L)
         }
         lua_pop(L, 1);             // pop value
       }
-      done = true;     
+      done = true;
     }
   }
-    
+
 failed:
   lua_pushboolean(L, done);
   return 1;

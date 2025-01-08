@@ -21,6 +21,7 @@
 
 #include "rosidl_luacommon/utility.h"
 
+/* Find length of array or sequence, puth to stack. */
 int rosidl_luacommon_push_length (lua_State* L)
 {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
@@ -39,6 +40,7 @@ int rosidl_luacommon_push_length (lua_State* L)
   return 1;
 }
 
+/* Push simplified string representation of a message. */
 int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix)
 {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
@@ -55,6 +57,7 @@ int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix)
   return 1;
 }
 
+/* Update sequence length. Push boolean result of operation to the stack. */
 int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn)
 {
   idl_lua_msg_t* ptr = lua_touserdata(L, 1);
@@ -63,14 +66,14 @@ int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn)
     lua_pushboolean(L, false);
     return 1;
   }
-    
+
   /* new length */
   lua_Integer len = luaL_checkinteger(L, 2);
   luaL_argcheck(L, len >= 0, 2, "wrong length");
-  
+
   /* list */
   rosidl_runtime_c__boolean__Sequence* seq = ptr->obj;
-  bool done = true;  
+  bool done = true;
   if (seq->capacity >= (size_t) len) {
     /* memory is enough */
     seq->size = (size_t) len;
@@ -79,13 +82,14 @@ int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn)
     done = fn(ptr, (size_t) len, false);
   } else {
     /* resize and copy data */
-    done = fn(ptr, (size_t) len, true);    
+    done = fn(ptr, (size_t) len, true);
   }
 
   lua_pushboolean(L, done);
   return 1;
 }
 
+/* Get pointer to message array if the index is not out of range. */
 void* rosidl_luacommon_array_check_ind (idl_lua_msg_t* msg, int ind)
 {
   if (msg->value > IDL_LUA_SEQ) {
@@ -102,7 +106,8 @@ void* rosidl_luacommon_array_check_ind (idl_lua_msg_t* msg, int ind)
   return NULL;
 }
 
-void* rosidl_luacommon_list_info (idl_lua_msg_t* msg, size_t* size, size_t* capacity)
+/* When the argement contains array or sequence, find its length, capacity and data pointer. */
+void* rosidl_luacommon_list_info (const idl_lua_msg_t* msg, size_t* size, size_t* capacity)
 {
   if (msg->value > IDL_LUA_SEQ) {
     *size = *capacity = (size_t) msg->value;
@@ -118,6 +123,7 @@ void* rosidl_luacommon_list_info (idl_lua_msg_t* msg, size_t* size, size_t* capa
   return NULL;
 }
 
+/* Execute function from the given table. */
 void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top)
 {
   /* nested object, other metatable, get by name */
@@ -134,16 +140,17 @@ void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top)
   fn(L);                                    // execute, push result if need
 }
 
+/* Read elements from dictionary and set the message fields. */
 bool rosidl_luacommon_fill_from_table (lua_State* L)
 {
   /* stack [userdata, input table], update it */
   if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {
-    return false;    
+    return false;
   }
   lua_pushnil(L);
   lua_pushnil(L);
   lua_rotate(L, 2, 2);      // stack [userdata, nil, nil, input table, setters]
-  
+
   /* copy members */
   lua_pushnil(L);            // push initial key
   while (lua_next(L, 4) != 0) {
@@ -161,10 +168,11 @@ bool rosidl_luacommon_fill_from_table (lua_State* L)
     lua_copy(L, 2, -1);     // set key for next iteration
     /* stack [userdata, key, value, input table, setters, key] */
   }
-  
+
   return true;
 }
 
+/* Check if the geven arguments are of different type, push false in this case. */
 bool rosidl_luacommon_push_wrong_args (lua_State* L)
 {
   lua_getmetatable(L, 1);  // push table
@@ -174,6 +182,6 @@ bool rosidl_luacommon_push_wrong_args (lua_State* L)
   if (!eql) {
     lua_pushboolean(L, false);
   }
-  
-  return eql;       
+
+  return !eql;
 }

@@ -102,6 +102,25 @@ void* rosidl_luacommon_array_check_ind (idl_lua_msg_t* msg, int ind)
   return NULL;
 }
 
+void* rosidl_luacommon_list_info (idl_lua_msg_t* msg, size_t* size, size_t* capacity, bool* list)
+{
+  if (msg->value > IDL_LUA_SEQ) {
+    *size = *capacity = (size_t) msg->value;
+    *list = true;
+    return msg->obj;
+  } else if (msg->value == IDL_LUA_SEQ) {
+    /* sequence */
+    rosidl_runtime_c__boolean__Sequence *seq = msg->obj;
+    *size = seq->size;
+    *capacity = seq->capacity;
+    *list = true;
+    return (void*) seq->data;
+  }
+  *size = *capacity = 0;
+  *list = false;
+  return NULL;
+}
+
 void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top)
 {
   /* nested object, other metatable, get by name */

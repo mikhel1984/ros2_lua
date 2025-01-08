@@ -60,16 +60,7 @@ static int STRUCT_NAME ## _seq_eq (lua_State* L) \
 #define OBJ_SEQ_LEN(STRUCT_NAME) \
 static int STRUCT_NAME ## _seq_len (lua_State* L) \
 { \
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
-  if (ptr->value > 0) { \
-    lua_pushinteger(L, ptr->value); \
-  } else if (ptr->value == IDL_LUA_SEQ) { \
-    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr->obj; \
-    lua_pushinteger(L, seq->size); \
-  } else { \
-    lua_pushnil(L); \
-  } \
-  return 1; \
+  return rosidl_luacommon_push_length(L); \
 }
 
 /**
@@ -81,16 +72,7 @@ static int STRUCT_NAME ## _seq_len (lua_State* L) \
 #define OBJ_SEQ_STR(STRUCT_NAME) \
 static int STRUCT_NAME ## _seq_str (lua_State* L) \
 { \
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
-  if (ptr->value > 0) { \
-    lua_pushfstring(L, "%s array of size %d", #STRUCT_NAME, ptr->value); \
-  } else if (ptr->value == IDL_LUA_SEQ) { \
-    rosidl_runtime_c__ ## STRUCT_NAME ##__Sequence* seq = ptr->obj; \
-    lua_pushfstring(L, "%s sequence of size %d", #STRUCT_NAME, seq->size); \
-  } else { \
-    luaL_error(L, "unexpected object"); \
-  } \
-  return 1; \
+  return rosidl_luacommon_push_msg_string(L, #STRUCT_NAME); \
 }
 
 /**
@@ -137,44 +119,42 @@ static int STRUCT_NAME ## _seq_copy (lua_State* L) \
   return 1; \
 }
 
-/**
- * Resize sequence.
- *
- * \param STRUCT_NAME rosidl structure name
- * \param METATABLE metatable name
- * \return function for changing size.
- */
-#define OBJ_SEQ_RESIZE(STRUCT_NAME, METATABLE) \
-static int STRUCT_NAME ## _seq_resize (lua_State* L) \
+#define OBJ_SEQ_DO_RESIZE(STRUCT_NAME) \
+bool STRUCT_NAME ## _do_resize (idl_lua_msg_t* ptr, size_t n, bool copy) \
 { \
-  idl_lua_msg_t* ptr = luaL_checkudata(L, 1, METATABLE); \
-  if (ptr->value != IDL_LUA_SEQ) { \
-    lua_pushboolean(L, false); \
-    return 1; \
-  } \
-  lua_Integer len = luaL_checkinteger(L, 2); \
-  luaL_argcheck(L, len >= 0, 2, "wrong length"); \
   rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr->obj; \
   bool done = true; \
-  if (seq->capacity == 0) { \
-    done = rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(seq, len); \
-  } else if (seq->capacity >= (size_t) len) { \
-    seq->size = (size_t) len; \
-  } else { \
+  if (copy) { \
     rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence newseq; \
-    if (rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(&newseq, len) && \
+    if (rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(&newseq, n) && \
         rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__copy(seq, &newseq)) \
     { \
       rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence tmp = *seq; \
       *seq = newseq; \
-      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(&tmp);  \
-      seq->size = len; \
+      seq->size = n; \
+      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(&tmp); \
     } else { \
       done = false; \
     } \
+  } else { \
+    if (seq->capacity) { \
+      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(seq); \
+    } \
+    done = rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(seq, n); \
   } \
-  lua_pushboolean(L, done); \
-  return 1; \
+  return done; \
+}
+
+/**
+ * Resize sequence.
+ *
+ * \param STRUCT_NAME rosidl structure name
+ * \return function for changing size.
+ */
+#define OBJ_SEQ_RESIZE(STRUCT_NAME) \
+static int STRUCT_NAME ## _seq_resize (lua_State* L) \
+{ \
+  return rosidl_luacommon_push_realloc(L, STRUCT_NAME ## _do_resize); \
 }
 
 /**

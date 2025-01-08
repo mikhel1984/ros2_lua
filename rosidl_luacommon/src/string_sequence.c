@@ -18,6 +18,7 @@
 
 #include "rosidl_luacommon/definition.h"
 #include "rosidl_luacommon/sequence_macro.h"
+#include "rosidl_luacommon/utility.h"
 
 /** String sequence metatable name. */
 const char* MT_SEQ_STRING = "ROS2.rosidl_sequence.String";
@@ -48,21 +49,7 @@ static int String_seq_set (lua_State* L)
   const char* val = lua_tolstring(L, 3, &len);
 
   /* get pointer */
-  rosidl_runtime_c__String* lst = NULL;
-  if (ptr->value > 0) {
-    /* array */
-    if (0 < ind && ind <= ptr->value) {
-      lst = ptr->obj;
-    }
-  } else if (ptr->value == IDL_LUA_SEQ) {
-    /* sequence */
-    rosidl_runtime_c__String__Sequence* seq = ptr->obj;
-    if (0 < ind && ((size_t) ind) <= seq->size) {
-      lst = seq->data;
-    }
-  } else {
-    luaL_error(L, "unexpected object");
-  }
+  rosidl_runtime_c__String* lst = rosidl_luacommon_array_check_ind(ptr, ind);
 
   /* set */
   if (lst) {
@@ -93,21 +80,7 @@ static int String_seq_get (lua_State* L)
   lua_Integer ind = luaL_checkinteger(L, 2);
 
   /* get pointer */
-  rosidl_runtime_c__String* lst = NULL;
-  if (ptr->value > 0) {
-    /* array */
-    if (0 < ind && ind <= ptr->value) {
-      lst = ptr->obj;
-    }
-  } else if (ptr->value == IDL_LUA_SEQ) {
-    /* sequence */
-    rosidl_runtime_c__String__Sequence* seq = ptr->obj;
-    if (0 < ind && ((size_t) ind) <= seq->size) {
-      lst = seq->data;
-    }
-  } else {
-    luaL_error(L, "unexpected object");
-  }
+  rosidl_runtime_c__String* lst = rosidl_luacommon_array_check_ind(ptr, ind);
 
   /* set */
   if (lst) {
@@ -178,7 +151,8 @@ static int String_seq_copy (lua_State* L)
   return 1;
 }
 
-OBJ_SEQ_RESIZE (String, MT_SEQ_STRING)
+OBJ_SEQ_DO_RESIZE(String)
+OBJ_SEQ_RESIZE (String)
 
 /**
  * Call message as function.
@@ -210,46 +184,46 @@ static int String_seq_call (lua_State* L)
 
   } else if (LUA_TTABLE == tp) {
     /* arg2 - table */
-    lua_len(L, 2);                  // push len
-    int len = luaL_checkinteger(L, -1);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
-    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
-      rosidl_runtime_c__String* lst = msg->obj;
-      if (IDL_LUA_SEQ == msg->value) {
-        /* resize sequence */
-        lua_insert(L, 2);           // set len before table
-        String_seq_resize(L);
-        if (!lua_toboolean(L, -1)) {
-          /* resize failed */
-          return 1;
+    int len = luaL_len(L, 2);
+    
+    size_t arr_len = 0, arr_cap = 0;
+    bool is_list = false;
+    rosidl_runtime_c__String* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap, &is_list);    
+    if (len && is_list) {
+      /* check array */
+      if (arr_len != (size_t) len) {
+        if (IDL_LUA_SEQ == msg->value) {
+          if ((size_t) len <= arr_cap) {
+            ((rosidl_runtime_c__String__Sequence*)msg->obj)->size = (size_t) len;
+          } else if (!String_do_resize(msg, (size_t) len, false)) {
+            goto failed;
+          }
+          lst = ((rosidl_runtime_c__String__Sequence*)msg->obj)->data;        
+        } else {
+          goto failed;
         }
-        rosidl_runtime_c__String__Sequence* seq = msg->obj;
-        lst = seq->data;
-        lua_remove(L, 2);           // pop len
-      }
-      lua_pop(L, 1);                // pop top (len or call result)
+      }           
       /* copy */
-      bool stop = false;
       for (int i = 0; i < len; i++) {
-        lua_pushinteger(L, i+1);    // push index
-        lua_gettable(L, 2);         // pop index, push value
+        lua_pushinteger(L, i+1);   // push index
+        lua_gettable(L, 2);        // pop index, push value
         if (LUA_TSTRING != lua_type(L, -1)) {
-          stop = true;
-          break;
+          goto failed;
         }
         size_t str_len = 0;
         const char* str_data = lua_tolstring(L, -1, &str_len);
         if (!rosidl_runtime_c__String__assignn(lst+i, str_data, str_len)) {
-          stop = true;
-          break;
+          goto failed;
         }
-        lua_pop(L, 1);              // pop value
+        lua_pop(L, 1);             // pop value
       }
-      done = !stop;
+      done = true;     
     }
   }
+    
+failed:
   lua_pushboolean(L, done);
-
   return 1;
 }
 

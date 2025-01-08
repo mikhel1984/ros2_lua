@@ -27,6 +27,7 @@ add_library(${LIB_NAME} SHARED
   src/int_sequence.c
   src/boolean_sequence.c
   src/string_sequence.c
+  src/utility.c
 )
 ament_target_dependencies(${LIB_NAME} rosidl_runtime_c)
 

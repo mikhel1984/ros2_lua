@@ -35,5 +35,7 @@ bool rosidl_luacommon_fill_from_table (lua_State* L);
 
 bool rosidl_luacommon_push_wrong_args (lua_State* L);
 
+void* rosidl_luacommon_list_info (idl_lua_msg_t* msg, size_t* size, size_t* capacity, bool *list);
+
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
 

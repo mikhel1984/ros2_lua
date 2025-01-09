@@ -24,7 +24,8 @@ header_files = [
     include_base + '__struct.h',
     include_base + '__functions.h',
     include_base + '__type_support.h',
-    'rosidl_luacommon/definition.h']
+    'rosidl_luacommon/definition.h',
+    'rosidl_luacommon/utility.h']
 }@
 
 @[for header_file in header_files]@
@@ -144,9 +145,8 @@ static int @(msg_prefix)__lnew (lua_State* L) {
 
   /* table based initialization */
   if (LUA_TTABLE == lua_type(L, 2)) {
-    // initialize
     lua_replace(L, 1);         // pop, move userdata to first place
-    @(msg_prefix)__lcall(L);   // call initialization
+    rosidl_luacommon_fill_from_table(L);
     lua_settop(L, 1);          // pop, remove call result
   }
 
@@ -177,14 +177,9 @@ static int @(msg_prefix)__lgc (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__leq (lua_State* L) {
-  /* check type equality */
-  lua_getmetatable(L, 1);  // push table
-  lua_getmetatable(L, 2);  // push table
-  if (lua_isnil(L, -2) || !lua_rawequal(L, -1, -2)) {
-    lua_pushboolean(L, false);
+  if (rosidl_luacommon_push_wrong_args(L)) {
     return 1;
   }
-  lua_pop(L, 2);           // pop, remove metatables
 
   /* compare data */
   idl_lua_msg_t* p1 = lua_touserdata(L, 1);
@@ -226,13 +221,9 @@ static int @(msg_prefix)__leq (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__lcopy (lua_State* L) {
-  /* check type equality */
-  lua_getmetatable(L, 1);  // push table
-  lua_getmetatable(L, 2);  // push table
-  if (lua_isnil(L, -2) || !lua_rawequal(L, -1, -2)) {
-    lua_pushboolean(L, false);
+  if (rosidl_luacommon_push_wrong_args(L)) {
+    return 1;
   }
-  lua_pop(L, 2);  // remove metatables
 
   /* data */
   idl_lua_msg_t* dst = lua_touserdata(L, 1);
@@ -265,10 +256,10 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
         b = seq->data;
       }
     }
-    if (b != NULL) {
+    if (b) {
       done = true;
       for (int i = 0; i < dst->value; i++) {
-        done = @(msg_typename)__copy(b+i, a+i) && done;
+        done = done && @(msg_typename)__copy(b++, a++);
       }
     }
   }
@@ -285,20 +276,7 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
  */
 static int @(msg_prefix)__llen (lua_State* L)
 {
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
-  if (ptr->value > IDL_LUA_SEQ) {
-    /* array */
-    lua_pushinteger(L, ptr->value);
-  } else if (ptr->value == IDL_LUA_SEQ) {
-    /* list */
-    @(msg_typename)__Sequence* seq = ptr->obj;
-    lua_pushinteger(L, seq->size);
-  } else {
-    /* scalar value */
-    lua_pushnil(L);
-  }
-
-  return 1;
+  return rosidl_luacommon_push_length(L);
 }
 
 /**
@@ -309,17 +287,55 @@ static int @(msg_prefix)__llen (lua_State* L)
  */
 static int @(msg_prefix)__lstr (lua_State* L)
 {
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
-  if (ptr->value > IDL_LUA_SEQ) {
-    lua_pushfstring(L, "@(msg_typename) array of size %d", ptr->value);
-  } else if (ptr->value == IDL_LUA_SEQ) {
-    @(msg_typename)__Sequence* seq = ptr->obj;
-    lua_pushfstring(L, "@(msg_typename) sequence of size %d", seq->size);
-  } else {
-    lua_pushfstring(L, "@(msg_typename)");
-  }
+  return rosidl_luacommon_push_msg_string(L, "@(msg_typename)");
+}
 
-  return 1;
+/**
+ * Get object fields or array type.
+ * out: "static"/"dynamic" for array or {"field1", "field2", ..} for message.
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int @(msg_prefix)__lbnot (lua_State* L)
+{
+  return rosidl_luacommon_push_msg_keys(L, "getters");
+}
+
+/**
+ * Reallocate memory. Copy old data if need.
+ * It is assumed that new size is greater then the previous one.
+ * \param[inout] ptr Pointer to Lua message structure.
+ * \param[in] n New size.
+ * \param[in] copy Flag to make copy of the stored data.
+ * \return true in case of success.
+ */
+bool @(msg_prefix)__do_resize (idl_lua_msg_t* ptr, size_t n, bool copy)
+{
+  @(msg_typename)__Sequence* seq = ptr->obj;
+  bool done = true;
+
+  if (copy) {
+    @(msg_typename)__Sequence newseq;
+    if (@(msg_typename)__Sequence__init(&newseq, n) &&
+        @(msg_typename)__Sequence__copy(seq, &newseq))
+    {
+      /* swap */
+      @(msg_typename)__Sequence tmp = *seq;
+      *seq = newseq;
+      seq->size = n;   // size become reduced after copy
+      /* remove old */
+      @(msg_typename)__Sequence__fini(&tmp);
+    } else {
+      done = false;
+    }
+  } else {
+    if (seq->capacity) {
+      /* free old memory */
+      @(msg_typename)__Sequence__fini(seq);
+    }
+    done = @(msg_typename)__Sequence__init(seq, n);
+  }
+  return done;
 }
 
 /**
@@ -331,44 +347,7 @@ static int @(msg_prefix)__lstr (lua_State* L)
  */
 static int @(msg_prefix)__lresize (lua_State* L)
 {
-  idl_lua_msg_t* ptr = luaL_checkudata(L, 1, "@(msg_metatable)");
-  if (ptr->value != IDL_LUA_SEQ) {
-    /* only list can be resized */
-    lua_pushboolean(L, false);
-    return 1;
-  }
-
-  /* new length */
-  lua_Integer len = luaL_checkinteger(L, 2);
-  luaL_argcheck(L, len >= 0, 2, "wrong length");
-  @(msg_typename)__Sequence* seq = ptr->obj;
-  bool done = true;
-
-  if (seq->capacity == 0) {
-    /* empty object, make new */
-    done = @(msg_typename)__Sequence__init(seq, len);
-  } else if (seq->capacity >= (size_t) len) {
-    /* memory is enough */
-    seq->size = (size_t) len;
-  } else {
-    /* allocate new memory and copy data */
-    @(msg_typename)__Sequence newseq;
-    if (@(msg_typename)__Sequence__init(&newseq, len) &&
-       @(msg_typename)__Sequence__copy(seq, &newseq))
-    {
-      /* swap */
-      @(msg_typename)__Sequence tmp = *seq;
-      *seq = newseq;
-      seq->size = len;
-      /* remove old */
-      @(msg_typename)__Sequence__fini(&tmp);
-    } else {
-      done = false;
-    }
-  }
-
-  lua_pushboolean(L, done);
-  return 1;
+  return rosidl_luacommon_push_realloc(L, @(msg_prefix)__do_resize);
 }
 
 @# setters
@@ -600,19 +579,10 @@ static int @(msg_prefix)__lindex (lua_State* L) {
   idl_lua_msg_t* msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
-    /* object list, same metatable, get by index */
-    @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
-    if (msg->value > IDL_LUA_SEQ) {
-      if (0 < n && n <= msg->value) {
-        lst = msg->obj;
-      }
-    } else {
-      @(msg_typename)__Sequence *seq = msg->obj;
-      if (0 < n && ((size_t) n) <= seq->size) {
-        lst = seq->data;
-      }
-    }
+    /* object list, same metatable, get by index */
+    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);
+
     if (lst) {
       idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
       res->obj = &(lst[n-1]);                   // index from 1
@@ -623,18 +593,7 @@ static int @(msg_prefix)__lindex (lua_State* L) {
       lua_pushnil(L);
     }
   } else {
-    /* nested object, other metatable, get by name */
-    if (luaL_getmetafield(L, 1, "getters") != LUA_TTABLE) {  // push table
-      luaL_error(L, "wrong metatable");
-    }
-    lua_pushvalue(L, 2);                      // push key (duplicate)
-    lua_gettable(L, -2);                      // pop key, push function
-    lua_CFunction fn = lua_tocfunction(L, -1);
-    if (NULL == fn) {
-      luaL_error(L, "unknown field '%s'", lua_tostring(L, 2));
-    }
-    lua_settop(L, 2);                         // stack [object, key]
-    fn(L);                                    // push result
+    rosidl_luacommon_field_apply(L, "getters", 2);
   }
 
   return 1;
@@ -650,19 +609,10 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
   idl_lua_msg_t* msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
-    /* object list, same metatable, by index */
-    @(msg_typename)* lst = NULL;
     lua_Integer n = luaL_checkinteger(L, 2);
-    if (msg->value > IDL_LUA_SEQ) {
-      if (0 < n && n <= msg->value) {
-        lst = msg->obj;
-      }
-    } else {
-      @(msg_typename)__Sequence *seq = msg->obj;
-      if (0 < n && ((size_t) n) <= seq->size) {
-        lst = seq->data;
-      }
-    }
+    /* object list, same metatable, by index */
+    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);
+
     /* right part */
     idl_lua_msg_t* src = luaL_checkudata(L, 3, "@(msg_metatable)");
     if (src->value >= IDL_LUA_SEQ) {
@@ -672,17 +622,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
       @(msg_typename)__copy(src->obj, &(lst[n-1]));
     }
   } else {
-    /* nested object, other metatable, get by name */
-    if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {  // push table
-      luaL_error(L, "wrong metatable");
-    }
-    lua_pushvalue(L, 2);                      // push key (duplicate)
-    lua_gettable(L, -2);                      // pop key, push function
-    lua_CFunction fn = lua_tocfunction(L, -1);
-    if (NULL == fn) {
-      luaL_error(L, "unknown field '%s", lua_tostring(L, 2));
-    }
-    fn(L);
+    rosidl_luacommon_field_apply(L, "setters", 3);
   }
 
   return 0;
@@ -696,7 +636,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
  * \return number of outputs.
  */
 static int @(msg_prefix)__lcall (lua_State* L) {
-  bool done = true;
+  bool done = false;
   int tp = lua_type(L, 2);
 
   if (LUA_TUSERDATA == tp) {
@@ -708,23 +648,24 @@ static int @(msg_prefix)__lcall (lua_State* L) {
     return @(msg_prefix)__lresize(L);
 
   } else if (LUA_TTABLE == tp) {
-    /* element-wise copy */
-    lua_len(L, 2);
-    int len = luaL_checkinteger(L, -1);
+    int len = luaL_len(L, 2);
     idl_lua_msg_t* msg = lua_touserdata(L, 1);
-    if (len > 0 && (IDL_LUA_SEQ == msg->value || msg->value == len)) {
-      lua_insert(L, 2);   // stack [userdata, len, input table]
-      @(msg_typename)* lst = msg->obj;
-      if (IDL_LUA_SEQ == msg->value) {
-        /* resize */
-        @(msg_prefix)__lresize(L);
-        if (lua_toboolean(L, -1)) {
-          lua_pop(L, 1);   // success, remove result
+
+    if (len > 0 && msg->value >= IDL_LUA_SEQ) {
+      /* element-wise copy */
+      size_t arr_len = 0, arr_cap = 0;
+      @(msg_typename)* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      if (arr_len != (size_t) len) {
+        if (IDL_LUA_SEQ == msg->value) {
+          if ((size_t) len <= arr_cap) {
+            ((@(msg_typename)__Sequence*) msg->obj)->size = (size_t) len;
+          } else if (!@(msg_prefix)__do_resize(msg, (size_t) len, false)) {
+            goto failed;
+          }
+          lst = ((@(msg_typename)__Sequence*) msg->obj)->data;
         } else {
-          return 1;        // failed
+          goto failed;
         }
-        @(msg_typename)__Sequence *seq = msg->obj;
-        lst = seq->data;
       }
       /* copy members */
       idl_lua_msg_t* src = NULL;
@@ -732,47 +673,21 @@ static int @(msg_prefix)__lcall (lua_State* L) {
         lua_pushinteger(L, i+1);  // push index
         lua_gettable(L, -2);      // pop index, push value
         src = luaL_checkudata(L, -1, "@(msg_metatable)");
-        if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, &(lst[i]))) {
-          goto lcall_failed;      // exit
+        if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, lst++)) {
+          goto failed;
         }
         lua_pop(L, 1);            // pop value
       }
+      done = true;
+
     } else if (len == 0 && msg->value < IDL_LUA_SEQ) {
-      lua_pop(L, 1);  // remove length
-      /* get setters */
-      if (luaL_getmetafield(L, 1, "setters") != LUA_TTABLE) {
-        goto lcall_failed;       // exit
-      }
-      lua_pushnil(L);
-      lua_pushnil(L);
-      lua_rotate(L, 2, 2);      // stack [userdata, nil, nil, input table, setters]
-      /* copy members */
-      lua_pushnil(L);            // push initial key
-      while (lua_next(L, 4) != 0) {
-        /* stack [userdata, nil, nil, input table, setters, key, value] */
-        lua_replace(L, 3);       // pop value, prepare for function call
-        lua_copy(L, -1, 2);      // stack [userdata, key, value, ... ]
-        lua_gettable(L, 5);      // pop key, push value from setters
-        lua_CFunction fn = lua_tocfunction(L, -1);
-        if (NULL == fn) {
-          goto lcall_failed;     // exit
-        }
-        int top = lua_gettop(L);   // save stack size
-        fn(L);
-        lua_settop(L, top);     // restore stack
-        lua_copy(L, 2, -1);     // set key for next iteration
-        /* stack [userdata, key, value, input table, setters, key] */
-      }
-    } else {
-      done = false;
+      /* dictionary */
+      done = rosidl_luacommon_fill_from_table(L);
     }
-
-  } else {
-lcall_failed:
-    done = false;
   }
-  lua_pushboolean(L, done);
+failed:  // false by default
 
+  lua_pushboolean(L, done);
   return 1;
 }
 
@@ -799,7 +714,7 @@ fn_name = name_parts[-1]
 @{
 type_dict = NUMERIC_LUA_TYPES[constant.type.typename]
 }@
-  @(type_dict['ifn'])(L, @(constant.value));  // push value  
+  @(type_dict['ifn'])(L, @(constant.value));  // push value
 @[  elif isinstance(member.type, BasicType) and constant.type.typename == 'boolean']@
   lua_pushboolean(L, @('true' if constant.value else 'false'));  // push value
 @[  elif isinstance(member.type, AbstractString) or isinstance(member.type, AbstractWString)]@
@@ -851,6 +766,7 @@ static const struct luaL_Reg @(msg_prefix)__common[] = {
   {"__eq", @(msg_prefix)__leq},
   {"__len", @(msg_prefix)__llen},
   {"__tostring", @(msg_prefix)__lstr},
+  {"__bnot", @(msg_prefix)__lbnot},
   {"__index", @(msg_prefix)__lindex},
   {"__newindex", @(msg_prefix)__lnewindex},
   {"__call", @(msg_prefix)__lcall},

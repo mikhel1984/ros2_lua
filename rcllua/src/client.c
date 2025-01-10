@@ -28,7 +28,7 @@
 #include "rcllua/node.h"
 #include "rcllua/utils.h"
 
-/** Indices of service bindings in register. */
+/** Indices of client bindings in register. */
 enum CliReg {
   /** node reference */
   CLI_REG_NODE = 1,
@@ -46,7 +46,7 @@ enum CliReg {
 enum CliOut {
   /** response message */
   CLI_OUT_RESPONSE = 1,
-  /** callback function (if any) */
+  /** callback function */
   CLI_OUT_CALLBACK,
   /** number of elements + 1 */
   CLI_OUT_NUMBER
@@ -158,7 +158,6 @@ static int rcl_lua_client_free (lua_State* L)
   rcl_ret_t ret = rcl_client_fini(cli, node);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to fini client: %s", rcl_get_error_string().str);
-    rcl_reset_error();
   }
 
   /* free dependencies */
@@ -227,13 +226,9 @@ static int rcl_lua_client_send_request (lua_State* L)
   lua_pop(L, 1);                           // pop name
 
   /* arg3 - callback function */
-  luaL_argcheck(L, lua_isfunction(L, 3), 3, "calback is expected");
+  luaL_argcheck(L, lua_isfunction(L, 3), 3, "callback is expected");
   lua_pushvalue(L, 3);                     // push function (copy)
   lua_rawseti(L, -2, CLI_REG_CALLBACK);    // pop function, a[.] = fn
-
-  if (!lua_isfunction(L, 3)) {
-    luaL_error(L, "cal");
-  }
 
   /* send */
   int64_t seq_num = 0;

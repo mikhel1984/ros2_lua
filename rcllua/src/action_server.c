@@ -21,6 +21,7 @@
 #include "rcllua/node.h"
 #include "rcllua/clock.h"
 #include "rcllua/wait_set.h"
+#include "rcllua/utils.h"
 
 /** Indices of action server binding in register. */
 enum ActSrvReg {
@@ -189,8 +190,8 @@ static int rcl_lua_action_server_free (lua_State* L)
     case RCL_RET_OK: break; \
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED: \
     case RCL_RET_ACTION_SERVICE_TAKE_FAILED: \
-      lua_pop(L, 2); \
-      return; \
+      lua_pushnil(L); \
+      return 1; \
     default: \
       luaL_error(L, "failed to take " #Type); \
   } \
@@ -259,7 +260,7 @@ static int rcl_lua_action_server_result_response (lua_State* L)
   SEND_SERVICE_RESPONSE(result)
 }
 
-static int rcl_lua_actoin_server_cancel_response (lua_State* L)
+static int rcl_lua_action_server_cancel_response (lua_State* L)
 {
   SEND_SERVICE_RESPONSE(cancel)
 }
@@ -324,6 +325,7 @@ static int rcl_lua_action_server_num_entities (lua_State* L)
   /* arg1 - action server */
   rcl_action_server_t* srv = lua_touserdata(L, 1);
 
+  /* subscriptions, guards, timers, clients, services */
   size_t count[] = {0, 0, 0, 0, 0, 0};
   rcl_ret_t ret = rcl_action_server_wait_set_get_num_entities(
     srv, count, count+1, count+2, count+3, count+4);
@@ -331,13 +333,10 @@ static int rcl_lua_action_server_num_entities (lua_State* L)
     luaL_error(L, "failed to get number of entities");
   }
   
-  lua_createtable(L, 0, 5);
   for(size_t i = 0; i < 5; i++) {
     lua_pushinteger(L, count[i]);
-    lua_rawseti(L, -2, i+1);
   }
-
-  return 1;
+  return 5;
 }
 
 static int rcl_lua_action_server_is_ready (lua_State* L)
@@ -347,20 +346,18 @@ static int rcl_lua_action_server_is_ready (lua_State* L)
   /* arg2 - WaitSet */
   rcl_wait_set_t* wait_set = luaL_checkudata(L, 2, MT_WAIT_SET);
 
-  bool status[] = {false, false, false, false, false};
+  /* goal_req, cancel_req, result_req, goal_expired */
+  bool status[] = {false, false, false, false};
   rcl_ret_t ret = rcl_action_server_wait_set_get_entities_ready(
     wait_set, srv, status, status+1, status+2, status+3, status+4);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to get ready action server entries");
   }
 
-  lua_createtable(L, 0, 5);
-  for(size_t i = 0; i < 5; i++) {
+  for(size_t i = 0; i < 4; i++) {
     lua_pushboolean(L, status[i]);
-    lua_rawseti(L, -2, i+1);
   }
-
-  return 1;
+  return 4;
 }
 
 static int rcl_lua_action_server_add_waitset (lua_State* L)
@@ -398,4 +395,31 @@ static int rcl_lua_actoin_server_expire_goals (lua_State* L)
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to expire goals");
   }
+}
+
+
+static const struct luaL_Reg act_srv_methods[] = {
+  {"__gc", rcl_lua_action_server_free},
+  {"take_goal_request", rcl_lua_action_server_goal_request},
+  {"send_goal_response", rcl_lua_action_server_goal_response},
+  {"take_result_request", rcl_lua_action_server_result_request},
+  {"send_result_response", rcl_lua_action_server_result_response},
+  {"take_cancel_request", rcl_lua_action_server_cancel_request},
+  {"send_cancel_response", rcl_lua_action_server_cancel_response},
+  {"publish_feedback", rcl_lua_action_server_publish_feedback},
+  {"publish_status", rcl_lua_action_server_publish_status},
+  {"get_num_entities", rcl_lua_action_server_num_entities},
+  {"is_ready", rcl_lua_action_server_is_ready},
+  {"add_to_waitset", rcl_lua_action_server_add_waitset},
+  {NULL, NULL}
+};
+
+void rcl_lua_add_action_server_methods (lua_State* L)
+{
+  /* constructor */
+  lua_pushcfunction(L, rcl_lua_action_server_init);  // push function
+  lua_setfield(L, -2, "new_action_server");          // pop, lib['new_action_server'] = function
+
+  /* metamethods */
+  rcl_lua_utils_add_mt(L, MT_ACTION_SERVER, act_srv_methods);
 }

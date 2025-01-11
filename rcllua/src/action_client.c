@@ -24,6 +24,7 @@
 #include "rcllua/node.h"
 #include "rcllua/qos.h"
 #include "rcllua/wait_set.h"
+#include "rcllua/utils.h"
 
 /** Indices of action client binding in register. */
 enum ActCliReg {
@@ -387,3 +388,11 @@ static const struct luaL_Reg act_cli_methods[] = {
   {NULL, NULL}
 };
 
+void rcl_lua_add_action_client (lua_State* L)
+{
+  /* constructor */
+  lua_pushcfunction(L, rcl_lua_action_client_init);  // push function
+  lua_setfield(L, -2, "new_action_client");          // pop, lib['new_action_client'] = function
+
+  rcl_lua_utils_add_mt(L, MT_ACTION_CLIENT, act_cli_methods);
+}

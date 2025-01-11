@@ -57,10 +57,10 @@ NUMERIC_LUA_TYPES['octet'] = NUMERIC_LUA_TYPES['uint8']
 
 def sequence_metatable(type_):
     if isinstance(type_, AbstractGenericString):
-        return "ROS2.rosidl_sequence.String"
+        return "primitives_sequence__msg__String__mt"
     if type_.typename in ('char', 'octet'):
-        return "ROS2.rosidl_sequence.uint8"
-    return "ROS2.rosidl_sequence." + type_.typename
+        return "primitives_sequence__msg__uint8__mt"
+    return "primitives_sequence__msg__" + type_.typename + "__mt"
 
 
 def generate_lua(generator_arguments_file, typesupport_impls):

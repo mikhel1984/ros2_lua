@@ -15,15 +15,29 @@
 local rclbind = require("rcllua.rclbind")
 local client_lib = require("rcllua.client")
 
+-- "Lazy" access
+local node_params = nil  -- parameter methods
+local builtin_msg = nil  -- builtin interfaces
+
 --- List of predefined Node keywords.
-local protected = {name=true, namespace=true, init=true, bind=true}
+local protected = {
+  name=true, namespace=true, init=true, bind=true,
+  allow_undeclared_parameters=true,
+  parameter_overrides=true,
+  start_parameter_services=true}
 
 --- Logger class.
 local Logger = {name='rcllua'}
 
+--    NODE
+
 -- Node class.
 Node = {}           -- global
-Node.__index = Node
+
+--- Allow 'multiple inheritance'
+Node.__index = function (t, k)
+  return Node[k] or node_params and node_params[k] or nil
+end
 
 --- Create publisher object.
 --  @param msg Message type.
@@ -86,6 +100,7 @@ end
 function Node.create_timer (self, period, callback)
   local timer = rclbind.new_timer(self._clock__object, period, callback)
   table.insert(self._timer__list, timer)
+  timer:call()
   return timer
 end
 
@@ -94,6 +109,24 @@ end
 function Node.get_logger (self)
   local o = {name=self._node__name}
   return setmetatable(o, Logger)
+end
+
+--- Get node name.
+--  @return name string.
+function Node.get_name (self)
+  return self._node__object:get_name()
+end
+
+--- Get node namespace.
+--  @return node namespace string.
+function Node.get_namespace (self)
+  return self._node__object:get_namespace()
+end
+
+--- Get clock object.
+--  @return node clock.
+function Node.get_clock (self)
+  return self._clock__object
 end
 
 --- Update reference to Executor object.
@@ -121,19 +154,81 @@ function Node.bind (self, name)
   end
 end
 
+--- Get time as builtin_interfaces.Time object.
+--  Try to load interface first. Return get_clock():now() by default.
+--  @param t (=nil) rcllua time object.
+--  @return time representation in form of builtin_interfaces.Time object.
+function Node.get_time_msg (self, t)
+  builtin_msg = builtin_msg or require('builtin_interfaces.msg')
+  t = t or self._clock__object:now()
+  local msg = builtin_msg.Time()
+  msg.sec = t.sec
+  msg.nanosec = t.nanosec
+  return msg
+end
+
+--- Load table with parameters methods.
+function Node.load_parameter_methods (self)
+  if not node_params then
+    -- add parameter methods
+    node_params = require('rcllua.node_parameters')
+    node_params._add_event_publisher(self)
+    if self._start_parameter_services ~= false then
+      -- add parameter service
+      local lib_param = require('rcllua.Parameter')
+      lib_param.new_parameter_service(self)
+    end
+  end
+end
+
+--- Declare and initialize parameter.
+--  @param name Fully-qualified name of the parameter.
+--  @param value (=nil) Value of the parameter to declare.
+--  @param descriptor (=nil) Descriptor of the parameter to declare.
+--  @param ignore_override (=false) True if overrides should ot be taken into account.
+--  @return parameter with assigned value.
+function Node.declare_parameter (self, name, value, descriptor, ignore_override)
+  Node.load_parameter_methods(self)
+  return node_params._declare_parameter(self, name, value, descriptor, ignore_override)
+end
+
+--- Declare a list of parameters.
+--  @param namespace Namespace for parameters.
+--  @param params List of tuples {name, value, type, ParameterDescriptor}
+--  @param ignore_override (=false) True if overrides should not be taken into account.
+--  @return parameter list.
+function Node.declare_parameters (self, namespace, params, ignore_override)
+  Node.load_parameter_methods(self)
+  return node_params._declare_parameters(self, namespace, params, ignore_override)
+end
+
+--- Set parameters.
+--  @param params The list of parameters to set.
+--  @return list of results for every set action.
+function Node.set_parameters (self, params)
+  Node.load_parameter_methods(self)
+  return node_params._set_parameters(self, params)
+end
+
+--- Check if the parameter is defined.
+--  @param name Parameter name.
+--  @return true if the parameter is found.
+function Node.has_parameter (self, name)
+  return self._parameter__list[name] ~= nil
+end
+
 --- Node object constructor.
 --  @param ... Additional parameters for passing to 'init' funciton.
 --  @return initialized object.
 function Node.__call (self, ...)
-  local param = self._init__param
   -- make instance
   local o = {}
   -- create node object
-  o._node__object = rclbind.new_node(param.name, param.namespace)
+  o._node__object = rclbind.new_node(self.name, self.namespace)
   -- add default clock
   o._clock__object = rclbind.new_clock()
   -- save name for quick access
-  o._node__name = param.name
+  o._node__name = self.name
   -- save executor later
   o._executor__weak = setmetatable({ref=nil}, {__mode='v'})
   -- references
@@ -143,32 +238,42 @@ function Node.__call (self, ...)
   o._service__list = {}
   o._guard__list = {}
   o._event__list = {}
+  -- for parameters
+  o._parameter__list = {}
+  o._descriptor__list = {}
+  o._allow_undeclared_parameters = self.allow_undeclared_parameters
+  o._start_parameter_services = self.start_parameter_services
+  o._parameter__overrides = self.parameter_overrides or {}
   -- copy other elements
-  for k, v in pairs(param) do
-    if not protected[k] then o[k] = v end
-  end
   for k, v in pairs(self) do
-    if v ~= param then o[k] = v end
+    if not protected[k] then o[k] = v end
   end
   -- add Node methods
   setmetatable(o, Node)
   -- call initialization
-  if param.init then
-    param.init(o, ...)
+  if self.init then
+    self.init(o, ...)
+  end
+  -- add parameter service
+  if self.start_parameter_services then
+    Node.load_parameter_methods(o)
   end
   return o
 end
 
 -- Allow to call Node table.
-setmetatable(Node, {
+setmetatable(Node, 
+{
 --- Node class constructor.
 --  @param param Table with initialization parameters.
 __call = function (self, param)
   assert(param and param.name, "'name' must be defined")
-  -- save init parameters
-  local o = {_init__param=param}
-  return setmetatable(o, self)
-end })
+  -- save as init parameters
+  return setmetatable(param, self)
+end 
+})
+
+--    LOGGER
 
 --- List of log levels
 local LogLevel = rclbind.LogLevel

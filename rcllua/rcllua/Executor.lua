@@ -81,10 +81,7 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
 
   for i = 1, #subscriptions do wait_set:add_subscription(subscriptions[i]) end
 
-  for i = 1, #timers do
-    timers[i]:call()
-    wait_set:add_timer(timers[i])
-  end
+  for i = 1, #timers do wait_set:add_timer(timers[i]) end
 
   for i = 1, #clients do wait_set:add_client(clients[i]:handle()) end
 
@@ -113,6 +110,7 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
     local fn, ref = table.unpack(timers[i])
     if rclbind.is_timer_ready(ref) then
       coroutine.yield(fn)
+      rclbind.timer_call(ref)
     end
   end
 
@@ -217,7 +215,8 @@ function Executor.spin_once (self, timeout_sec)
 end
 
 -- Allow to call Executor table.
-setmetatable(Executor, {
+setmetatable(Executor, 
+{
 --- Create Executor object.
 __call = function ()
   local o = {}
@@ -233,6 +232,7 @@ __call = function ()
   o._ev_no = 0
   setmetatable(o, Executor)
   return o
-end })
+end 
+})
 
 return Executor

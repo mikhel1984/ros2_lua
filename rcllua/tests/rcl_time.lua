@@ -11,7 +11,7 @@ function rut:time_value()
   assert(rut:eqlf(math.floor(float), 123))
 
   assert(rut:eql(tm.sec, 123))
-  assert(rut:eql(tm.nsec, 456))
+  assert(rut:eql(tm.nanosec, 456))
   assert(rut:eql(tm.clock_type, 2))
 
   -- immutable
@@ -25,7 +25,7 @@ function rut:duration_value()
   assert(rut:eqlf(math.floor(float), 123))
 
   assert(rut:eql(dur.sec, 123))
-  assert(rut:eql(dur.nsec, 456))
+  assert(rut:eql(dur.nanosec, 456))
 
   -- immrutable
  rut:catch(function() tm.sec = 3 end)

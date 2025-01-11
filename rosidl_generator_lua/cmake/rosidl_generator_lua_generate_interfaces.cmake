@@ -174,6 +174,7 @@ if(NOT _msg_list STREQUAL "")
   )
   target_link_libraries(msg
     ${c_typesupport_target}
+    rosidl_luacommon::rosidl_utility
   )
   ament_target_dependencies(msg
     "rosidl_runtime_c"
@@ -190,6 +191,7 @@ if(NOT _srv_list STREQUAL "")
   )
   target_link_libraries(srv
     ${c_typesupport_target}
+    rosidl_luacommon::rosidl_utility
   )
   ament_target_dependencies(srv
     "rosidl_runtime_c"
@@ -205,7 +207,9 @@ if(NOT _action_list STREQUAL "")
     LIBRARY_OUTPUT_DIRECTORY ${_output_path}
   )
   target_link_libraries(action
-    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c)
+    ${rosidl_generate_interfaces_TARGET}__rosidl_generator_c
+    rosidl_luacommon::rosidl_utility
+  )
   target_include_directories(action PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
     ${_luacommon_dir})

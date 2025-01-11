@@ -169,7 +169,6 @@ static int rcl_lua_service_free (lua_State* L)
   rcl_ret_t ret = rcl_service_fini(srv, node);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to fini service: %s", rcl_get_error_string().str);
-    rcl_reset_error();
   }
 
   /* free dependencies */

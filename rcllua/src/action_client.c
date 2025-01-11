@@ -21,6 +21,7 @@
 #include <rmw/types.h>
 #include <rmw/qos_profiles.h>
 
+#include "rcllua/node.h"
 #include "rcllua/qos.h"
 #include "rcllua/wait_set.h"
 
@@ -75,7 +76,7 @@ static int rcl_lua_action_client_init (lua_State* L)
   /* arg1 - node */
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
 
-  /* arg2 - message type */
+  /* arg2 - action type */
   rosidl_action_type_support_t* ts = NULL;
   /* check table */
   if (lua_istable(L, 2)) {
@@ -122,7 +123,7 @@ static int rcl_lua_action_client_init (lua_State* L)
     lua_pop(L, 1);
   }
 
-  // make client
+  /* new action client */
   rcl_action_client_t* cli = lua_newuserdata(L, sizeof(rcl_action_client_t));
   *cli = rcl_action_get_zero_initialized_client();
 
@@ -144,7 +145,7 @@ static int rcl_lua_action_client_init (lua_State* L)
   lua_pushvalue(L, 1);                   // push node
   lua_rawseti(L, -2, ACT_CLI_REG_NODE);  // pop node
 
-  lua_rawsetp(L, LUA_REGISTRYINDEX, cli);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, cli);  // pop table, save to registry
 
   return 1;
 }
@@ -162,7 +163,7 @@ static int rcl_lua_action_client_free (lua_State* L)
   /* finalize */
   rcl_ret_t ret = rcl_action_client_fini(cli, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini publisher: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to fini action client: %s", rcl_get_error_string().str);
   }
 
   /* free dependencies */

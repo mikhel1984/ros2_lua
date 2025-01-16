@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <time.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <threads.h>
 #include <lauxlib.h>
 
@@ -73,10 +76,46 @@ static int rcl_lua_utils_sleep_thread (lua_State* L)
   return 0;
 }
 
+/**
+ * Generate UUID value.
+ *
+ * \return UUID string.
+ */
+static int rcl_lua_utils_get_uuid (lua_State* L)
+{
+  /* init */
+  static bool gen_init = false;
+  static uint64_t uuid_lsb = 0;
+  static uint64_t uuid_msb = 0;
+
+  if (!gen_init) {
+    srand(time(NULL));
+    uuid_lsb = (uint64_t) rand();
+    uuid_msb = (uint64_t) rand();
+    gen_init = true;
+  }
+
+  /* update */
+  if (0 == ++uuid_lsb) {
+    ++uuid_msb;
+  }
+
+  char uuid[16];
+  *(uint64_t*)(&uuid[0]) = uuid_msb;
+  *(uint64_t*)(&uuid[8]) = uuid_lsb;
+
+  lua_pushlstring(L, uuid, 16);
+  return 1;
+}
+
 /* Add to library */
 void rcl_lua_add_util_methods (lua_State* L)
 {
   /* sleep some time */
   lua_pushcfunction(L, rcl_lua_utils_sleep_thread);  // push function
   lua_setfield(L, -2, "sleep_thread");               // pop, lib['sleep_thread'] = fn
+
+  /* generate uuid */
+  lua_pushcfunction(L, rcl_lua_utils_get_uuid);  // push function
+  lua_setfield(L, -2, "get_uuid");               // pop, lib['get_uuid'] = fn
 }

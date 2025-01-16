@@ -126,7 +126,9 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
 
   for i = 1, #clients do
     local resp, fn = table.unpack(clients[i])
-    coroutine.yield(function() fn(resp) end)
+    if resp and fn then
+      coroutine.yield(function() fn(resp) end)
+    end
   end
 
   return true

@@ -99,6 +99,12 @@ function Client.wait_for_service (self, timeout_sec)
   return self._client:service_is_available()
 end
 
+--- Free request callback.
+--  @param future Future object.
+function Client.remove_pending_request (self, future)
+  self._client:remove_pending_request(future._req_id)
+end
+
 --- Get client object.
 --  @return client (userdata).
 function Client.handle (self)

@@ -332,6 +332,11 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
     return;
   }
   lua_rawseti(L, -5, CLI_OUT_CALLBACK);    // pop function, a[.] = callback
+  
+  /* remove this request */
+  lua_pushinteger(L, header.request_id.sequence_number);  // push response sequence
+  lua_pushnil(L);                          // push nil
+  lua_rawset(L, -3);                       // pop sequence, pop nil, remove callback
   lua_pop(L, 1);                           // pop table c
 
   lua_rawseti(L, -3, CLI_OUT_RESPONSE);    // pop message, a[.] = response

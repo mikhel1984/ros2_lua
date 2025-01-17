@@ -34,20 +34,20 @@ enum ActCliReg {
   ACT_CLI_REG_MT_RESULT_REQ,
   /** result message constructor */
   ACT_CLI_REG_NEW_RESULT,
-  /** result callback */
-  ACT_CLI_REG_RESULT_CB,
+  /** result callbacks */
+  ACT_CLI_REG_RESULT_LIST,
   /** cancel request */
   ACT_CLI_REG_MT_CANCEL_REQ,
   /** cancel message constructor */
   ACT_CLI_REG_NEW_CANCEL,
-  /** cancel callback */
-  ACT_CLI_REG_CANCEL_CB,
+  /** cancel callbacks */
+  ACT_CLI_REG_CANCEL_LIST,
   /** goal request */
   ACT_CLI_REG_MT_GOAL_REQ,
   /** goal message constructor */
   ACT_CLI_GOAL_NEW_GOAL,
   /** goal callback */
-  ACT_CLI_REG_GOAL_CB,
+  ACT_CLI_REG_GOAL_LIST,
   /** feedback constructor */
   ACT_CLI_REG_NEW_FEEDBACK,
   /** feedback callback */
@@ -60,6 +60,7 @@ enum ActCliReg {
   ACT_CLI_REG_NUMBER
 };
 
+/** List of outputs for clients and subscriptions */
 enum ActCliOut {
   /** response message */
   ACT_CLI_OUT_RESPONSE = 1,
@@ -71,6 +72,27 @@ enum ActCliOut {
 
 /** Action client object metatable name. */
 const char* MT_ACTION_CLIENT = "ROS2.ActionClient";
+
+/**
+ * Create action client object. Save bindings to register.
+ *
+ * Arguments:
+ * - node object
+ * - action type (table)
+ * - action name
+ * - QoS table (={})
+ * -- goal_service_qos
+ * -- result_service_qos
+ * -- cancel_service_qos
+ * -- feedback_topic_qos
+ * -- status_topic_qos
+ *
+ * Return:
+ * - action client object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 
 static int rcl_lua_action_client_init (lua_State* L)
 {
@@ -143,14 +165,33 @@ static int rcl_lua_action_client_init (lua_State* L)
 
   /* save reference objects */
   lua_createtable(L, 0, ACT_CLI_REG_NUMBER-1);  // push table a
+
   lua_pushvalue(L, 1);                   // push node
   lua_rawseti(L, -2, ACT_CLI_REG_NODE);  // pop node
+
+  lua_newtable(L);                       // push result list
+  lua_rawseti(L, -2, ACT_CLI_REG_RESULT_LIST);  // pop results
+
+  lua_newtable(L);                       // push cancel list
+  lua_rawseti(L, -2, ACT_CLI_REG_CANCEL_LIST);  // pop cancels
+
+  lua_newtable(L);                       // push goal list
+  lua_rawseti(L, -2, ACT_CLI_REG_GOAL_LIST);  // pop goals
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, cli);  // pop table, save to registry
 
   return 1;
 }
 
+/**
+ * Action client destructor.
+ *
+ * Arguments:
+ * - action client object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_free (lua_State* L)
 {
   /* arg1 - action client object */
@@ -174,6 +215,12 @@ static int rcl_lua_action_client_free (lua_State* L)
   return 0;
 }
 
+/**
+ * Request template.
+ * \param Type Service type.
+ * \param MT_ID Metatable index in register.
+ * \param CB_ID Index of callbacks in register.
+ */
 #define SEND_SERVICE_REQUEST(Type, MT_ID, CB_ID) \
   /* arg1 - action client */ \
   rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT); \
@@ -185,30 +232,76 @@ static int rcl_lua_action_client_free (lua_State* L)
   lua_pop(L, 1); \
   /* arg3 - callback */ \
   luaL_argcheck(L, lua_isfunction(L, 3), 3, "callback is expected"); \
-  lua_pushvalue(L, 3); \
-  lua_rawseti(L, -2, CB_ID); \
   /* send */ \
   int64_t seq_num = 0; \
   rcl_ret_t ret = rcl_action_send_ ## Type ## _request(cli, req->obj, &seq_num); \
   if (RCL_RET_OK != ret) { \
     luaL_error(L, "failed to send " #Type " request"); \
   } \
+  /* save callback */ \
+  lua_rawgeti(L, -1, CB_ID); \
+  lua_pushinteger(L, seq_num); \
+  lua_pushvalue(L, 3); \
+  lua_rawset(L, -3); \
+  /* return ID */ \
   lua_pushinteger(L, seq_num); \
   return 1;
 
+/**
+ * Send request to result service.
+ *
+ * Arguments:
+ * - action client object
+ * - request message
+ * - callback
+ *
+ * Return:
+ * - sequence id
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_send_result_request (lua_State* L)
 {
-  SEND_SERVICE_REQUEST(result, ACT_CLI_REG_MT_RESULT_REQ, ACT_CLI_REG_RESULT_CB)
+  SEND_SERVICE_REQUEST(result, ACT_CLI_REG_MT_RESULT_REQ, ACT_CLI_REG_RESULT_LIST)
 }
 
+/**
+ * Send request to cancel service.
+ *
+ * Arguments:
+ * - action client object
+ * - request message
+ * - callback
+ *
+ * Return:
+ * - sequence id
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_send_cancel_request (lua_State* L)
 {
-  SEND_SERVICE_REQUEST(cancel, ACT_CLI_REG_MT_CANCEL_REQ, ACT_CLI_REG_CANCEL_CB)
+  SEND_SERVICE_REQUEST(cancel, ACT_CLI_REG_MT_CANCEL_REQ, ACT_CLI_REG_CANCEL_LIST)
 }
 
+/**
+ * Send request to goal service.
+ *
+ * Arguments:
+ * - action client object
+ * - request message
+ * - callback
+ *
+ * Return:
+ * - sequence id
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_send_goal_request (lua_State* L)
 {
-  SEND_SERVICE_REQUEST(goal, ACT_CLI_REG_MT_GOAL_REQ, ACT_CLI_REG_GOAL_CB)
+  SEND_SERVICE_REQUEST(goal, ACT_CLI_REG_MT_GOAL_REQ, ACT_CLI_REG_GOAL_LIST)
 }
 
 #define TAKE_SERVICE_RESPONSE(Type, NEW_ID, CB_ID) \

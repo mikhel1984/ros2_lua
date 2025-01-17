@@ -61,7 +61,7 @@ const char* MT_CLIENT = "ROS2.Client";
  * Arguments:
  * - node object
  * - service type (table)
- * - topic name
+ * - service name
  * - qos profile (optional)
  *
  * Return:

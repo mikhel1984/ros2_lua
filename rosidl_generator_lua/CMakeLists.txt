@@ -39,8 +39,9 @@ install(
 )
 
 ament_package(
-  CONFIG_EXTRAS 
+  CONFIG_EXTRAS
     "cmake/rosidl_generator_lua_get_typesupports.cmake"
     "cmake/register_lua.cmake"
     "rosidl_generator_lua-extras.cmake.in"
+    "cmake/rosidl_lua_generate_lib.cmake"
 )

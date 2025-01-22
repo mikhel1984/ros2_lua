@@ -6,6 +6,7 @@ Collection of packages that allows writing ROS2 nodes in Lua.
 
 - support for publishers and subscriptions
 - support for clients and services
+- parameter server
 - message generation
 
 ## Installation
@@ -20,15 +21,10 @@ colcon build --symlink-install
 ```
 
 ## ROS interfaces
-To work with the ROS interfaces (std_msgs etc.) bild them locally in your workspace.
-```sh
-. install/setup.bash
-cd src
-git clone -b humble https://github.com/ros2/common_interfaces.git
-git clone -b humble https://github.com/ros2/rcl_interfaces.git
-git clone -b humble https://github.com/ros2/test_interface_files.git
-colcon build --symlink-install
-```
+
+Lua messages for default ROS interfaces can be generated using **rcllua_std_msgs** node. The 
+list of messages is defined it its CMakeLists file and could be edited acording the repository
+requirements.
 
 ## Making ROS2 package in Lua
 

@@ -6,11 +6,6 @@ The package contains examples how the ROS2 nodes can be created, testd and launc
 - *tests* - unit test example
 - *raw* - make nodes with pure **rclbind** calls
 
-## Prerequisits
-
-The package uses **std_msgs** messages. You could build it standalone in the local workspace or
-build all the common interfaces as described in the main [readme](../README.md).
-
 ## Build
 
 Call

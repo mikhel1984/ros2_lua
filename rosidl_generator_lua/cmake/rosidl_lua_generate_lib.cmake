@@ -1,7 +1,6 @@
 # Copyright 2014-2018 Open Source Robotics Foundation, Inc.
 # Copyright 2025 Stanislav Mikhel
 #
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,6 +14,7 @@
 # limitations under the License.
 
 macro(rosidl_lua_generate_lib msg_name)
+
   # Get a list of typesupport implementations from valid rmw implementations.
   set(_typesupport_impls "")
   rosidl_generator_lua_get_typesupports(_typesupport_impls)
@@ -135,22 +135,13 @@ macro(rosidl_lua_generate_lib msg_name)
   set(_target_name_lib "${rosidl_generate_interfaces_TARGET}${rosidl_generator_lua_suffix}")
 
   add_library(${_target_name_lib} SHARED ${_generated_c_files})
-  ament_target_dependencies(${_target_name_lib} 
+  ament_target_dependencies(${_target_name_lib}
     rosidl_runtime_c
     ${msg_name}
     rosidl_luacommon
   )
 
-  # Additional definitions
-  #set(_luacommon_dir "${rosidl_luacommon_DIR}/../../../include")
-  #normalize_path(_luacommon_dir "${_luacommon_dir}")
-
-  #target_include_directories(${_target_name_lib}
-  #  PRIVATE
-  #  ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c
-  #)
-
-  rosidl_get_typesupport_target(c_typesupport_target 
+  rosidl_get_typesupport_target(c_typesupport_target
     "${rosidl_generate_interfaces_TARGET}" "rosidl_typesupport_c")
 
   # Compile Lua msgs
@@ -160,7 +151,7 @@ macro(rosidl_lua_generate_lib msg_name)
       PREFIX ""
       LIBRARY_OUTPUT_NAME msg
       LIBRARY_OUTPUT_DIRECTORY ${_output_path}
-    )    
+    )
     ament_target_dependencies(msg__${msg_name}
       rosidl_runtime_c
       rosidl_luacommon
@@ -186,7 +177,7 @@ macro(rosidl_lua_generate_lib msg_name)
     )
     target_link_libraries(srv__${msg_name}
       rosidl_luacommon::rosidl_utility
-    )    
+    )
   endif()
 
   # Compile Lua actions

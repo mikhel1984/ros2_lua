@@ -14,16 +14,16 @@
 # limitations under the License.
 
 macro(rcllua_generate_interfaces interface_name)
-  
+
   # find path to 'share' message directory
   find_package(${interface_name} REQUIRED)
   set(_cm_dir ${${interface_name}_DIR})
   get_filename_component(_src_path "${${interface_name}_DIR}/.." ABSOLUTE)
-  
+
   set(_idl_tuples "")
   set(_non_idl_tuples "")
   set(_interface_tuples "")
-  
+
   # simply collect idl and not idl files
   if(EXISTS "${_src_path}/msg")
     file(GLOB _idl_files RELATIVE "${_src_path}" "${_src_path}/msg/*.idl")
@@ -35,9 +35,9 @@ macro(rcllua_generate_interfaces interface_name)
     foreach(_file ${_msg_files})
       list(APPEND _non_idl_tuples "${_src_path}:${_file}")
       list(APPEND _interface_tuples "${_src_path}:${_file}")
-    endforeach()    
+    endforeach()
   endif()
-  
+
   if(EXISTS "${_src_path}/srv")
     file(GLOB _idl_files RELATIVE "${_src_path}" "${_src_path}/srv/*.idl")
     foreach(_file ${_idl_files})
@@ -48,9 +48,9 @@ macro(rcllua_generate_interfaces interface_name)
     foreach(_file ${_msg_files})
       list(APPEND _non_idl_tuples "${_src_path}:${_file}")
       list(APPEND _interface_tuples "${_src_path}:${_file}")
-    endforeach()    
+    endforeach()
   endif()
- 
+
   # Check for any action or service interfaces
   # Which have implicit dependencies that need to be found
   foreach(_tuple ${_interface_tuples})
@@ -95,7 +95,7 @@ macro(rcllua_generate_interfaces interface_name)
       list_append_unique(_ARG_DEPENDENCIES "service_msgs")
     endif()
   endforeach()
-  
+
   # collect all interface files from dependencies
   set(_dep_files)
   foreach(_dep ${ARGN})
@@ -121,7 +121,7 @@ macro(rcllua_generate_interfaces interface_name)
       endif()
     endforeach()
   endforeach()
-  
+
   set(_non_idl_files "")
   foreach(_tuple ${_non_idl_tuples})
     string(REGEX REPLACE ":([^:]*)$" "/\\1" _non_idl_file "${_tuple}")
@@ -141,7 +141,7 @@ macro(rcllua_generate_interfaces interface_name)
   # which is ensured by every generator finding its dependencies first
   # and then registering itself as an extension
   set(rosidl_generate_interfaces_TARGET ${interface_name})
-  set(rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES ${_recursive_dependencies})  
+  set(rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES ${_recursive_dependencies})
   set(rosidl_generate_interfaces_IDL_TUPLES ${_idl_tuples})
 
   set(rosidl_generate_interfaces_ABS_IDL_FILES)
@@ -149,7 +149,7 @@ macro(rcllua_generate_interfaces interface_name)
     string(REGEX REPLACE ":([^:]*)$" "/\\1" _abs_idl_file "${_idl_tuple}")
     list(APPEND rosidl_generate_interfaces_ABS_IDL_FILES "${_abs_idl_file}")
   endforeach()
-  
-  rosidl_lua_generate_lib(${interface_name}) 
+
+  rosidl_lua_generate_lib(${interface_name})
 
 endmacro()

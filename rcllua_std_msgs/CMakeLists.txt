@@ -23,8 +23,16 @@ find_package(rosidl_generator_lua REQUIRED)
 
 include(cmake/rcllua_generate_interfaces.cmake)
 
-# Generate lua libraries
+# Generate lua libraries (name dep1 dep2 ...)
 rcllua_generate_interfaces(builtin_interfaces)
-rcllua_generate_interfaces(std_msgs builtin_interfaces)
+rcllua_generate_interfaces(std_msgs       builtin_interfaces)
+rcllua_generate_interfaces(rcl_interfaces builtin_interfaces)
+rcllua_generate_interfaces(lifecycle_msgs)
+rcllua_generate_interfaces(action_msgs    builtin_interfaces)
+rcllua_generate_interfaces(geometry_msgs  std_msgs)
+rcllua_generate_interfaces(sensor_msgs    builtin_interfaces geometry_msgs std_msgs)
+rcllua_generate_interfaces(nav_msgs       builtin_interfaces geometry_msgs std_msgs)
+
+rcllua_generate_interfaces(std_srvs)
 
 ament_package()

@@ -1,4 +1,5 @@
 # Copyright 2014-2018 Open Source Robotics Foundation, Inc.
+# Copyright 2025 Stanislav Mikhel
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +15,16 @@
 
 macro(rcllua_generate_interfaces interface_name)
   
-  message(WARNING ${ARGN})
-    
-  #_rosidl_cmake_register_package_hook()
-  #ament_export_dependencies(${_ARG_DEPENDENCIES})
-
+  # find path to 'share' message directory
   find_package(${interface_name} REQUIRED)
   set(_cm_dir ${${interface_name}_DIR})
   get_filename_component(_src_path "${${interface_name}_DIR}/.." ABSOLUTE)
-  
-  
-  #get_filename_component(_msgs_path "${_cm_dir}/../msg" ABSOLUTE)
-  message(WARNING ${_src_path})
   
   set(_idl_tuples "")
   set(_non_idl_tuples "")
   set(_interface_tuples "")
   
+  # simply collect idl and not idl files
   if(EXISTS "${_src_path}/msg")
     file(GLOB _idl_files RELATIVE "${_src_path}" "${_src_path}/msg/*.idl")
     foreach(_file ${_idl_files})
@@ -44,14 +38,22 @@ macro(rcllua_generate_interfaces interface_name)
     endforeach()    
   endif()
   
-  #message(WARNING ${_idl_tuples})
-  
-  #message(WARNING ${_non_idl_tuples})
-  
+  if(EXISTS "${_src_path}/srv")
+    file(GLOB _idl_files RELATIVE "${_src_path}" "${_src_path}/srv/*.idl")
+    foreach(_file ${_idl_files})
+      list(APPEND _idl_tuples "${_src_path}:${_file}")
+      list(APPEND _interface_tuples "${_src_path}:${_file}")
+    endforeach()
+    file(GLOB _msg_files RELATIVE "${_src_path}" "${_src_path}/srv/*.msg")
+    foreach(_file ${_msg_files})
+      list(APPEND _non_idl_tuples "${_src_path}:${_file}")
+      list(APPEND _interface_tuples "${_src_path}:${_file}")
+    endforeach()    
+  endif()
+ 
   # Check for any action or service interfaces
   # Which have implicit dependencies that need to be found
   foreach(_tuple ${_interface_tuples})
-    # We use the parent directory name to identify if the interface is an action or service
     string(REGEX REPLACE ".*:([^:]*)$" "\\1" _tuple_file "${_tuple}")
     get_filename_component(_parent_dir "${_tuple_file}" DIRECTORY)
     get_filename_component(_parent_dir ${_parent_dir} NAME)
@@ -139,11 +141,7 @@ macro(rcllua_generate_interfaces interface_name)
   # which is ensured by every generator finding its dependencies first
   # and then registering itself as an extension
   set(rosidl_generate_interfaces_TARGET ${interface_name})
-  set(rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES ${_recursive_dependencies})
-  set(rosidl_generate_interfaces_LIBRARY_NAME "")
-  set(rosidl_generate_interfaces_SKIP_INSTALL "")
-  set(rosidl_generate_interfaces_ADD_LINTER_TESTS "")
-
+  set(rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES ${_recursive_dependencies})  
   set(rosidl_generate_interfaces_IDL_TUPLES ${_idl_tuples})
 
   set(rosidl_generate_interfaces_ABS_IDL_FILES)

@@ -17,6 +17,7 @@ assert(_VERSION >= 'Lua 5.3', 'Lua 5.3+ expected')
 local rclbind = require("rcllua.rclbind")
 require("rcllua.Executor")
 
+
 --- Library
 rcllua = {}
 
@@ -30,6 +31,52 @@ local function get_global_executor()
     _executor = Executor()
   end
   return _executor
+end
+
+--- Pretty print for message.
+--  @param msg ROS message object.
+--  @param n Shift index.
+--  @return string representation of the message.
+local function _get_structure (msg, n)
+  local shift = string.rep('  ', n)
+  local acc, tp = {}, ~msg
+  if type(tp) == 'table' then
+    -- structure
+    for _, nm in ipairs(tp) do
+      local v = msg[nm]
+      if type(v) == 'userdata' then
+        -- message
+        if #v == nil then
+          -- structure
+          acc[#acc+1] = string.format('%s%s:', shift, nm)
+          acc[#acc+1] = _get_structure(v, n+1)
+        else
+          -- array
+          acc[#acc+1] = string.format(
+            '%s%s%s:', shift, nm, (~v == 'static') and string.format('[%d]', #v) or '')
+          acc[#acc+1] = _get_structure(v, n)
+        end
+      else
+        -- standard type
+        acc[#acc+1] = string.format('%s%s: %s', shift, nm, tostring(v))
+      end
+    end
+  else
+    -- array
+    for i = 1, #msg do
+      local v = msg[i]
+      if type(v) == 'userdata' then
+        -- message
+        local s = _get_structure(v, n+1)  -- structure, cannot be array
+        local ln = shift .. '- '
+        acc[#acc+1] = ln .. string.sub(s, #ln+1)
+      else
+        -- standard type
+        acc[#acc+1] = string.format('%s- %s', shift, tostring(v))
+      end
+    end
+  end
+  return table.concat(acc, '\n')
 end
 
 --- Initialize ROS environment.
@@ -70,6 +117,13 @@ end
 --  @param time Sleep time (float).
 function rcllua.sleep_sec (self, time)
   rclbind.sleep_thread(time)
+end
+
+--- Get string representation for a ROS message.
+--  @param msg Message object.
+--  @return string representation.
+function rcllua.tostring (self, msg)
+  return _get_structure(msg, 0)
 end
 
 return rcllua

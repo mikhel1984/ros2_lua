@@ -305,56 +305,87 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
 }
 
 #define TAKE_SERVICE_RESPONSE(Type, NEW_ID, CB_ID) \
+  /* arg1 - action client */ \
+  rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT); \
   /* save result into table */ \
   lua_createtable(L, ACT_CLI_OUT_NUMBER-1, 0); \
   /* prepare response message */ \
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli); \
-  if (lua_isnil(L, -1)) { \
-    luaL_error(L, "action client bindings not found"); \
-  } \
   lua_rawgeti(L, -1, NEW_ID); \
   lua_call(L, 0, 1); \
   idl_lua_msg_t* msg = lua_touserdata(L, -1); \
   /* get response */ \
   rmw_request_id_t header; \
-  rcl_ret_t ret = rcl_take_result_response(cli, &header, msg->obj); \
+  rcl_ret_t ret = rcl_action_take_ ## Type ## _response(cli, &header, msg->obj); \
   switch (ret) { \
     case RCL_RET_OK: break; \
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED: \
     case RCL_RET_ACTION_SERVER_TAKE_FAILED: \
       lua_pop(L, 2); \
-      return; \
+      return 1; \
     default: \
-      luaL_error(L, "failed to take " "result"); \
+      luaL_error(L, "failed to take " #Type); \
   } \
+  /* check request id */ \
+  lua_rawgeti(L, -2, CB_ID); \
+  lua_pushinteger(L, header.sequence_number); \
+  if (lua_rawget(L, -2) != LUA_TFUNCTION) { \
+    lua_pop(L, 2); \
+    return 1; \
+  } \
+  lua_rawseti(L, -5, ACT_CLI_OUT_CALLBACK); \
+  /* remove request */ \
+  lua_pushinteger(L, header.sequence_number); \
+  lua_pushnil(L); \
+  lua_rawset(L, -3); \
+  lua_pop(L, 1); \
+  /* response */ \
   lua_rawseti(L, -3, ACT_CLI_OUT_RESPONSE); \
-  /* save callback function */ \
-  lua_rawgeti(L, -1, CB_ID); \
-  lua_rawseti(L, -3, ACT_CLI_OUT_CALLBACK); \
-  lua_pop(L, 1);
+  lua_pop(L, 1); \
+  return 1;
 
-void rcl_lua_action_client_get_result_response (lua_State* L, const rcl_action_client_t *cli)
+/**
+ * Get response from result service.
+ * Push to the stack {response, callback}.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_action_client_get_result_response (lua_State* L)
 {
-  TAKE_SERVICE_RESPONSE(result, ACT_CLI_REG_NEW_RESULT, ACT_CLI_REG_RESULT_CB)
+  TAKE_SERVICE_RESPONSE(result, ACT_CLI_REG_NEW_RESULT, ACT_CLI_REG_RESULT_LIST)
 }
 
-void rcl_lua_action_client_get_cancel_response (lua_State* L, const rcl_action_client_t *cli)
+/**
+ * Get response from cancel service.
+ * Push to the stack {response, callback}.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_action_client_get_cancel_response (lua_State* L)
 {
-  TAKE_SERVICE_RESPONSE(cancel, ACT_CLI_REG_NEW_CANCEL, ACT_CLI_REG_CANCEL_CB)
+  TAKE_SERVICE_RESPONSE(cancel, ACT_CLI_REG_NEW_CANCEL, ACT_CLI_REG_CANCEL_LIST)
 }
 
-void rcl_lua_action_client_get_goal_response (lua_State* L, const rcl_action_client_t *cli)
+/**
+ * Get response from goal service.
+ * Push to the stack {response, callback}.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_action_client_get_goal_response (lua_State* L)
 {
-  TAKE_SERVICE_RESPONSE(goal, ACT_CLI_REG_NEW_GOAL, ACT_CLI_REG_GOAL_CB)
+  TAKE_SERVICE_RESPONSE(goal, ACT_CLI_REG_NEW_GOAL, ACT_CLI_REG_GOAL_LIST)
 }
 
 #define TAKE_MESSAGE(Type, NEW_ID, CB_ID) \
+  /* arg1 - action client */ \
+  rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT); \
   lua_createtable(L, ACT_CLI_OUT_NUMBER-1, 0); \
   /* get message constructor */ \
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli); \
-  if (lua_isnil(L, -1)) { \
-    luaL_error(L, "action client bindings not found"); \
-  } \
   lua_rawgeti(L, -1, NEW_ID); \
   /* make empty message */ \
   lua_call(L, 0, 1); \
@@ -365,26 +396,57 @@ void rcl_lua_action_client_get_goal_response (lua_State* L, const rcl_action_cli
     case RCL_RET_OK: break; \
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED: \
       lua_pop(L, 2); \
-      return; \
+      return 1; \
     default: \
-      luaL_error(L, "failed to take " "feedback"); \
+      luaL_error(L, "failed to take " #Type); \
   } \
   lua_rawseti(L, -3, ACT_CLI_OUT_RESPONSE); \
   /* save callback function */ \
   lua_rawgeti(L, -1, CB_ID); \
-  lua_rawseti(L, -3, SUB_OUT_CALLBACK); \
-  lua_pop(L, 1);
+  lua_rawseti(L, -3, ACT_CLI_OUT_CALLBACK); \
+  lua_pop(L, 1); \
+  return 1;
 
-void rcl_lua_action_client_take_feedback (lua_State* L, const rcl_action_client_t *cli)
+/**
+ * Get feedback message.
+ * Push to the stack {response, callback}.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_action_client_take_feedback (lua_State* L)
 {
   TAKE_MESSAGE(feedback, ACT_CLI_REG_NEW_FEEDBACK, ACT_CLI_REG_FEEDBACK_CB)
 }
 
-void rcl_lua_action_client_take_status (lua_State* L, const rcl_action_client_t *cli)
+/**
+ * Get status message.
+ * Push to the stack {response, callback}.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_action_client_take_status (lua_State* L)
 {
   TAKE_MESSAGE(status, ACT_CLI_REG_NEW_STATUS, ACT_CLI_REG_STATUS_CB)
 }
 
+/**
+ * Get number of enities to update wait set.
+ *
+ * Arguments:
+ * - action client
+ * 
+ * Return:
+ * - subcription number
+ * - guard conditions number
+ * - timers number
+ * - clients number
+ * - servers number
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_num_entities (lua_State* L)
 {
   /* arg1 - action client */
@@ -397,15 +459,26 @@ static int rcl_lua_action_client_num_entities (lua_State* L)
     luaL_error(L, "failed to get number of entities");
   }
 
-  lua_createtable(L, 0, 5);
+  /* put to stack */
   for(size_t i = 0; i < 5; i++) {
     lua_pushinteger(L, count[i]);
-    lua_rawseti(L, -2, i+1);
   }
 
-  return 1;
+  return 5;
 }
 
+/**
+ * Check if the action server is available.
+ *
+ * Arguments:
+ * - action client
+ *
+ * Return:
+ * - true when server is available
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_server_is_available (lua_State* L)
 {
   /* arg1 - action client object */
@@ -426,6 +499,16 @@ static int rcl_lua_action_client_server_is_available (lua_State* L)
   return 1;
 }
 
+/**
+ * Add action client to wait set.
+ *
+ * Arguments:
+ * - action client
+ * - wait set object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_add_wait_set (lua_State* L)
 {
   /* arg1 - action client */
@@ -441,6 +524,23 @@ static int rcl_lua_action_client_add_wait_set (lua_State* L)
   return 0;
 }
 
+/**
+ * Check if there are any ready entries.
+ *
+ * Arguments:
+ * - action client
+ * - wait set object
+ *
+ * Return:
+ * - feedback message flag
+ * - status message flag
+ * - goal response flag
+ * - cancel response flag
+ * - result response flag
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_is_ready (lua_State* L)
 {
   /* arg1 - action client */
@@ -455,15 +555,15 @@ static int rcl_lua_action_client_is_ready (lua_State* L)
     luaL_error(L, "failed to get ready action client entries");
   }
 
-  lua_createtable(L, 0, 5);
+  /* put to stack */
   for(size_t i = 0; i < 5; i++) {
     lua_pushboolean(L, status[i]);
-    lua_rawseti(L, -2, i+1);
   }
 
-  return 1;
+  return 5;
 }
 
+/** List of the action client methods. */
 static const struct luaL_Reg act_cli_methods[] = {
   {"__gc", rcl_lua_action_client_free},
   {"send_goal_request", rcl_lua_action_client_send_goal_request},
@@ -481,11 +581,13 @@ static const struct luaL_Reg act_cli_methods[] = {
   {NULL, NULL}
 };
 
+/* Add action client to library. */
 void rcl_lua_add_action_client (lua_State* L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_action_client_init);  // push function
   lua_setfield(L, -2, "new_action_client");          // pop, lib['new_action_client'] = function
 
+  /* metamethods */
   rcl_lua_utils_add_mt(L, MT_ACTION_CLIENT, act_cli_methods);
 }

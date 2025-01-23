@@ -328,7 +328,6 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
   if (lua_rawget(L, -2) != LUA_TFUNCTION) {               // pop request seq, push callback
     /* callback not found */
     lua_pop(L, 2);
-    puts("not found");
     return;
   }
   lua_rawseti(L, -5, CLI_OUT_CALLBACK);    // pop function, a[.] = callback

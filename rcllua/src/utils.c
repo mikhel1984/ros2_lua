@@ -108,6 +108,21 @@ static int rcl_lua_utils_get_uuid (lua_State* L)
   return 1;
 }
 
+static int rcl_lua_utils_is_instance (lua_State* L)
+{
+  bool equal = false;
+  /* arg1 - message object */
+  /* arg2 - message table */
+  if (lua_istable(L, 2)) {
+    lua_getfield(L, 2, "_metatable");    // push name
+    const char* mt = lua_tostring(L, -1);
+    equal = (mt != NULL) && (luaL_testudata(L, 1, mt) != NULL);
+  }
+
+  lua_pushboolean(L, equal);
+  return 1;
+}
+
 /* Add to library */
 void rcl_lua_add_util_methods (lua_State* L)
 {
@@ -118,4 +133,8 @@ void rcl_lua_add_util_methods (lua_State* L)
   /* generate uuid */
   lua_pushcfunction(L, rcl_lua_utils_get_uuid);  // push function
   lua_setfield(L, -2, "get_uuid");               // pop, lib['get_uuid'] = fn
+
+  /* check message type */
+  lua_pushcfunction(L, rcl_lua_utils_is_instance);  // push function
+  lua_setfield(L, -2, "is_instance");               // pop, lib['is_instance'] = fn
 }

@@ -21,6 +21,8 @@
 #include <rmw/types.h>
 #include <rmw/qos_profiles.h>
 
+#include <rosidl_luacommon/definition.h>
+
 #include "rcllua/node.h"
 #include "rcllua/qos.h"
 #include "rcllua/wait_set.h"
@@ -176,19 +178,22 @@ static int rcl_lua_action_client_init (lua_State* L)
   lua_newtable(L);                       // push interface table
   lua_pushnil(L);                        // push key
   while (lua_next(L, 2) != 0) {
+    if (strcmp(lua_tostring(L, -2), "_type_support") == 0) {
+      lua_pop(L, 1);
+      continue;
+    }
     lua_pushvalue(L, -2);                // push, duplicate key
     lua_rotate(L, -3, 1);                // key, key, value
     lua_rawset(L, -4);                   // pop key and value
   }
-  lua_pop(L, 1);                         // pop key
   lua_pushvalue(L, 5);                   // push CancelGoal interface
   lua_setfield(L, -2, "CancelGoal");     // pop, save interface
   lua_pushvalue(L, 6);                   // push GoalStatus
   lua_setfield(L, -2, "GoalStatus");     // pop, save interface
   lua_rawseti(L, -2, ACT_CLI_REG_INTERFACE);  // pop interface
 
-  lua_getfield(L, 2, "Feedback");        // push table
-  lua_getfield(L, -2, "_new");           // push constructor
+  lua_getfield(L, 2, "FeedbackMessage");  // push table
+  lua_getfield(L, -1, "_new");            // push constructor
   lua_rawseti(L, -3, ACT_CLI_REG_FEEDBACK_NEW);  // pop constructor
   lua_pop(L, 1);                         // pop table
 
@@ -261,7 +266,7 @@ static int rcl_lua_action_client_free (lua_State* L)
   lua_rawgeti(L, -1, CB_ID); \
   lua_pushvalue(L, 3); \
   lua_rawseti(L, -2, seq_num); \
-  /* return ID */ \
+  /* return sequence number */ \
   lua_pushinteger(L, seq_num); \
   return 1;
 
@@ -352,7 +357,7 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
       luaL_error(L, "failed to take " #Type); \
   } \
   /* check request id */ \
-  lua_rawgeti(L, -2, CB_ID); \
+  lua_rawgeti(L, 2, CB_ID); \
   if (lua_rawgeti(L, -1, header.sequence_number) == LUA_TNIL) { \
     return 1; \
   } \
@@ -449,6 +454,7 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED:
+      puts("cannot take");
       lua_pushnil(L);
       return 1;
     default:
@@ -458,9 +464,12 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
   /* get uuid */
   lua_getfield(L, -1, "goal_id");   // push userdata
   lua_getfield(L, -1, "uuid");      // push uuid
+  lua_remove(L, -2);                // pop goal_id
+  rcl_lua_utils_push_uuid_str(L, -1);  // push uuid str
   lua_rawgeti(L, -4, ACT_CLI_REG_FEEDBACK_LIST);  // push table b
   lua_replace(L, -3);               // pop, replace userdata
   if (lua_rawget(L, -2) == LUA_TNIL) {    // pop uuid, push callback or nil
+    puts("wrong UUID");
     return 1;  // callback not found
   }
 
@@ -675,7 +684,7 @@ static int rcl_lua_action_client_get_interface (lua_State* L)
  *
  * Arguments:
  * - action client
- * - UUID string
+ * - UUID object (table or message)
  * - function
  *
  * \param[inout] L Lua stack.
@@ -686,12 +695,14 @@ static int rcl_lua_action_client_set_feedback (lua_State* L)
   /* arg1 - action client */
   rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT);
   /* arg2 - uuid */
+  luaL_argcheck(L, lua_istable(L, 2) || lua_isuserdata(L, 2), 2, "expected message field or table");
   /* arg3 - feedback callback */
   luaL_argcheck(L, lua_isfunction(L, 3), 3, "callback is expected");
 
   /* save callback */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);
-  lua_pushvalue(L, 2);
+  lua_rawgeti(L, -1, ACT_CLI_REG_FEEDBACK_LIST);
+  rcl_lua_utils_push_uuid_str(L, 2);
   lua_pushvalue(L, 3);
   lua_rawset(L, -3);
 

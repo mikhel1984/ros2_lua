@@ -47,6 +47,15 @@ void rcl_lua_utils_add_mt (lua_State* L, const char* name, const struct luaL_Reg
 void rcl_lua_utils_add_enum (lua_State* L, const char* name, const rcl_lua_enum* ps);
 
 /**
+ * Make string representation for the UUID (table or message field).
+ * Push result to stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] pos Table index.
+ */
+void rcl_lua_utils_push_uuid_str (lua_State* L, int pos);
+
+/**
  * Add useful functions to library.
  *
  * \param[inout] L Lua stack.

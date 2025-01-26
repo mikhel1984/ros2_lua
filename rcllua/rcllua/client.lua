@@ -30,6 +30,12 @@ function Future.result (self)
   return self._result
 end
 
+--- Set / update callback method.
+--  @param func New callback function.
+function Future.add_done_callback (self, func)
+  self._callback = func
+end
+
 --- Execute callback if any.
 function Future.__call (self)
   if self._callback and self._result then
@@ -39,14 +45,16 @@ end
 
 --- Future object constructor.
 --  @param fn Callback function.
+--  @param mt Request metatable.
 --  @return new Future object.
-local function new_future (fn)
+local function new_future (fn, mt)
   local o = {
     _is_future = true,
     _is_done = false,
     _req_id = -1,
     _result = nil,
     _callback = fn,
+    _req_metatable = mt.__name,
   }
   return setmetatable(o, Future)
 end
@@ -72,10 +80,10 @@ end
 
 --- Send request to server.
 --  @param req Request object.
---  @param callback Function to execute when get response (optional) fn(response) --> nil.
+--  @param callback (=nil) Function to execute when get response (optional) fn(response) --> nil.
 --  @return Future object.
 function Client.call_async (self, req, callback)
-  local future = new_future(callback)
+  local future = new_future(callback, getmetatable(req))
   local future_cb = function (msg)
     future._result = msg
     future._is_done = true
@@ -111,4 +119,7 @@ function Client.handle (self)
   return self._client
 end
 
-return Client
+return {
+  Client = Client,
+  new_future = new_future
+} 

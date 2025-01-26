@@ -78,6 +78,8 @@ const char* MT_ACTION_CLIENT = "ROS2.ActionClient";
  * -- cancel_service_qos
  * -- feedback_topic_qos
  * -- status_topic_qos
+ * - cancel interface
+ * - state interface
  *
  * Return:
  * - action client object

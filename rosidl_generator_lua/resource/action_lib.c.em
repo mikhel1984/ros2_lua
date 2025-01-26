@@ -1,15 +1,22 @@
+// Created from rosidl_generator_lua/resource/action_lib.c.em
+// Generated code does not contain a copyright notice
+
 #include <lua.h>
 #include <lauxlib.h>
 
 #include <rosidl_luacommon/definition.h>
+
 @{
+from rosidl_generator_lua import make_include_prefix
 from rosidl_generator_lua import make_prefix
 from rosidl_parser.definition import AbstractNestedType, NamespacedType
-import sys
+# import sys
 }@
+@[for act in content]@
+#include "@(make_include_prefix(act))__type_support.h"
+@[end for]@
 @# collect functions and namespaces
 @{
-#import sys
 nested_list = []
 nested_list.append(("rosidl_luacommon", "sequence"))  # TODO check if required
 for act in content:
@@ -53,6 +60,7 @@ int luaopen_@(package_name)_action (lua_State* L)
 send_names = act.send_goal_service.request_message.structure.namespaced_type.name.split('_')
 }@
 
+  const rosidl_action_type_support_t *ts;
   // open "namespace" @(send_names[0])
   lua_createtable(L, 0, 6);              // push table
   @(make_prefix(act.goal))__add_methods(L);
@@ -74,6 +82,12 @@ result_names = act.get_result_service.request_message.structure.namespaced_type.
   @(make_prefix(act.get_result_service.response_message))__add_methods(L);
   // close "namespace" @(result_names[1])
   lua_setfield(L, -2, "@(result_names[1])");  // pop table
+
+  // add type support
+  ts = ROSIDL_TYPESUPPORT_INTERFACE__ACTION_SYMBOL_NAME(rosidl_typesupport_c, @(', '.join(act.namespaced_type.namespaced_name())))();
+  lua_pushlightuserdata(L, (void*) ts);
+  lua_setfield(L, -2, "_type_support");
+
   // close "namespace" @(send_names[0])
   lua_setfield(L, -2, "@(send_names[0])");   // pop table
 @[end for]@

@@ -1,4 +1,4 @@
-// Created from rosidl_generator_lua/resource/msg.c
+// Created from rosidl_generator_lua/resource/srv_lib.c.em
 // Generated code does not contain a copyright notice
 
 #include <lua.h>
@@ -22,7 +22,6 @@ import sys
 @# collect functions and namespaces
 @# nested types
 @{
-#import sys
 nested_list = []
 nested_list.append(("rosidl_luacommon", "sequence"))  # TODO check if required
 for srv in content:

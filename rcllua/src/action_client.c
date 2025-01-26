@@ -38,15 +38,12 @@ enum ActCliReg {
   ACT_CLI_REG_CANCEL_LIST,
   /** result requests and callbacks */
   ACT_CLI_REG_RESULT_LIST,
-  /** sequence number to goal ID */
-  ACT_CLI_REG_SEC_TO_UUID,
   /** feedback callbacks */
   ACT_CLI_REG_FEEDBACK_LIST,
   /** feedback constructor */
   ACT_CLI_REG_FEEDBACK_NEW,
   /** status interface */
   ACT_CLI_REG_STATUS_NEW,
-
  /** number of elements + 1 */
   ACT_CLI_REG_NUMBER
 };
@@ -138,6 +135,25 @@ static int rcl_lua_action_client_init (lua_State* L)
     lua_pop(L, 1);
   }
 
+  /* arg5 - cancel interface */
+  bool is_interface = false; 
+  if (lua_istable(L, 5)) {
+    lua_getfield(L, 5, "_type_support");
+    is_interface = lua_isuserdata(L, -1);
+    lua_pop(L, 1);
+  }
+  luaL_argcheck(L, is_interface, 5, "CancelGoal interface is expected");
+
+  /* arg6 - state */
+  is_interface = false;
+  if (lua_istable(L, 6)) {
+    lua_getfield(L, 6, "_type_support");
+    is_interface = lua_isuserdata(L, -1);
+    lua_pop(L, 1);
+  }
+  luaL_argcheck(L, is_interface, 6, "GoalStatus interface is expected");
+
+
   /* new action client */
   rcl_action_client_t* cli = lua_newuserdata(L, sizeof(rcl_action_client_t));
   *cli = rcl_action_get_zero_initialized_client();
@@ -170,12 +186,19 @@ static int rcl_lua_action_client_init (lua_State* L)
     lua_rawset(L, -4);
   }
   lua_pop(L, 1);                         // pop key
+  lua_pushvalue(L, 5);                   // push CancelGoal interface
+  lua_setfield(L, -2, "CancelGoal");     // pop, save interface
+  lua_pushvalue(L, 6);                   // push GoalStatus
+  lua_setfield(L, -2, "GoalStatus");     // pop, save interface
   lua_rawseti(L, -2, ACT_CLI_REG_INTERFACE);  // pop interface
 
   lua_getfield(L, 2, "Feedback");        // push table
   lua_getfield(L, -2, "_new");           // push constructor
   lua_rawseti(L, -3, ACT_CLI_REG_FEEDBACK_NEW);  // pop constructor
   lua_pop(L, 1);                         // pop table
+
+  lua_getfield(L, 6, "_new");            // push constructor
+  lua_rawseti(L, -2, ACT_CLI_REG_STATUS_NEW);  // pop constructor
 
   /* prepare tables */
   for (int i = ACT_CLI_REG_GOAL_LIST; i <= ACT_CLI_REG_FEEDBACK_LIST; i++) {
@@ -313,6 +336,7 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
   lua_rawgeti(L, -1, ACT_CLI_REG_INTERFACE); \
   lua_getfield(L, -1, TBL_NAME); \
   lua_getfield(L, -1, "Response"); \
+  lua_getfield(L, -1, "_new"); \
   lua_rotate(L, -3, 1); lua_pop(L, 2); \
   lua_call(L, 0, 1); \
   idl_lua_msg_t* msg = lua_touserdata(L, -1); \
@@ -399,33 +423,6 @@ static int rcl_lua_action_client_get_goal_response (lua_State* L)
   TAKE_SERVICE_RESPONSE(goal, "SendGoal", ACT_CLI_REG_GOAL_LIST)
 }
 
-#define TAKE_MESSAGE(Type, NEW_ID, CB_ID) \
-  /* arg1 - action client */ \
-  rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT); \
-  lua_createtable(L, ACT_CLI_OUT_NUMBER-1, 0); \
-  /* get message constructor */ \
-  lua_rawgetp(L, LUA_REGISTRYINDEX, cli); \
-  lua_rawgeti(L, -1, NEW_ID); \
-  /* make empty message */ \
-  lua_call(L, 0, 1); \
-  idl_lua_msg_t *msg = lua_touserdata(L, -1); \
-  /* get and save message */ \
-  rcl_ret_t ret = rcl_action_take_ ## Type(cli, msg->obj); \
-  switch (ret) { \
-    case RCL_RET_OK: break; \
-    case RCL_RET_ACTION_CLIENT_TAKE_FAILED: \
-      lua_pop(L, 2); \
-      return 1; \
-    default: \
-      luaL_error(L, "failed to take " #Type); \
-  } \
-  lua_rawseti(L, -3, ACT_CLI_OUT_RESPONSE); \
-  /* save callback function */ \
-  lua_rawgeti(L, -1, CB_ID); \
-  lua_rawseti(L, -3, ACT_CLI_OUT_CALLBACK); \
-  lua_pop(L, 1); \
-  return 1;
-
 /**
  * Get feedback message. If callback is registered then
  * return {message, callback} else nil.
@@ -490,7 +487,27 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
  */
 static int rcl_lua_action_client_take_status (lua_State* L)
 {
-  TAKE_MESSAGE(status, ACT_CLI_REG_NEW_STATUS, ACT_CLI_REG_STATUS_CB)
+  /* arg1 - action client */
+  rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT);
+
+  /* make empty message */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);      // push table a
+  lua_rawgeti(L, -1, ACT_CLI_REG_STATUS_NEW);  // push constructor
+  lua_call(L, 0, 1);                           // pop constructor, push message
+  idl_lua_msg_t *msg = lua_touserdata(L, -1);
+
+  /* get message */
+  rcl_ret_t ret = rcl_action_take_status(cli, msg->obj);
+  switch (ret) {
+    case RCL_RET_OK: break;
+    case RCL_RET_ACTION_CLIENT_TAKE_FAILED:
+      lua_pushnil(L);
+      return 1;
+    default:
+      luaL_error(L, "failed to take feedbak");
+  }
+
+  return 1;
 }
 
 /**
@@ -644,7 +661,7 @@ static int rcl_lua_action_client_set_feedback (lua_State* L)
   /* arg1 - action client */
   rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT);
   /* arg2 - uuid */
-  /* arg3 - callback */
+  /* arg3 - feedback callback */
   luaL_argcheck(L, lua_isfunction(L, 3), 3, "callback is expected");
 
   /* save callback */
@@ -652,29 +669,6 @@ static int rcl_lua_action_client_set_feedback (lua_State* L)
   lua_pushvalue(L, 2);
   lua_pushvalue(L, 3);
   lua_rawset(L, -3);
-
-  return 0;
-}
-
-static int rcl_lua_action_client_register_cancel (lua_State* L)
-{
-  /* arg1 - action client */
-  rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT);
-
-  /* arg2 - cancel service */
-  bool is_message = false;
-  if (lua_istable(L, 2)) {
-    lua_getfield(L, -1, "_type_support");
-    is_message = lua_isuserdata(L, -1);
-    lua_pop(L, 1);
-  }
-  luaL_argerror(L, is_message, 2, "CancelGoal service is expected");
-
-  /* save */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);      // push table
-  lua_rawgeti(L, -1, ACT_CLI_REG_INTERFACE);   // push interfaces
-  lua_pushvalue(L, 2);                         // push service
-  lua_setfield(L, -2, "CancelGoal");           // pop, save service
 
   return 0;
 }
@@ -688,21 +682,19 @@ static const struct luaL_Reg act_cli_methods[] = {
   {"take_result_response", rcl_lua_action_client_get_result_response},
   {"send_cancel_request", rcl_lua_action_client_send_cancel_request},
   {"take_cancel_response", rcl_lua_action_client_get_cancel_response},
-  {"take_and_proc_feedback", rcl_lua_action_client_take_feedback},
+  {"take_feedback", rcl_lua_action_client_take_feedback},
   {"take_status", rcl_lua_action_client_take_status},
   {"get_num_entities", rcl_lua_action_client_num_entities},
   {"is_action_server_available", rcl_lua_action_client_server_is_available},
   {"add_to_waitset", rcl_lua_action_client_add_wait_set},
   {"is_ready", rcl_lua_action_client_is_ready},
-  {"is_goal", rcl_lua_action_client_is_goal},
   {"get_interface", rcl_lua_action_client_get_interface},
   {"set_callback", rcl_lua_action_client_set_feedback},
-  {"register_cancel", rcl_lua_action_client_register_cancel},
   {NULL, NULL}
 };
 
 /* Add action client to library. */
-void rcl_lua_add_action_client (lua_State* L)
+void rcl_lua_add_action_client_methods (lua_State* L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_action_client_init);  // push function

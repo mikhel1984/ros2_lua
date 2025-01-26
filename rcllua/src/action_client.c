@@ -92,8 +92,7 @@ static int rcl_lua_action_client_init (lua_State* L)
   rosidl_action_type_support_t* ts = NULL;
   /* check table */
   if (lua_istable(L, 2)) {
-    lua_getfield(L, 2, "_type_support");   // push pointer
-    if (lua_islightuserdata(L, -1)) {
+    if (lua_getfield(L, 2, "_type_support") == LUA_TLIGHTUSERDATA) {   // push pointer
       ts = lua_touserdata(L, -1);
       lua_pop(L, 1);                       // pop pointer
     }
@@ -108,38 +107,32 @@ static int rcl_lua_action_client_init (lua_State* L)
   /* arg4 - QoS table */
   rcl_action_client_options_t action_client_ops = rcl_action_client_get_default_options();
   if (lua_istable(L, 4)) {
-    lua_getfield(L, 4, "goal_service_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 4, "goal_service_qos") != LUA_TNIL) {
       action_client_ops.goal_service_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 4, "result_service_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 4, "result_service_qos") != LUA_TNIL) {
       action_client_ops.result_service_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 4, "cancel_service_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 4, "cancel_service_qos") != LUA_TNIL) {
       action_client_ops.cancel_service_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 4, "feedback_topic_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 4, "feedback_topic_qos") != LUA_TNIL) {
       action_client_ops.feedback_topic_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 4, "status_topic_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 4, "status_topic_qos") != LUA_TNIL) {
       action_client_ops.status_topic_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
   }
 
   /* arg5 - cancel interface */
-  bool is_interface = false; 
+  bool is_interface = false;
   if (lua_istable(L, 5)) {
-    lua_getfield(L, 5, "_type_support");
-    is_interface = lua_isuserdata(L, -1);
+    is_interface = (lua_getfield(L, 5, "_type_support") == LUA_TLIGHTUSERDATA);
     lua_pop(L, 1);
   }
   luaL_argcheck(L, is_interface, 5, "CancelGoal interface is expected");
@@ -147,12 +140,10 @@ static int rcl_lua_action_client_init (lua_State* L)
   /* arg6 - state */
   is_interface = false;
   if (lua_istable(L, 6)) {
-    lua_getfield(L, 6, "_type_support");
-    is_interface = lua_isuserdata(L, -1);
+    is_interface = (lua_getfield(L, 6, "_type_support") == LUA_TLIGHTUSERDATA);
     lua_pop(L, 1);
   }
   luaL_argcheck(L, is_interface, 6, "GoalStatus interface is expected");
-
 
   /* new action client */
   rcl_action_client_t* cli = lua_newuserdata(L, sizeof(rcl_action_client_t));
@@ -171,6 +162,10 @@ static int rcl_lua_action_client_init (lua_State* L)
   luaL_getmetatable(L, MT_ACTION_CLIENT);  // push metatable
   lua_setmetatable(L, -2);                 // pop metatable
 
+  if (!lua_checkstack(L, 5)) {
+    luaL_error(L, "not enough space for action client initialization");
+  }
+
   /* save reference objects */
   lua_createtable(L, 0, ACT_CLI_REG_NUMBER-1);  // push table a
 
@@ -183,7 +178,7 @@ static int rcl_lua_action_client_init (lua_State* L)
   while (lua_next(L, 2) != 0) {
     lua_pushvalue(L, -2);                // push, duplicate key
     lua_rotate(L, -3, 1);                // key, key, value
-    lua_rawset(L, -4);
+    lua_rawset(L, -4);                   // pop key and value
   }
   lua_pop(L, 1);                         // pop key
   lua_pushvalue(L, 5);                   // push CancelGoal interface
@@ -264,9 +259,8 @@ static int rcl_lua_action_client_free (lua_State* L)
   /* save callback */ \
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli); \
   lua_rawgeti(L, -1, CB_ID); \
-  lua_pushinteger(L, seq_num); \
   lua_pushvalue(L, 3); \
-  lua_rawset(L, -3); \
+  lua_rawseti(L, -2, seq_num); \
   /* return ID */ \
   lua_pushinteger(L, seq_num); \
   return 1;
@@ -328,6 +322,11 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
   SEND_SERVICE_REQUEST(goal, ACT_CLI_REG_GOAL_LIST)
 }
 
+/**
+ * Get service response.
+ * \param TBL_NAME String with service name.
+ * \param CB_ID Index of table with service callbacks.
+ */
 #define TAKE_SERVICE_RESPONSE(Type, TBL_NAME, CB_ID) \
   /* arg1 - action client */ \
   rcl_action_client_t* cli = lua_touserdata(L, 1); \
@@ -354,8 +353,7 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
   } \
   /* check request id */ \
   lua_rawgeti(L, -2, CB_ID); \
-  lua_pushinteger(L, header.sequence_number); \
-  if (lua_isnil(L, -1)) { \
+  if (lua_rawgeti(L, -1, header.sequence_number) == LUA_TNIL) { \
     return 1; \
   } \
   /* save result into table */ \
@@ -367,9 +365,8 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
   lua_pushinteger(L, header.sequence_number); \
   lua_rawseti(L, -2, ACT_CLI_OUT_SEQUENCE); \
   /* remove request */ \
-  lua_pushinteger(L, header.sequence_number); \
   lua_pushnil(L); \
-  lua_rawset(L, -5); \
+  lua_rawseti(L, -4, header.sequence_number); \
   return 1;
 
 /**
@@ -463,24 +460,28 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
   lua_getfield(L, -1, "uuid");      // push uuid
   lua_rawgeti(L, -4, ACT_CLI_REG_FEEDBACK_LIST);  // push table b
   lua_replace(L, -3);               // pop, replace userdata
-  lua_rawget(L, -2);                // pop uuid, push callback or nil
-  if (lua_isnil(L, -1)) {
+  if (lua_rawget(L, -2) == LUA_TNIL) {    // pop uuid, push callback or nil
     return 1;  // callback not found
   }
 
   /* prepare result */
   lua_createtable(L, ACT_CLI_OUT_NUMBER-1, 0);  // push table c
   lua_pushvalue(L, -2);                  // push feedback
-  lua_rawseti(L, ACT_CLI_OUT_CALLBACK);  // pop feedback
+  lua_rawseti(L, -2, ACT_CLI_OUT_CALLBACK);  // pop feedback
   lua_pushvalue(L, -4);                  // push message
-  lua_rawseti(L, ACT_CLI_OUT_RESPONSE);  // pop message
+  lua_rawseti(L, -2, ACT_CLI_OUT_RESPONSE);  // pop message
 
   return 1;
 }
 
 /**
  * Get status message.
- * Push to the stack {response, callback}.
+ *
+ * Arguments:
+ * - action client
+ *
+ * Return:
+ * - status message
  *
  * \param[inout] L Lua stack.
  * \return number of outputs.
@@ -504,7 +505,7 @@ static int rcl_lua_action_client_take_status (lua_State* L)
       lua_pushnil(L);
       return 1;
     default:
-      luaL_error(L, "failed to take feedbak");
+      luaL_error(L, "failed to take status");
   }
 
   return 1;
@@ -529,7 +530,7 @@ static int rcl_lua_action_client_take_status (lua_State* L)
 static int rcl_lua_action_client_num_entities (lua_State* L)
 {
   /* arg1 - action client */
-  rcl_action_client_t* cli = luaL_checkudata(L, 1, MT_ACTION_CLIENT);
+  rcl_action_client_t* cli = lua_touserdata(L, 1);
 
   size_t count[] = {0, 0, 0, 0, 0};
   rcl_ret_t ret = rcl_action_client_wait_set_get_num_entities(
@@ -571,7 +572,7 @@ static int rcl_lua_action_client_server_is_available (lua_State* L)
   bool available = false;
   rcl_ret_t ret = rcl_action_server_is_available(node, cli, &available);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to check server");
+    luaL_error(L, "failed to check action server");
   }
 
   lua_pushboolean(L, available);
@@ -642,6 +643,19 @@ static int rcl_lua_action_client_is_ready (lua_State* L)
   return 5;
 }
 
+/**
+ * Get message constructor for the specific action structure.
+ *
+ * Arguments:
+ * - action client
+ * - interface name
+ *
+ * Return:
+ * - found interface table or nil
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_get_interface (lua_State* L)
 {
   /* arg1 - action client */
@@ -656,6 +670,17 @@ static int rcl_lua_action_client_get_interface (lua_State* L)
   return 1;
 }
 
+/**
+ * Set function to call for action server feedback.
+ *
+ * Arguments:
+ * - action client
+ * - UUID string
+ * - function
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_action_client_set_feedback (lua_State* L)
 {
   /* arg1 - action client */
@@ -689,7 +714,7 @@ static const struct luaL_Reg act_cli_methods[] = {
   {"add_to_waitset", rcl_lua_action_client_add_wait_set},
   {"is_ready", rcl_lua_action_client_is_ready},
   {"get_interface", rcl_lua_action_client_get_interface},
-  {"set_callback", rcl_lua_action_client_set_feedback},
+  {"set_feedback_method", rcl_lua_action_client_set_feedback},
   {NULL, NULL}
 };
 

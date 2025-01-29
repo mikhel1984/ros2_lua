@@ -15,6 +15,7 @@
 #ifndef RCLLUA__SUBSCRIBER_H_
 #define RCLLUA__SUBSCRIBER_H_
 
+#include <stdbool.h>
 #include <lua.h>
 
 struct rcl_subscription_s;
@@ -34,8 +35,9 @@ void rcl_lua_add_subscription_methods (lua_State* L);
  *
  * \param[inout] L Lua stack.
  * \param[in] sub pointer to subscription.
+ * \return true when push result.
  */
-void rcl_lua_subscription_push_callback (
+bool rcl_lua_subscription_push_callback (
   lua_State* L, const struct rcl_subscription_s* sub);
 
 #endif  // RCLLUA__SUBSCRIBER_H_

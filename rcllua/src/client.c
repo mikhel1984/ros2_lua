@@ -296,7 +296,7 @@ void rcl_lua_add_client_methods (lua_State* L)
 }
 
 /* Receive response */
-void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
+bool rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
 {
   /* save result into table */
   lua_createtable(L, CLI_OUT_NUMBER-1, 0);  // push table a
@@ -304,7 +304,8 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
   /* prepare response message */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);   // push table b (bindings)
   if (lua_isnil(L, -1)) {
-    luaL_error(L, "client bindings not found");
+    lua_pop(L, 2);
+    return false;
   }
   lua_rawgeti(L, -1, CLI_REG_NEW_RESPONSE);   // push constructor from b
   lua_call(L, 0, 1);                        // pop constructor, push message
@@ -317,7 +318,7 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
     case RCL_RET_OK: break;
     case RCL_RET_CLIENT_TAKE_FAILED:
       lua_pop(L, 2);  // keep only a
-      return;         // {nil, nil}
+      return true;         // {nil, nil}
     default:
       luaL_error(L, "encountered error when taking client response");
   }
@@ -328,7 +329,7 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
   if (lua_rawget(L, -2) != LUA_TFUNCTION) {               // pop request seq, push callback
     /* callback not found */
     lua_pop(L, 2);
-    return;
+    return true;
   }
   lua_rawseti(L, -5, CLI_OUT_CALLBACK);    // pop function, a[.] = callback
   
@@ -342,4 +343,5 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
 
   lua_pop(L, 1);                           // pop b
   /* keep table 'a' on stack */
+  return true;
 }

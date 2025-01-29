@@ -15,6 +15,7 @@
 #ifndef RCLLUA__TIMER_H_
 #define RCLLUA__TIMER_H_
 
+#include <stdbool.h>
 #include <lua.h>
 
 struct rcl_timer_s;
@@ -33,7 +34,8 @@ void rcl_lua_add_timer_methods (lua_State* L);
  *
  * \param[inout] L Lua stack.
  * \param[in] timer pointer to timer.
+ * \return true when push result
  */
-void rcl_lua_timer_push_callback (lua_State* L, const struct rcl_timer_s* timer);
+bool rcl_lua_timer_push_callback (lua_State* L, const struct rcl_timer_s* timer);
 
 #endif  // RCLLUA__TIMER_H_

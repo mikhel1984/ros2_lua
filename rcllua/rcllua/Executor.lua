@@ -116,19 +116,13 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
   wait_set:wait(timeout_sec)
   if not rclbind.context_ok() then return true end
 
-    -- collect result
-    --[[
+  -- collect result
   subscriptions = wait_set:ready_subscriptions()
   timers = wait_set:ready_timers()
   clients = wait_set:ready_clients()
   services = wait_set:ready_services()
-  ]]
-  subscriptions = {}
-  timers = {}
-  clients = {}
-  services = {}
 
-  -- execute
+    -- execute
   for _, act in ipairs(actions) do
     local data = act:take_data(wait_set)
     if data then

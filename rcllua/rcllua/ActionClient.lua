@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-local action_msgs = require("action_msgs.msg")
+local action_msg = require("action_msgs.msg")
 local action_srv = require("action_msgs.srv")
 
 local rclbind = require("rcllua.rclbind")
@@ -53,10 +53,10 @@ local function new_goal_handle (action_client, goal_id, goal_response)
     _action_client = action_client,
     _goal_id = goal_id,
     _goal_response = goal_response,
-    _status = action_msgs.GoalStatus.STATUS_UNKNOWN,
+    _status = action_msg.GoalStatus.STATUS_UNKNOWN,
   }
   local s = rclbind.uuid_to_str(goal_id.uuid)
-  self._uuid_handle[s] = o
+  action_client._uuid_handle[s] = o
   return setmetatable(o, ClientGoalHandle)
 end
 
@@ -203,18 +203,26 @@ function ActionClient.wait_for_server (self, timeout_sec)
   return self._client:is_action_server_available()
 end
 
+function ActionClient.get_num_entities (self)
+  return self._client:get_num_entities()
+end
+
+function ActionClient.add_to_waitset (self, wait_set)
+  self._client:add_to_waitset(wait_set)
+end
+
 
 setmetatable(ActionClient, 
 {
 __call = function (self, node, action_type, action_name, qos)
   local client = rclbind.new_action_client(
-    node._node__object, action_type, action_name, 
+    node._node__object, action_type, action_name, qos,
     action_srv.CancelGoal, action_msg.GoalStatusArray)
-  node:add_waitable(client)
   local o = {
     _client = client,  
     _uuid_handle = {}
   }
+  node:add_waitable(o)
   return setmetatable(o, self)
 end
 })

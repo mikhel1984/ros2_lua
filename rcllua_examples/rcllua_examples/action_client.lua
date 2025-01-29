@@ -9,13 +9,11 @@ require "rcllua.ActionClient"
 local Fibonacci = require("action_tutorials_interfaces.action").Fibonacci
 
 local function list_to_string (list)
-  --local t = {}
-  --for i, v in ipairs(list) do t[i] = 
   return table.concat(list, ' ')
 end
 
 local FibonacciActionClient = Node {
-  node = 'fibonacci_action_client',
+  name = 'fibonacci_action_client',
 
   init = function (self)
     self.action_client = ActionClient(self, Fibonacci, 'fibonacci')
@@ -24,7 +22,7 @@ local FibonacciActionClient = Node {
   send_goal = function (self, order)
     local goal_msg = Fibonacci.Goal {order = order}
     self.action_client:wait_for_server()
-    local send_goal_future = self.action_client:send_goal_async(goal_msg, self:bind 'result_cb')
+    local send_goal_future = self.action_client:send_goal_async(goal_msg, self:bind 'feedback_cb')
     send_goal_future:add_done_callback(self:bind 'get_response_cb')
   end,
 
@@ -40,7 +38,7 @@ local FibonacciActionClient = Node {
   end,
 
   feedback_cb = function (self, msg)
-    self:get_logger():info("Feedback: %s", list_to_string(msg))
+    self:get_logger():info("Feedback: %s", list_to_string(msg.feedback.partial_sequence))
   end, 
 
   get_result_cb = function (self, future)

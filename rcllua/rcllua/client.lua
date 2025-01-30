@@ -43,6 +43,8 @@ function Future.__call (self)
   end
 end
 
+--- Update result field.
+--  @param value Result.
 function Future._set_result(self, value)
   self._result = value
   self._is_done = true
@@ -50,7 +52,7 @@ end
 
 --- Future object constructor.
 --  @param fn Callback function.
---  @param mt Request metatable.
+--  @param mt (=nil) Request metatable name (optional).
 --  @return new Future object.
 local function new_future (fn, mt)
   local o = {
@@ -59,7 +61,7 @@ local function new_future (fn, mt)
     _req_id = -1,
     _result = nil,
     _callback = fn,
-    _req_metatable = mt.__name,
+    _req_metatable = mt and mt.__name,
   }
   return setmetatable(o, Future)
 end
@@ -126,4 +128,4 @@ end
 return {
   Client = Client,
   new_future = new_future
-} 
+}

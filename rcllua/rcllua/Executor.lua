@@ -64,7 +64,7 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
       guard_cnt = guard_cnt + guard_no
     end
   end
-  
+
   if executor._sub_no ~= sub_cnt then
     executor._sub_no = sub_cnt
     executor._wait_set = nil
@@ -246,7 +246,7 @@ function Executor.spin_once (self, timeout_sec)
 end
 
 -- Allow to call Executor table.
-setmetatable(Executor, 
+setmetatable(Executor,
 {
 --- Create Executor object.
 __call = function ()
@@ -263,7 +263,7 @@ __call = function ()
   o._ev_no = 0
   setmetatable(o, Executor)
   return o
-end 
+end
 })
 
 return Executor

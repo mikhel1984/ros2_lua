@@ -267,7 +267,7 @@ function Node.__call (self, ...)
 end
 
 -- Allow to call Node table.
-setmetatable(Node, 
+setmetatable(Node,
 {
 --- Node class constructor.
 --  @param param Table with initialization parameters.
@@ -275,7 +275,7 @@ __call = function (self, param)
   assert(param and param.name, "'name' must be defined")
   -- save as init parameters
   return setmetatable(param, self)
-end 
+end
 })
 
 --    LOGGER

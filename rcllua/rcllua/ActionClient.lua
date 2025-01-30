@@ -18,36 +18,51 @@ local action_srv = require("action_msgs.srv")
 local rclbind = require("rcllua.rclbind")
 local new_future = require("rcllua.client").new_future
 
-
--- ClientGoalHandle class
+-- ClientGoalHandle class.
 local ClientGoalHandle = {}
 ClientGoalHandle.__index = ClientGoalHandle
 
+--- Get goal UUID.
+--  @return UUID object.
 function ClientGoalHandle.goal_id (self)
   return self._goal_id
 end
 
+--- Get response time.
+--  @return Time object.
 function ClientGoalHandle.stamp (self)
   return self._goal_response.stamp
 end
 
+--- Check if the goal is accepted.
+--  @return true when accepted
 function ClientGoalHandle.accepted (self)
   return self._goal_response.accepted
 end
 
+--- Send cancel request.
+--  @return Future object.
 function ClientGoalHandle.cancel_goal_async (self)
   return self._action_client:_cancel_goal_async(self)
 end
 
+--- Send result request.
+--  @return Future object.
 function ClientGoalHandle.get_result_async (self)
   return self._action_client:_get_result_async(self)
 end
 
+--- Check UUID equality.
+--  @return true when ID are equal.
 function ClientGoalHandle.__eq (self, other)
   return self._goal_id == other._goal_id
 end
 
-
+--- ClientGoalHandle constructor.
+--  @param action_client Action client object.
+--  @param goal_id Goal UUID.
+--  @param goal_response Goal response message.
+--  @return new ClientGoalHandle object.
 local function new_goal_handle (action_client, goal_id, goal_response)
   local o = {
     _action_client = action_client,
@@ -65,6 +80,10 @@ end
 ActionClient = {}
 ActionClient.__index = ActionClient
 
+--- Send new goal request to action server.
+--  @param goal Goal message.
+--  @param cb_feedback (=nil) Function to process feedback messages (optional).
+--  @param uuid (=nil) Task UUID (optional).
 function ActionClient.send_goal_async (self, goal, cb_feedback, uuid)
   assert(rclbind.is_instance(goal, self._client:get_interface 'Goal'), 'action goal is expected')
   -- prepare message
@@ -76,8 +95,8 @@ function ActionClient.send_goal_async (self, goal, cb_feedback, uuid)
     request.goal_id.uuid(rclbind.get_uuid())   -- make from array
   end
   -- register callback
-  if cb_feedback then 
-    self._client:set_feedback_method(request.goal_id.uuid, cb_feedback) 
+  if cb_feedback then
+    self._client:set_feedback_method(request.goal_id.uuid, cb_feedback)
   end
   -- prepare 'future'
   local future = new_future(nil, getmetatable(request))
@@ -91,6 +110,9 @@ function ActionClient.send_goal_async (self, goal, cb_feedback, uuid)
   return future
 end
 
+--- Check if there are available messages.
+--  @param wait_set WaitSet object.
+--  @return table with incoming data or nil.
 function ActionClient.take_data (self, wait_set)
   local is_feedback, is_status, is_goal, is_cancel, is_result = self._client:is_ready(wait_set)
   local data = {}
@@ -106,13 +128,15 @@ function ActionClient.take_data (self, wait_set)
   return nil
 end
 
+--- Process incoming data. The method works inside a Lua coroutine.
+--  @param data Table with incoming data.
 function ActionClient.execute (self, data)
   local value = data['goal']
   if value then
     local resp, cb, seq = table.unpack(value)
-    local future = cb(resp)  -- make handle
+    local future = cb(resp)
     if future._callback then
-      coroutine.yield(function () future._callback(future) end)
+      coroutine.yield(function () future:_callback() end)
     end
   end
 
@@ -121,7 +145,7 @@ function ActionClient.execute (self, data)
     local resp, cb, seq = table.unpack(value)
     local future = cb(resp)
     if future._callback then
-      coroutine.yield(function () future._callback(future) end)
+      coroutine.yield(function () future:_callback() end)
     end
   end
 
@@ -130,7 +154,7 @@ function ActionClient.execute (self, data)
     local resp, cb, seq = table.unpack(value)
     local future = cb(resp)
     if future._callback then
-      coroutine.yield(function () future._callback(future) end)
+      coroutine.yield(function () future:_callback() end)
     end
   end
 
@@ -143,15 +167,14 @@ function ActionClient.execute (self, data)
   value = data['status']
   if value then
     local goal_status = action_msg.GoalStatus
-    local status_list = value.status_list
-    for _, msg in ipairs(status_list) do
+    for _, msg in ipairs(value.status_list) do
       local s = rclbind.uuid_to_str(msg.goal_info.goal_id.uuid)
       local handle = self._uuid_handle[s]
       if handle then
         local status = msg.status
         handle._status = status
-        if goal_status.STATUS_SUCCEEDED == status or 
-           goal_status.STATUS_CANCELED == status or 
+        if goal_status.STATUS_SUCCEEDED == status or
+           goal_status.STATUS_CANCELED == status or
            goal_status.STATUS_ABORTED == status
         then
           self._uuid_handle[s] = nil
@@ -162,35 +185,45 @@ function ActionClient.execute (self, data)
   end
 end
 
+--- Send cancel request.
+--  @param handle ClientGoalHandle object.
+--  @return future object.
 function ActionClient._cancel_goal_async (self, handle)
   local request = action_srv.CancelGoal.Request()
   request.goal_info.goal_id = handle:goal_id()
   local future = new_future(nil, getmetatable(request))
-  local future_cb = function (resp)
-    future:_set_result(resp)
-    return future
-  end
-  future._req_id = self._client:send_cancel_request(request, future_cb)
+  future._req_id = self._client:send_cancel_request(request,
+    function (resp)
+      future:_set_result(resp)
+      return future
+    end)
   return future
 end
 
+--- Send result request.
+--  @param handle ClientGoalHandle object.
+--  @return future object.
 function ActionClient._get_result_async (self, handle)
-  local srv = self._client:get_interface 'GetResult'
-  local request = srv.Request()
+  local request = self._client:get_interface('GetResult').Request()
   request.goal_id = handle:goal_id()
   local future = new_future(nil, getmetatable(request))
-  local future_cb = function (resp)
-    future:_set_result(resp)
-    return future
-  end
-  future._req_id = self._client:send_result_request(request, future_cb)
+  future._req_id = self._client:send_result_request(request,
+    function (resp)
+      future:_set_result(resp)
+      return future
+    end)
   return future
 end
 
+--- Check if the action server is available.
+--  @return true if server is ready.
 function ActionClient.server_is_ready (self)
   return self._client:is_action_server_available()
 end
 
+--- Sleep until action server become ready.
+--  @param timeout_sec (=inf) Wait time (optional).
+--  @return true if service is ready.
 function ActionClient.wait_for_server (self, timeout_sec)
   local sleep_time = math.min(0.2, timeout_sec or 1.0)
   timeout_sec = timeout_sec or math.huge
@@ -203,28 +236,36 @@ function ActionClient.wait_for_server (self, timeout_sec)
   return self._client:is_action_server_available()
 end
 
+--- Get number of available interfaces.
+--  @return 5 numbers.
 function ActionClient.get_num_entities (self)
   return self._client:get_num_entities()
 end
 
+--- Add action client object to wait set.
 function ActionClient.add_to_waitset (self, wait_set)
   self._client:add_to_waitset(wait_set)
 end
 
-
-setmetatable(ActionClient, 
+-- Allow to call ActionClient table.
+setmetatable(ActionClient,
 {
+--- ActionClient constructor.
+--  @param node Source node object.
+--  @param action_type Action service type.
+--  @param action_name Action service name.
+--  @param qos (={}) Table with quality of service for each client component.
+--  @return new ActionClient object.
 __call = function (self, node, action_type, action_name, qos)
   local client = rclbind.new_action_client(
     node._node__object, action_type, action_name, qos,
     action_srv.CancelGoal, action_msg.GoalStatusArray)
   local o = {
-    _client = client,  
-    _uuid_handle = {}
+    _client = client,
+    _uuid_handle = {},
   }
   node:add_waitable(o)
   return setmetatable(o, self)
 end
 })
-
 

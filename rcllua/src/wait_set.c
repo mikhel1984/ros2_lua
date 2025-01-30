@@ -318,8 +318,9 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
   for (size_t i = 0; i < ws->size_of_timers; i++) {
     /* table {callback, ref} */
     if (ws->timers[i]) {
-      rcl_lua_timer_push_callback(L, ws->timers[i]);     // push table
-      lua_rawseti(L, -2, ind++);        // pop function
+      if (rcl_lua_timer_push_callback(L, ws->timers[i])) {   // push table 
+        lua_rawseti(L, -2, ind++);        // pop function
+      }
     }
   }
 
@@ -349,8 +350,9 @@ static int rcl_lua_wait_set_ready_subscription (lua_State* L)
   for (size_t i = 0; i < ws->size_of_subscriptions; i++) {
     /* table {message, function} */
     if (ws->subscriptions[i]) {
-      rcl_lua_subscription_push_callback(L, ws->subscriptions[i]);  // push table b
-      lua_rawseti(L, -2, ind++);         // pop table b
+      if (rcl_lua_subscription_push_callback(L, ws->subscriptions[i])) { // push table b
+        lua_rawseti(L, -2, ind++);         // pop table b
+      }
     }
   }
 
@@ -380,8 +382,9 @@ static int rcl_lua_wait_set_ready_clients (lua_State* L)
   for (size_t i = 0; i < ws->size_of_clients; i++) {
     /* add table */
     if (ws->clients[i]) {
-      rcl_lua_client_push_response(L, ws->clients[i]);  // push table b
-      lua_rawseti(L, -2, ind++);      // pop table b
+      if (rcl_lua_client_push_response(L, ws->clients[i])) { // push table b
+        lua_rawseti(L, -2, ind++);      // pop table b
+      }
     }
   }
 
@@ -411,8 +414,9 @@ static int rcl_lua_wait_set_ready_services (lua_State* L)
   for (size_t i = 0; i < ws->size_of_services; i++) {
     /* add table */
     if (ws->services[i]) {
-      rcl_lua_service_push_callback(L, ws->services[i]);  // push table b
-      lua_rawseti(L, -2, ind++);     // pop table b
+      if (rcl_lua_service_push_callback(L, ws->services[i])) {  // push table b
+        lua_rawseti(L, -2, ind++);     // pop table b
+      }
     }
   }
 

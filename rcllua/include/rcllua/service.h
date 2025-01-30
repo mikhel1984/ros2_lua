@@ -15,6 +15,7 @@
 #ifndef RCLLUA__SERVICE_H_
 #define RCLLUA__SERVICE_H_
 
+#include <stdbool.h>
 #include <lua.h>
 
 struct rcl_service_s;
@@ -34,7 +35,8 @@ void rcl_lua_add_service_methods (lua_State* L);
  *
  * \param[inout] L Lua stack.
  * \param[in] srv pointer to service.
+ * \return true when put result.
  */
-void rcl_lua_service_push_callback (lua_State* L, const struct rcl_service_s* srv);
+bool rcl_lua_service_push_callback (lua_State* L, const struct rcl_service_s* srv);
 
 #endif  // RCLLUA__SERVICE_H_

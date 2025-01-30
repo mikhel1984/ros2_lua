@@ -174,7 +174,11 @@ static int String_seq_call (lua_State* L)
   bool done = false;
   int tp = lua_type(L, 2);
 
-  if (LUA_TUSERDATA == tp) {
+  if (LUA_TNONE == tp) {
+    lua_pushnil(L);  // no constructor
+    return 1;
+
+  } else if (LUA_TUSERDATA == tp) {
     /* arg2 - other message */
     return String_seq_copy(L);
 

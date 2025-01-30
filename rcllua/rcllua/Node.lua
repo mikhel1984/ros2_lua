@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 local rclbind = require("rcllua.rclbind")
-local client_lib = require("rcllua.client")
+local client_lib = require("rcllua.client").Client
 
 -- "Lazy" access
 local node_params = nil  -- parameter methods
@@ -138,6 +138,10 @@ function Node.set_executor (self, executor)
   self._executor__weak.ref = executor
 end
 
+function Node.add_waitable (self, action)
+  table.insert(self._action__list, action)
+end
+
 --- Get current Executor object.
 --  @return reference to executor.
 function Node.executor (self)
@@ -238,6 +242,7 @@ function Node.__call (self, ...)
   o._service__list = {}
   o._guard__list = {}
   o._event__list = {}
+  o._action__list = {}
   -- for parameters
   o._parameter__list = {}
   o._descriptor__list = {}
@@ -262,7 +267,7 @@ function Node.__call (self, ...)
 end
 
 -- Allow to call Node table.
-setmetatable(Node, 
+setmetatable(Node,
 {
 --- Node class constructor.
 --  @param param Table with initialization parameters.
@@ -270,7 +275,7 @@ __call = function (self, param)
   assert(param and param.name, "'name' must be defined")
   -- save as init parameters
   return setmetatable(param, self)
-end 
+end
 })
 
 --    LOGGER

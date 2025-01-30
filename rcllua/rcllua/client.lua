@@ -30,23 +30,38 @@ function Future.result (self)
   return self._result
 end
 
+--- Set / update callback method.
+--  @param func New callback function.
+function Future.add_done_callback (self, func)
+  self._callback = func
+end
+
 --- Execute callback if any.
 function Future.__call (self)
-  if self._callback and self._result then
-    self._callback(self._result)
+  if self._callback then
+    self._callback(self)
   end
+end
+
+--- Update result field.
+--  @param value Result.
+function Future._set_result(self, value)
+  self._result = value
+  self._is_done = true
 end
 
 --- Future object constructor.
 --  @param fn Callback function.
+--  @param mt (=nil) Request metatable name (optional).
 --  @return new Future object.
-local function new_future (fn)
+local function new_future (fn, mt)
   local o = {
     _is_future = true,
     _is_done = false,
     _req_id = -1,
     _result = nil,
     _callback = fn,
+    _req_metatable = mt and mt.__name,
   }
   return setmetatable(o, Future)
 end
@@ -72,13 +87,12 @@ end
 
 --- Send request to server.
 --  @param req Request object.
---  @param callback Function to execute when get response (optional) fn(response) --> nil.
+--  @param callback (=nil) Function to execute when get response (optional) fn(response) --> nil.
 --  @return Future object.
 function Client.call_async (self, req, callback)
-  local future = new_future(callback)
+  local future = new_future(callback, getmetatable(req))
   local future_cb = function (msg)
-    future._result = msg
-    future._is_done = true
+    future:_set_result(msg)
   end
   future._req_id = self._client:send_request(req, future_cb)
   return future
@@ -88,7 +102,7 @@ end
 --  @param timeout_sec Wait time.
 --  @return true if service is ready.
 function Client.wait_for_service (self, timeout_sec)
-  local sleep_time = math.min(0.2, timeout_sec)
+  local sleep_time = math.min(0.2, timeout_sec or 1.0)
   timeout_sec = timeout_sec or math.huge
   while rclbind.context_ok() and not self._client:service_is_available()
     and timeout_sec > 0
@@ -99,10 +113,19 @@ function Client.wait_for_service (self, timeout_sec)
   return self._client:service_is_available()
 end
 
+--- Free request callback.
+--  @param future Future object.
+function Client.remove_pending_request (self, future)
+  self._client:remove_pending_request(future._req_id)
+end
+
 --- Get client object.
 --  @return client (userdata).
 function Client.handle (self)
   return self._client
 end
 
-return Client
+return {
+  Client = Client,
+  new_future = new_future
+}

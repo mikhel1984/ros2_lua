@@ -639,7 +639,19 @@ static int @(msg_prefix)__lcall (lua_State* L) {
   bool done = false;
   int tp = lua_type(L, 2);
 
-  if (LUA_TUSERDATA == tp) {
+  if (LUA_TNONE == tp) {
+    /* make new message */
+    @(msg_prefix)__lnew(L);   // push new message
+    lua_insert(L, 1);         // swap
+    @(msg_prefix)__lcopy(L);  // push fill result
+    if (lua_toboolean(L, -1)) {
+      lua_pushvalue(L, 1);
+    } else {
+      lua_pushnil(L);
+    }
+    return 1;
+
+  } else if (LUA_TUSERDATA == tp) {
     /* copy values */
     return @(msg_prefix)__lcopy(L);
 

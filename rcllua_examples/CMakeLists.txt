@@ -15,6 +15,8 @@ rcllua_cmake_executable(${PROJECT_NAME}/service.lua
   simple_service)
 rcllua_cmake_executable(${PROJECT_NAME}/client.lua
   simple_client)
+rcllua_cmake_executable(${PROJECT_NAME}/action_client.lua
+  action_client)
 
 # rclbind examples
 rcllua_cmake_executable(raw/timer.lua raw_timer)
@@ -22,6 +24,7 @@ rcllua_cmake_executable(raw/publisher.lua raw_publisher)
 rcllua_cmake_executable(raw/subscription.lua raw_subscription)
 rcllua_cmake_executable(raw/service.lua raw_service)
 rcllua_cmake_executable(raw/client.lua raw_client)
+rcllua_cmake_executable(raw/action_client.lua raw_action_client)
 
 # if need
 # copy files to install/lib directory, add to Lua path

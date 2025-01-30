@@ -15,6 +15,7 @@
 #ifndef RCLLUA__CLIENT_H_
 #define RCLLUA__CLIENT_H_
 
+#include <stdbool.h>
 #include <lua.h>
 
 struct rcl_client_s;
@@ -34,7 +35,8 @@ void rcl_lua_add_client_methods (lua_State* L);
  *
  * \param[inout] L Lua stack.
  * \param[in] cli pointer to client.
+ * \return true when push result.
  */
-void rcl_lua_client_push_response (lua_State* L, const struct rcl_client_s* cli);
+bool rcl_lua_client_push_response (lua_State* L, const struct rcl_client_s* cli);
 
 #endif  // RCLLUA__CLIENT_H_

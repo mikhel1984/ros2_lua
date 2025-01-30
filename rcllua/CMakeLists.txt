@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rcl REQUIRED)
 find_package(rcutils REQUIRED)
+find_package(rcl_action REQUIRED)
 find_package(Lua REQUIRED)  # >= 5.3
 
 find_package(rcllua_cmake REQUIRED)
@@ -37,12 +38,14 @@ add_library(${LIB_NAME} SHARED
   src/service.c
   src/client.c
   src/qos.c
+  src/action_client.c
 )
 
 ament_target_dependencies(${LIB_NAME}
   rcl
   rcutils
   rosidl_luacommon
+  rcl_action
 )
 
 set_target_properties(${LIB_NAME} PROPERTIES 

@@ -28,7 +28,7 @@
 #include "rcllua/node.h"
 #include "rcllua/utils.h"
 
-/** Indices of service bindings in register. */
+/** Indices of client bindings in register. */
 enum CliReg {
   /** node reference */
   CLI_REG_NODE = 1,
@@ -36,8 +36,8 @@ enum CliReg {
   CLI_REG_MT_REQUEST,
   /** response message constructor */
   CLI_REG_NEW_RESPONSE,
-  /** callback function */
-  CLI_REG_CALLBACK,
+  /** requests */
+  CLI_REG_LIST_REQ,
   /** number of elements + 1 */
   CLI_REG_NUMBER
 };
@@ -46,7 +46,7 @@ enum CliReg {
 enum CliOut {
   /** response message */
   CLI_OUT_RESPONSE = 1,
-  /** callback function (if any) */
+  /** callback function */
   CLI_OUT_CALLBACK,
   /** number of elements + 1 */
   CLI_OUT_NUMBER
@@ -61,7 +61,7 @@ const char* MT_CLIENT = "ROS2.Client";
  * Arguments:
  * - node object
  * - service type (table)
- * - topic name
+ * - service name
  * - qos profile (optional)
  *
  * Return:
@@ -120,6 +120,9 @@ static int rcl_lua_client_init (lua_State* L)
   lua_pushvalue(L, 1);                 // push node
   lua_rawseti(L, -2, CLI_REG_NODE);    // pop node, a[.] = node
 
+  lua_newtable(L);                     // push empty table
+  lua_rawseti(L, -2, CLI_REG_LIST_REQ);  // pop table, a[.] = table
+
   lua_getfield(L, 2, "Request");       // push table b
   lua_getfield(L, -1, "_metatable");   // push name
   lua_rawseti(L, -3, CLI_REG_MT_REQUEST);  // pop name, a[.] = name
@@ -158,7 +161,6 @@ static int rcl_lua_client_free (lua_State* L)
   rcl_ret_t ret = rcl_client_fini(cli, node);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to fini client: %s", rcl_get_error_string().str);
-    rcl_reset_error();
   }
 
   /* free dependencies */
@@ -227,13 +229,7 @@ static int rcl_lua_client_send_request (lua_State* L)
   lua_pop(L, 1);                           // pop name
 
   /* arg3 - callback function */
-  luaL_argcheck(L, lua_isfunction(L, 3), 3, "calback is expected");
-  lua_pushvalue(L, 3);                     // push function (copy)
-  lua_rawseti(L, -2, CLI_REG_CALLBACK);    // pop function, a[.] = fn
-
-  if (!lua_isfunction(L, 3)) {
-    luaL_error(L, "cal");
-  }
+  luaL_argcheck(L, lua_isfunction(L, 3), 3, "callback is expected");
 
   /* send */
   int64_t seq_num = 0;
@@ -242,15 +238,49 @@ static int rcl_lua_client_send_request (lua_State* L)
     luaL_error(L, "failed to send request");
   }
 
-  lua_pushinteger(L, seq_num);
+  /* save callback */
+  lua_rawgeti(L, -1, CLI_REG_LIST_REQ);    // push table b
+  lua_pushinteger(L, seq_num);             // push key
+  lua_pushvalue(L, 3);                     // push value (function)
+  lua_rawset(L, -3);                       // pop key, pop value, b[key] = value
+
+  lua_pushinteger(L, seq_num);             // push return value
   return 1;
+}
+
+/**
+ * Remove pending request.
+ *
+ * Arguments:
+ * - client object
+ * - request sequence number
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_client_remove_request (lua_State* L)
+{
+  /* arg1 - client object */
+  rcl_client_t* cli = luaL_checkudata(L, 1, MT_CLIENT);
+  /* arg2 - request id */
+  luaL_argcheck(L, lua_isinteger(L, 2), 2, "sequence ID is expected");
+
+  /* remove request and callback */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table a
+  lua_rawgeti(L, -1, CLI_REG_LIST_REQ);    // push table b
+  lua_pushvalue(L, 2);                     // push key (ID)
+  lua_pushnil(L);                          // push value
+  lua_rawset(L, -3);                       // pop key & value, clear record
+
+  return 0;
 }
 
 /** List of client methods */
 static const struct luaL_Reg cli_methods[] = {
+  {"__gc", rcl_lua_client_free},
   {"service_is_available", rcl_lua_client_service_is_available},
   {"send_request", rcl_lua_client_send_request},
-  {"__gc", rcl_lua_client_free},
+  {"remove_pending_request", rcl_lua_client_remove_request},
   {NULL, NULL}
 };
 
@@ -266,7 +296,7 @@ void rcl_lua_add_client_methods (lua_State* L)
 }
 
 /* Receive response */
-void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
+bool rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
 {
   /* save result into table */
   lua_createtable(L, CLI_OUT_NUMBER-1, 0);  // push table a
@@ -274,7 +304,8 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
   /* prepare response message */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);   // push table b (bindings)
   if (lua_isnil(L, -1)) {
-    luaL_error(L, "client bindings not found");
+    lua_pop(L, 2);
+    return false;
   }
   lua_rawgeti(L, -1, CLI_REG_NEW_RESPONSE);   // push constructor from b
   lua_call(L, 0, 1);                        // pop constructor, push message
@@ -287,16 +318,30 @@ void rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
     case RCL_RET_OK: break;
     case RCL_RET_CLIENT_TAKE_FAILED:
       lua_pop(L, 2);  // keep only a
-      return;         // {nil, nil}
+      return true;         // {nil, nil}
     default:
       luaL_error(L, "encountered error when taking client response");
   }
-  lua_rawseti(L, -3, CLI_OUT_RESPONSE);    // pop message, a[.] = response
 
-  /* save callback function */
-  lua_rawgeti(L, -1, CLI_REG_CALLBACK);    // push function from b
-  lua_rawseti(L, -3, CLI_OUT_CALLBACK);    // pop function, a[.] = callback
+  /* check request/callback exists */
+  lua_rawgeti(L, -2, CLI_REG_LIST_REQ);    // push table c, callbacks
+  lua_pushinteger(L, header.request_id.sequence_number);  // push response sequence
+  if (lua_rawget(L, -2) != LUA_TFUNCTION) {               // pop request seq, push callback
+    /* callback not found */
+    lua_pop(L, 2);
+    return true;
+  }
+  lua_rawseti(L, -5, CLI_OUT_CALLBACK);    // pop function, a[.] = callback
+  
+  /* remove this request */
+  lua_pushinteger(L, header.request_id.sequence_number);  // push response sequence
+  lua_pushnil(L);                          // push nil
+  lua_rawset(L, -3);                       // pop sequence, pop nil, remove callback
+  lua_pop(L, 1);                           // pop table c
+
+  lua_rawseti(L, -3, CLI_OUT_RESPONSE);    // pop message, a[.] = response
 
   lua_pop(L, 1);                           // pop b
   /* keep table 'a' on stack */
+  return true;
 }

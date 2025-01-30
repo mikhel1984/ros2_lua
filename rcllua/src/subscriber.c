@@ -185,7 +185,7 @@ void rcl_lua_add_subscription_methods (lua_State* L)
 }
 
 /* Return table {message, callback}. */
-void rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t* sub)
+bool rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t* sub)
 {
   /* save result into table */
   lua_createtable(L, SUB_OUT_NUMBER-1, 0);  // push table a
@@ -193,7 +193,8 @@ void rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t*
   /* get message constructor */
   lua_rawgetp(L, LUA_REGISTRYINDEX, sub);  // push table b
   if (lua_isnil(L, -1)) {
-    luaL_error(L, "subscriber bindings not found");
+    lua_pop(L, 2);
+    return false;
   }
   lua_rawgeti(L, -1, SUB_REG_NEW);         // push function from b
 
@@ -220,4 +221,5 @@ void rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t*
 
   lua_pop(L, 1);                          // pop table b
   /* keep table 'a' on the stack */
+  return true;
 }

@@ -79,7 +79,10 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
 { \
   bool done = false; \
   int tp = lua_type(L, 2); \
-  if (LUA_TUSERDATA == tp) { \
+  if (LUA_TNONE == tp) { \
+    lua_pushnil(L); \
+    return 1; \
+  } else if (LUA_TUSERDATA == tp) { \
     return STRUCT_NAME ## _seq_copy(L); \
   } else if (LUA_TNUMBER == tp) { \
     return STRUCT_NAME ## _seq_resize(L); \

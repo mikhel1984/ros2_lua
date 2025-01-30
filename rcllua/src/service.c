@@ -169,7 +169,6 @@ static int rcl_lua_service_free (lua_State* L)
   rcl_ret_t ret = rcl_service_fini(srv, node);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to fini service: %s", rcl_get_error_string().str);
-    rcl_reset_error();
   }
 
   /* free dependencies */
@@ -291,7 +290,7 @@ void rcl_lua_add_service_methods (lua_State* L)
 }
 
 /* Receive request */
-void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
+bool rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
 {
   /* save result into table */
   lua_createtable(L, SRV_OUT_NUMBER-1, 0);  // push table a
@@ -303,7 +302,8 @@ void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
   /* prepare request message */
   lua_rawgetp(L, LUA_REGISTRYINDEX, srv);   // push table b (bindings)
   if (lua_isnil(L, -1)) {
-    luaL_error(L, "service binginds not found");
+    lua_pop(L, 2);
+    return false;
   }
   lua_rawgeti(L, -1, SRV_REG_NEW_REQUEST);  // push constructor from b
   lua_call(L, 0, 1);                        // pop constructor, push message
@@ -316,7 +316,7 @@ void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
     case RCL_RET_OK: break;
     case RCL_RET_SERVICE_TAKE_FAILED:
       lua_pop(L, 2);  // keep only a
-      return;         // {nil, ..., srv}
+      return true;      // {nil, ..., srv}
     default:
       luaL_error(L, "service failed to take request");
   }
@@ -338,4 +338,5 @@ void rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
 
   lua_pop(L, 1);                           // pop table b
   /* keep table 'a' on stack */
+  return true;
 }

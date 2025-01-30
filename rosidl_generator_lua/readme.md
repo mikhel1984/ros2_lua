@@ -18,6 +18,9 @@ for i = 1, #msg.a do msg.a[i] = 42 end
 local a = msg.a
 for i = 1, #a do a[i] = 42 end
 ```
+One should remember that such userdata keep reference to original object. It means, that such reference is valid while the source message is available. 
+After the garbage collector work these references will be broken. If you need to keep part of message use new instance generation as shown below.
+But it doesn't work with sequence of primitives since they don't have destructor (for now).
 
 All interface types (messages, services, actions) are compiled into separate dynamic libraries: package_name.msg, package_name.srv, package_name.action.
 Each library knows its dependencies and tries to load it during the ‘require’ procedure.
@@ -30,7 +33,7 @@ Access to constants available only through the message 'class'.
 - getting size (#a, return nil for non-lists)
 - short string description (tostring(a))
 - deep copy of nested elements (a.x = b.y, x and y should be of the same type)
-- call as function (a(...) -> bool)
+- call as function (a(...) -> bool|message)
 
 The last operation (call) provides several actions depending on the argument type:
 - other message - deep copy
@@ -41,6 +44,8 @@ The last operation (call) provides several actions depending on the argument typ
 (a.z{2,3,4} is equal to a.z[1] = 2, a.z[2] = 3, a.z[3] = 4)
 - positive number - resize list
 (a.z(4) after previous operation should contain {2, 3, 4, trash})
+- no arguments - make new message and do deep copy
+(a() returns message such that a == b)
 
 ## Building messages
 

@@ -17,6 +17,9 @@
 
 #include <lua.h>
 
+/* Metatable name */
+extern const char* MT_WAIT_SET;
+
 /**
  * Create WaitSet metatable, add constructor to library.
  *

@@ -25,56 +25,75 @@ end
 --  @param timeout_sec Wait time.
 --  @return coroutine yield with function for execution.
 local function wait_for_ready_callbacks (executor, timeout_sec)
-  local subscriptions = {}
-  local timers = {}
-  local services = {}
-  local clients = {}
-  local guards = {}
-  local events = {}
+  local subscriptions, sub_cnt = {}, 0
+  local timers, timer_cnt = {}, 0
+  local services, srv_cnt = {}, 0
+  local clients, cli_cnt = {}, 0
+  local guards, guard_cnt = {}, 0
+  local events, ev_cnt = {}, 0
+  local actions = {}
 
   for _, node in ipairs(executor._nodes) do
     for _, sub in ipairs(node._subscription__list) do
       subscriptions[#subscriptions+1] = sub
     end
-    if executor._sub_no ~= #subscriptions then
-      executor._sub_no = #subscriptions
-      executor._wait_set = nil
-    end
+    sub_cnt = #node._subscription__list + sub_cnt
 
     for _, timer in ipairs(node._timer__list) do
       timers[#timers+1] = timer
     end
-    if executor._timer_no ~= #timers then
-      executor._timer_no = #timers
-      executor._wait_set = nil
-    end
+    timer_cnt = #node._timer__list + timer_cnt
 
     for _, cli in ipairs(node._client__list) do
       clients[#clients+1] = cli
     end
-    if executor._cli_no ~= #clients then
-      executor._cli_no = #clients
-      executor._wait_set = nil
-    end
+    cli_cnt = #node._client__list + cli_cnt
 
     for _, srv in ipairs(node._service__list) do
       services[#services+1] = srv
     end
-    if executor._srv_no ~= #services then
-      executor._srv_no = #services
-      executor._wait_set = nil
+    srv_cnt = #node._service__list + srv_cnt
+
+    for _, act in ipairs(node._action__list) do
+      actions[#actions+1] = act
+      local sub_no, guard_no, timer_no, cli_no, srv_no = act:get_num_entities()
+      sub_cnt   = sub_cnt + sub_no
+      timer_cnt = timer_cnt + timer_no
+      cli_cnt   = cli_cnt + cli_no
+      srv_cnt   = srv_cnt + srv_no
+      guard_cnt = guard_cnt + guard_no
     end
+  end
+
+  if executor._sub_no ~= sub_cnt then
+    executor._sub_no = sub_cnt
+    executor._wait_set = nil
+  end
+  if executor._timer_no ~= timer_cnt then
+    executor._timer_no = timer_cnt
+    executor._wait_set = nil
+  end
+  if executor._cli_no ~= cli_cnt then
+    executor._cli_no = cli_cnt
+    executor._wait_set = nil
+  end
+  if executor._srv_no ~= srv_cnt then
+    executor._srv_no = srv_cnt
+    executor._wait_set = nil
+  end
+  if executor._guard_no ~= guard_cnt then
+    executor._guard_no = guard_cnt
+    executor._wait_set = nil
   end
 
   executor._wait_set = executor._wait_set or
     rclbind.new_wait_set(
-      executor._sub_no,
-      executor._guard_no,
-      executor._timer_no,
-      executor._cli_no,
-      executor._srv_no,
-      executor._ev_no)
-
+      sub_cnt,
+      guard_cnt,
+      timer_cnt,
+      cli_cnt,
+      srv_cnt,
+      ev_cnt)
 
   local wait_set = executor._wait_set
   wait_set:clear()
@@ -87,12 +106,15 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
 
   for i = 1, #services do wait_set:add_service(services[i]) end
 
+  for i = 1, #actions do actions[i]:add_to_waitset(wait_set) end
+
   if timeout_sec > 0 then
     -- to nanoseconds
     timeout_sec = math.floor(timeout_sec * 1E9)
   end
 
   wait_set:wait(timeout_sec)
+  if not rclbind.context_ok() then return true end
 
   -- collect result
   subscriptions = wait_set:ready_subscriptions()
@@ -100,7 +122,14 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
   clients = wait_set:ready_clients()
   services = wait_set:ready_services()
 
-  -- execute
+    -- execute
+  for _, act in ipairs(actions) do
+    local data = act:take_data(wait_set)
+    if data then
+      act:execute(data)
+    end
+  end
+
   for i = 1, #subscriptions do
     local msg, fn = table.unpack(subscriptions[i])
     coroutine.yield(function() fn(msg) end)
@@ -126,7 +155,9 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
 
   for i = 1, #clients do
     local resp, fn = table.unpack(clients[i])
-    coroutine.yield(function() fn(resp) end)
+    if resp and fn then
+      coroutine.yield(function() fn(resp) end)
+    end
   end
 
   return true
@@ -215,7 +246,7 @@ function Executor.spin_once (self, timeout_sec)
 end
 
 -- Allow to call Executor table.
-setmetatable(Executor, 
+setmetatable(Executor,
 {
 --- Create Executor object.
 __call = function ()
@@ -232,7 +263,7 @@ __call = function ()
   o._ev_no = 0
   setmetatable(o, Executor)
   return o
-end 
+end
 })
 
 return Executor

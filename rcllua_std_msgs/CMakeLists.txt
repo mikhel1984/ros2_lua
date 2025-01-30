@@ -32,6 +32,7 @@ rcllua_generate_interfaces(action_msgs    builtin_interfaces)
 rcllua_generate_interfaces(geometry_msgs  std_msgs)
 rcllua_generate_interfaces(sensor_msgs    builtin_interfaces geometry_msgs std_msgs)
 rcllua_generate_interfaces(nav_msgs       builtin_interfaces geometry_msgs std_msgs)
+rcllua_generate_interfaces(unique_identifier_msgs)
 
 rcllua_generate_interfaces(std_srvs)
 

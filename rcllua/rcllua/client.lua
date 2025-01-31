@@ -74,7 +74,9 @@ Client.__index = Client
 --  @param ... Initialization parameters defined in Node.create_client.
 --  @return client (table).
 function Client.new_client (...)
-  local o = {}
+  local o = {
+    _weak = setmetatable({node=nil}, {__mode='v'})
+  }
   o._client = rclbind.new_client(...)
   return setmetatable(o, Client)
 end
@@ -96,6 +98,16 @@ function Client.call_async (self, req, callback)
   end
   future._req_id = self._client:send_request(req, future_cb)
   return future
+end
+
+--- Send request to server and wait for response.
+--  @param req Request object.
+--  @param timeout_sec (=nil) Wait time (optional).
+--  @return response object or nil (in the case of time out).
+function Client.call (self, req, timeout_sec)
+  local future = Client.call_async(self, req, timeout_sec)
+  self._weak.node:wait(function () return future._is_done end)
+  return future:result()
 end
 
 --- Sleep until service become ready.

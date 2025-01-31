@@ -89,6 +89,7 @@ end
 --  @return client (table).
 function Node.create_client (self, srv, name, qos)
   local cli = client_lib.new_client(self._node__object, srv, name, qos)
+  cli._weak.node = self
   table.insert(self._client__list, cli)
   return cli
 end

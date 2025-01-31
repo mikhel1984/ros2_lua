@@ -153,9 +153,39 @@ end
 --  @param name Function name in node table.
 --  @return function for binding.
 function Node.bind (self, name)
+  local fn = self[name]
   return function (...)
-    return self[name](self, ...)
+    return fn(self, ...)
   end
+end
+
+function Node.wrap (self, name)
+  return coroutine.wrap(Node.bind(self, name))
+end
+
+function Node.wait (self, cond)
+  if type(cond) == 'number' then
+    -- sleep for some time
+    assert(cond >= 0, 'Expected positive time')
+    local clock = self._clock__object
+    local wake_up_time = clocl:now() + rclbind.new_duration_sec(cond)
+    cond = function ()
+      return clock:now() > wake_up_time
+    end
+  end
+  assert(cond == 'function', 'Wrong condition method')
+  local co, main = coroutine.running()
+  assert(not main, "method must be created with 'wrap' to call 'wait'")
+  -- yield execution
+  self._resume__list[co] = cond
+  coroutine.yield()
+  self._resume__list[co] = nil
+end
+
+function Node.get_waited_list (self)
+  local t = {}
+  for k, v in pairs(self._resume__list) do t[k] = v end
+  return next(t) and t   -- table or nil if emtpy
 end
 
 --- Get time as builtin_interfaces.Time object.
@@ -235,6 +265,8 @@ function Node.__call (self, ...)
   o._node__name = self.name
   -- save executor later
   o._executor__weak = setmetatable({ref=nil}, {__mode='v'})
+  -- wait for resume
+  o._resume__list = {}
   -- references
   o._timer__list = {}
   o._subscription__list = {}

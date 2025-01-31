@@ -195,6 +195,18 @@ function Executor.remove_node (self, node)
   return false
 end
 
+function Executor.resume_waiters (self)
+  for i = 1, #self._nodes do
+    -- work with copy to aviod errors with multiple 'wait' in one function
+    local t = self._nodes[i]:get_waited_list()
+    if t then
+      for co, condition in pairs(t) do
+        if condition() then coroutine.resume(co) end
+      end
+    end
+  end
+end
+
 --- Run data spin.
 function Executor.spin (self)
   while rclbind.context_ok() and not self._is_shutdown do

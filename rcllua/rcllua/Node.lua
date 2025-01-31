@@ -159,21 +159,27 @@ function Node.bind (self, name)
   end
 end
 
+--- Similar to 'bind' method, but it puth function to coroutine.
+--  It allows to use 'wait' and suspend execution.
+--  @param name Function name in node table.
+--  @return function with coroutine inside.
 function Node.wrap (self, name)
   return coroutine.wrap(Node.bind(self, name))
 end
 
+--- "Sleep" until the condition is fulfilled.
+--  @param cond Condition, it can be time in seconds or funciton() -> bool.
 function Node.wait (self, cond)
   if type(cond) == 'number' then
     -- sleep for some time
-    assert(cond >= 0, 'Expected positive time')
+    assert(cond >= 0, 'Expected positive duration')
     local clock = self._clock__object
-    local wake_up_time = clocl:now() + rclbind.new_duration_sec(cond)
+    local finish = clock:now() + rclbind.new_duration_sec(cond)
     cond = function ()
-      return clock:now() > wake_up_time
+      return clock:now() > finish
     end
   end
-  assert(cond == 'function', 'Wrong condition method')
+  assert(type(cond) == 'function', 'Wrong condition method')
   local co, main = coroutine.running()
   assert(not main, "method must be created with 'wrap' to call 'wait'")
   -- yield execution
@@ -182,10 +188,13 @@ function Node.wait (self, cond)
   self._resume__list[co] = nil
 end
 
+--- Get list of yielded threads.
+--  @return table with coroutines.
 function Node.get_waited_list (self)
+  -- make copy
   local t = {}
   for k, v in pairs(self._resume__list) do t[k] = v end
-  return next(t) and t   -- table or nil if emtpy
+  return t
 end
 
 --- Get time as builtin_interfaces.Time object.

@@ -23,7 +23,7 @@ local MinimalClient = Node {
   send_request = function (self)
     local req = std_srvs.Trigger.Request()
     -- wait for result here
-    local resp = self.cli:call(req)
+    local resp = self.cli:call(req, 2.0)
     self:get_logger():info('Status: %s', resp.message)
   end,
 }

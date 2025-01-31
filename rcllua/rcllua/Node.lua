@@ -169,22 +169,37 @@ function Node.wrap (self, name)
 end
 
 --- "Sleep" until the condition is fulfilled.
---  @param cond Condition, it can be time in seconds or funciton() -> bool.
-function Node.wait (self, cond)
-  if type(cond) == 'number' then
-    -- sleep for some time
-    assert(cond >= 0, 'Expected positive duration')
+--  @param condition Function funciton() -> bool or timeout in seconds.
+--  @param timeout Timeout in seconds or nil.
+function Node.wait (self, condition, timeout)
+  if type(condition) == "number" then
+    timeout, condition = condition, nil
+  elseif type(condition) ~= "function" then
+    error "Wrong condition method"
+  end
+  local time_fn = nil
+  if timeout then
+    assert(timeout >= 0, 'Expected positive duration')
     local clock = self._clock__object
-    local finish = clock:now() + rclbind.new_duration_sec(cond)
-    cond = function ()
+    local finish = clock:now() + rclbind.new_duration_sec(timeout)
+    time_fn = function ()
       return clock:now() > finish
     end
+    -- TODO update spin once timeout
   end
-  assert(type(cond) == 'function', 'Wrong condition method')
+  -- make/choose function
+  local fn = nil
+  if condition and timeout then
+    fn = function () return condition() or time_fn() end
+  elseif condition then
+    fn = condition
+  elseif timeout then
+    fn = time_fn
+  end
+  -- yield and wait
   local co, main = coroutine.running()
   assert(not main, "method must be created with 'wrap' to call 'wait'")
-  -- yield execution
-  self._resume__list[co] = cond
+  self._resume__list[co] = fn
   coroutine.yield()
   self._resume__list[co] = nil
 end

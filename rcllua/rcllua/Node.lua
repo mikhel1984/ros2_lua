@@ -89,6 +89,7 @@ end
 --  @return client (table).
 function Node.create_client (self, srv, name, qos)
   local cli = client_lib.new_client(self._node__object, srv, name, qos)
+  cli._weak.node = self
   table.insert(self._client__list, cli)
   return cli
 end
@@ -153,9 +154,63 @@ end
 --  @param name Function name in node table.
 --  @return function for binding.
 function Node.bind (self, name)
+  local fn = self[name]
   return function (...)
-    return self[name](self, ...)
+    return fn(self, ...)
   end
+end
+
+--- Similar to 'bind' method, but it puth function to coroutine.
+--  It allows to use 'wait' and suspend execution.
+--  @param name Function name in node table.
+--  @return function with coroutine inside.
+function Node.wrap (self, name)
+  return coroutine.wrap(Node.bind(self, name))
+end
+
+--- "Sleep" until the condition is fulfilled.
+--  @param condition Function funciton() -> bool or timeout in seconds.
+--  @param timeout Timeout in seconds or nil.
+function Node.wait (self, condition, timeout)
+  if type(condition) == "number" then
+    timeout, condition = condition, nil
+  elseif type(condition) ~= "function" then
+    error "Wrong condition method"
+  end
+  local time_fn = nil
+  if timeout then
+    assert(timeout >= 0, 'Expected positive duration')
+    local clock = self._clock__object
+    local finish = clock:now() + rclbind.new_duration_sec(timeout)
+    time_fn = function ()
+      return clock:now() > finish
+    end
+    -- TODO update spin once timeout
+  end
+  -- make/choose function
+  local fn = nil
+  if condition and timeout then
+    fn = function () return condition() or time_fn() end
+  elseif condition then
+    fn = condition
+  elseif timeout then
+    fn = time_fn
+  end
+  -- yield and wait
+  local co, main = coroutine.running()
+  assert(not main, "method must be created with 'wrap' to call 'wait'")
+  self._resume__list[co] = fn
+  coroutine.yield()
+  self._resume__list[co] = nil
+end
+
+--- Get list of yielded threads.
+--  @return table with coroutines.
+function Node.get_waited_list (self)
+  -- make copy
+  local t = {}
+  for k, v in pairs(self._resume__list) do t[k] = v end
+  return t
 end
 
 --- Get time as builtin_interfaces.Time object.
@@ -235,6 +290,8 @@ function Node.__call (self, ...)
   o._node__name = self.name
   -- save executor later
   o._executor__weak = setmetatable({ref=nil}, {__mode='v'})
+  -- wait for resume
+  o._resume__list = {}
   -- references
   o._timer__list = {}
   o._subscription__list = {}

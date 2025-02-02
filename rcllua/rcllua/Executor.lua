@@ -14,13 +14,6 @@
 
 local rclbind = require("rcllua.rclbind")
 
---- Split seconds (float) into seconds and nanoseconds.
---  @param time_sec Time as float value.
---  @return seconds (int), nanoseconds (int)
-local function sec_nsec (time_sec)
-  return math.floor(time_sec), math.floor((time_sec % 1)*1E9)
-end
-
 --- Collect ready for execution tasks.
 --  @param timeout_sec Wait time.
 --  @return coroutine yield with function for execution.
@@ -195,6 +188,17 @@ function Executor.remove_node (self, node)
   return false
 end
 
+--- Resume coroutines if conditions are fulfilled.
+function Executor.resume_waiters (self)
+  for i = 1, #self._nodes do
+    for co, condition in pairs(self._nodes[i]:get_waited_list()) do
+      if rclbind.context_ok() and condition() then 
+        coroutine.resume(co) 
+      end
+    end
+  end
+end
+
 --- Run data spin.
 function Executor.spin (self)
   while rclbind.context_ok() and not self._is_shutdown do
@@ -212,8 +216,7 @@ function Executor.spin_until_future_complete (self, future, timeout_sec)
       Executor.spin_once(self, timeout_sec)
     end
   else
-    local dur = rclbind.new_duration(sec_nsec(timeout_sec))
-    local finish = self._clock:now() + dur
+    local finish = self._clock:now() + rclbind.new_duration_sec(timeout_sec)
     while rclbind.context_ok() and not self._is_shutdown and timeout_sec > 0
       and not future:done()
     do
@@ -243,6 +246,7 @@ function Executor.spin_once (self, timeout_sec)
   until self._cb_iter
   -- execute
   handle()
+  Executor.resume_waiters(self)
 end
 
 -- Allow to call Executor table.

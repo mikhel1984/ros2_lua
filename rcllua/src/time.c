@@ -100,6 +100,30 @@ static int rcl_lua_time_init_dur (lua_State* L)
 }
 
 /**
+ * Create duration object from seconds as floating point value.
+ *
+ * Arguments:
+ * - seconds (float)
+ *
+ * Return:
+ * - duration object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_time_init_dur_float (lua_State* L)
+{
+  /* arg1 - seconds (float) */
+  lua_Number sec = luaL_checknumber(L, 1);
+
+  /* to nanoseconds */
+  rcl_duration_value_t val = (rcl_duration_value_t) (sec * 1E9);
+  rcl_lua_time_push_duration(L, val);
+
+  return 1;
+}
+
+/**
  * Get time field value (sec, nanosec, clock).
  *
  * Arguments:
@@ -462,6 +486,9 @@ void rcl_lua_add_time_methods (lua_State* L)
   /* duration constructor */
   lua_pushcfunction(L, rcl_lua_time_init_dur);  // push function
   lua_setfield(L, -2, "new_duration");          // pop, lib['new_duration'] = function
+
+  lua_pushcfunction(L, rcl_lua_time_init_dur_float);  // push function
+  lua_setfield(L, -2, "new_duration_sec");      // pop, lib['new_duration_sec'] = fn
 
   /* time metamethods */
   rcl_lua_utils_add_mt(L, MT_TIME, time_methods);

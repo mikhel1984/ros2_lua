@@ -199,6 +199,19 @@ function Executor.resume_waiters (self)
   end
 end
 
+function Executor.resume_time (self, spin_timeout)
+  local tmin = spin_timeout and spin_timeout >=0 and spin_timeout or math.huge
+  local ind = nil
+  for i = 1, #self._nodes do
+    local ti = self._nodes[i]:get_shortest_time()
+    if ti < tmin then
+      tmin, ind = ti, i
+    end
+  end
+  if ind then self._nodes[ind]:pop_resume_time() end
+  return (tmin < math.huge) and tmin or -1
+end
+
 --- Run data spin.
 function Executor.spin (self)
   while rclbind.context_ok() and not self._is_shutdown do
@@ -229,7 +242,7 @@ end
 --- Spin until time is out or got new data.
 --  @param timeout_sec Wait time (optional).
 function Executor.spin_once (self, timeout_sec)
-  timeout_sec = timeout_sec or -1
+  timeout_sec = Executor.resume_time(self, timeout_sec)
   local ok, handle
   repeat
     if self._cb_iter then

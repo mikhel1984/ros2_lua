@@ -138,11 +138,11 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
 
   for i = 1, #services do
     local t = services[i]
-    local req, resp, fn = table.unpack(t)
+    local req, fn = table.unpack(t)
     coroutine.yield(
       function()
-        fn(req, resp)
-        rclbind.service_send_response(t)
+        local resp = fn(req, resp)
+        rclbind.service_send_response(t, resp)
       end)
   end
 

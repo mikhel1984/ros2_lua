@@ -107,7 +107,7 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
   end
 
   wait_set:wait(timeout_sec)
-  if not rclbind.context_ok() then return true end
+  if not rclbind.context_ok() then return end
 
   -- collect result
   subscriptions = wait_set:ready_subscriptions()
@@ -152,8 +152,6 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
       coroutine.yield(function() fn(resp) end)
     end
   end
-
-  return true
 end
 
 --- Executor class.
@@ -199,6 +197,9 @@ function Executor.resume_waiters (self)
   end
 end
 
+--- Find timeout value.
+--  @param spin_timeout Initial timeout.
+--  @return minimal timeout amont requests or -1.
 function Executor.resume_time (self, spin_timeout)
   local tmin = spin_timeout and spin_timeout >=0 and spin_timeout or math.huge
   local ind = nil
@@ -243,22 +244,22 @@ end
 --  @param timeout_sec Wait time (optional).
 function Executor.spin_once (self, timeout_sec)
   timeout_sec = Executor.resume_time(self, timeout_sec)
+  -- wait for message or timeout
   local ok, handle
-  repeat
-    if self._cb_iter then
-      ok, handle = coroutine.resume(self._cb_iter)
-    else
-      self._cb_iter = coroutine.create(wait_for_ready_callbacks)
-      ok, handle = coroutine.resume(self._cb_iter, self, timeout_sec)
-    end
-    if not ok then
-      error(handle)   -- resend error
-    elseif coroutine.status(self._cb_iter) == 'dead' then
-      self._cb_iter = nil  -- finished
-    end
-  until self._cb_iter
+  if self._cb_iter then
+    ok, handle = coroutine.resume(self._cb_iter)
+  else
+    self._cb_iter = coroutine.create(wait_for_ready_callbacks)
+    ok, handle = coroutine.resume(self._cb_iter, self, timeout_sec)
+  end
+
+  if not ok then
+    error(handle)   -- resend error
+  elseif coroutine.status(self._cb_iter) == 'dead' then
+    self._cb_iter = nil  -- finished
+  end
   -- execute
-  handle()
+  if handle then handle() end
   Executor.resume_waiters(self)
 end
 

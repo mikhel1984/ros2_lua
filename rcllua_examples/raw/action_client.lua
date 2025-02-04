@@ -27,7 +27,7 @@ end
 -- Send goal to action service
 local function async_send (goal)
   assert(rclbind.is_instance(goal, act_cli:get_interface 'Goal'), 'Not a goal message')
-  local uuid, uuid_str = rclbind.get_uuid()  -- make random
+  local uuid = rclbind.get_uuid()  -- make random
   local send_goal = act_cli:get_interface('SendGoal')
   local req = send_goal.Request { goal = goal }
   assert(req.goal_id.uuid(uuid), 'Unable to set UUID')

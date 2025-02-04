@@ -27,16 +27,23 @@
 enum ActSrvReg {
   /** node reference */
   ACT_SRV_REG_NODE = 1,
+
   ACT_SRV_REG_GOAL_NEW_REQ,
-  ACT_SRV_REG_GOAL_NEW_RESP,
-  ACT_SRV_REG_GOAL_CB,
   ACT_SRV_REG_RESULT_NEW_REQ,
+  ACT_SRV_REG_CANCEL_NEW_REQ,
+
+  ACT_SRV_REG_EXEC_CB,
+
+  ACT_SRV_REG_GOAL_CB,
+  ACT_SRV_REG_ACCEPT_CB,
+  ACT_SRV_REG_CANCEL_CB,
+
+  ACT_SRV_REG_FEEDBACK_MT,
+
+  ACT_SRV_REG_GOAL_NEW_RESP,
   ACT_SRV_REG_RESULT_NEW_RESP,
   ACT_SRV_REG_RESULT_CB,
-  ACT_SRV_REG_CANCEL_NEW_REQ,
   ACT_SRV_REG_CANCEL_NEW_RESP,
-  ACT_SRV_REG_CANCEL_CB,
-  ACT_SRV_REG_FEEDBACK_MT,
   /** number of elements + 1 */
   ACT_SRV_REG_NUMBER
 }
@@ -45,10 +52,9 @@ enum ActSrvReg {
 enum ActSrvOut {
   /** request message */
   ACT_SRV_OUT_REQUEST = 1,
-  /** response message */
-  ACT_SRV_OUT_RESPONSE,
   /** callback funciton */
   ACT_SRV_OUT_CALLBACK,
+
   /** header */
   ACT_SRV_OUT_HEADER,
   /** light userdata */
@@ -85,40 +91,41 @@ static int rcl_lua_action_server_init (lua_State* L)
   /* arg4 - action service name */
   const char* srv_name = luaL_checkstring(L, 4);
 
-  /* arg5 - QoS table */
+  /* arg5 - parameters table */
   rcl_action_server_options_t action_server_ops = rcl_action_server_get_default_options();
   if (lua_istable(L, 5)) {
-    lua_getfield(L, 5, "goal_service_qos");
-    if (!lua_isnil(L, -1)) {
+    /* QoS */
+    if (lua_getfield(L, 5, "goal_service_qos") != LUA_TNIL) {
       action_server_ops.goal_service_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 5, "result_service_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 5, "result_service_qos") != LUA_TNIL) {
       action_server_ops.result_service_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 5, "cancel_service_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 5, "cancel_service_qos") != LUA_TNIL) {
       action_server_ops.cancel_service_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 5, "feedback_topic_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 5, "feedback_topic_qos") != LUA_TNIL) {
       action_server_ops.feedback_topic_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
     }
     lua_pop(L, 1);
-    lua_getfield(L, 5, "status_topic_qos");
-    if (!lua_isnil(L, -1)) {
+    if (lua_getfield(L, 5, "status_topic_qos") != LUA_TNIL) {
       action_server_ops.status_topic_qos = *((rmw_qos_profile_t*) luaL_checkudata(L, -1, MT_QOS));
+    }
+    lua_pop(L, 1);
+    /* timeout */
+    if (lua_getfield(L, 5, "result_timeout") != LUA_TNIL) {
+      action_server_ops.result_timeout.nanoseconds = (rcl_duration_value_t) RCL_S_TO_NS(luaL_checknumber(L, -1));
+    } else {
+      action_server_ops.result_timeout.nanoseconds = (rcl_duration_value_t) 900;  // seconds
     }
     lua_pop(L, 1);
   }
 
-  /* arg6 - result timeout, sec */
-  if (lua_isnumber(L, 6)) {
-    action_server_ops.result_timeout.nanoseconds = (rcl_duration_value_t) RCL_S_TO_NS(lua_tonumberx(L, 6));
-  }
+  /* arg6 - execute callback */
+  luaL_argcheck(L, lua_isfunction(L, 6), 6, "function is expected");
 
   /* new action server */
   rcl_action_server_t *srv = lua_newuserdata(L, sizeof(rcl_action_server_t));
@@ -139,8 +146,37 @@ static int rcl_lua_action_server_init (lua_State* L)
 
   /* save reference objects */
   lua_createtable(L, 0, ACT_SRV_REG_NUMBER-1);  // push table a
+
   lua_pushvalue(L, 1);                   // push node
   lua_rawseti(L, -2, ACT_SRV_REG_NODE);  // pop node
+
+  /* callbacks */
+  if (lua_istable(L, 5)) {
+    if (lua_getfield(L, 5, "goal_callback") != LUA_TNIL) {  // push
+      lua_rawseti(L, -2, ACT_SRV_REG_GOAL_CB);    // pop
+    }
+    if (lua_getfield(L, 5, "handle_accepted_callback") != LUA_TNIL) {  // push
+      lua_rawseti(L, -2, ACT_SRV_REG_ACCEPT_CB);  // pop
+    }
+    if (lua_getfield(L, 5, "cancel_callback") != LUA_TNIL) {  // push
+      lua_rawseti(L, -2, ACT_SRV_REG_CANCEL_CB);  // pop
+    }
+  }
+
+  /* copy interfaces */
+  lua_newtable(L);                       // push interface table
+  lua_pushnil(L);                        // push key
+  while (lua_next(L, 2) != 0) {
+    if (strcmp(lua_tostring(L, -2), "_type_support") == 0) {
+      lua_pop(L, 1);
+      continue;
+    }
+    lua_pushvalue(L, -2);                // push, duplicate key
+    lua_rotate(L, -3, 1);                // key, key, value
+    lua_rawset(L, -4);                   // pop key and value
+  }
+  lua_rawseti(L, -2, ACT_CLI_REG_INTERFACE);  // pop interface
+
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, srv);  // pop table, save to registry
 
@@ -170,16 +206,13 @@ static int rcl_lua_action_server_free (lua_State* L)
   return 0;
 }
 
-#define TAKE_SERVICE_REQUEST(Type, NEW_REQ_ID, NEW_RESP_ID, CB_ID) \
+
+#define TAKE_SERVICE_REQUEST(Type, NEW_REQ_ID, CB_REQ_ID) \
+  /* arg1 - action server */ \
+  rcl_action_server_t* srv = lua_touserdata(L, 1); \
   lua_createtable(L, ACT_SRV_OUT_NUMBER-1, 0); \
-  /* save pointer */ \
-  lua_pushlightuserdata(L, (void*) srv); \
-  lua_rawseti(L, -2, ACT_SRV_OUT_REF); \
   /* prepare request message */ \
   lua_rawgetp(L, LUA_REGISTRYINDEX, srv); \
-  if (lua_isnil(L, -1)) { \
-    luaL_error(L, "action service binginds not found"); \
-  } \
   lua_rawgeti(L, -1, NEW_REQ_ID); \
   lua_call(L, 0, 1); \
   idl_lua_msg_t *msg = lua_touserdata(L, -1); \
@@ -200,41 +233,34 @@ static int rcl_lua_action_server_free (lua_State* L)
   rmw_request_id_t* info = lua_newuserdata(L, sizeof(rmw_request_id_t)); \
   *info = header; \
   lua_rawseti(L, -3, ACT_SRV_OUT_HEADER); \
-  /* add response */ \
-  lua_rawgeti(L, -1, NEW_RESP_ID); \
-  lua_call(L, 0, 1); \
-  lua_rawseti(L, -3, ACT_SRV_OUT_RESPONSE); \
   /* save callback function */ \
-  lua_rawgeti(L, -1, CB_ID); \
+  lua_rawgeti(L, -1, CB_REQ_ID); \
   lua_rawseti(L, -3, ACT_SRV_OUT_CALLBACK); \
-  lua_pop(L, 1);  
+  lua_pop(L, 1); \
+  return 1;
  
 static int rcl_lua_action_server_goal_request (lua_State* L)
 {
-  TAKE_SERVICE_REQUEST(goal, ACT_SRV_REG_GOAL_NEW_REQ, ACT_SRV_REG_GOAL_NEW_RESP, ACT_SRV_REG_GOAL_CB)
+  TAKE_SERVICE_REQUEST(goal, ACT_SRV_REG_GOAL_NEW_REQ, ACT_SRV_REG_GOAL_CB)
 }
 
 static int rcl_lua_action_server_result_request (lua_State* L)
 {
-  TAKE_SERVICE_REQUEST(result, ACT_SRV_REG_RESULT_NEW_REQ, ACT_SRV_REG_RESULT_NEW_RESP, ACT_SRV_REG_RESULT_CB)
+  TAKE_SERVICE_REQUEST(result, ACT_SRV_REG_RESULT_NEW_REQ, -1)
 }
 
 static int rcl_lua_action_server_cancel_request (lua_State* L)
 {
-  TAKE_SERVICE_REQUEST(cancel, ACT_SRV_REG_CANCEL_NEW_REQ, ACT_SRV_REG_CANCEL_NEW_RESP, ACT_SRV_REG_CANCEL_CB)
+  TAKE_SERVICE_REQUEST(cancel, ACT_SRV_REG_CANCEL_NEW_REQ, ACT_SRV_REG_CANCEL_CB)
 }
 
 #define SEND_SERVICE_RESPONSE(Type) \
-  luaL_argcheck( \
-    L, LUA_TTABLE == lua_type(L, 1) && lua_rawlen(L, 1) == (ACT_SRV_OUT_NUMBER-1), 1, \
-    "expected table from action service request"); \
-  /* get required elements */ \
-  lua_rawgeti(L, 1, ACT_SRV_OUT_REF); \
-  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER); \
-  lua_rawgeti(L, 1, ACT_SRV_OUT_RESPONSE); \
-  idl_lua_msg_t *resp = lua_touserdata(L, -1); \
-  lua_rawgeti(L, 1, ACT_SRV_OUT_HEADER); \
-  rmw_request_id_t* header = lua_touserdata(L, -1); \
+  /* arg1 - action server */ \
+  rcl_action_server_t* srv = lua_touserdata(L, 1); \
+  /* arg2 - response */ \
+  idl_lua_msg_t* resp = lua_touserdata(L, 2); \
+  /* arg3 - header */ \
+  rmw_request_id_t* header = lua_touserdata(L, 3); \
   /* send response */ \
   rcl_ret_t ret = rcl_action_send_ ## Type ## _response(srv, header, resp->obj); \
   switch (ret) { \
@@ -263,6 +289,17 @@ static int rcl_lua_action_server_result_response (lua_State* L)
 static int rcl_lua_action_server_cancel_response (lua_State* L)
 {
   SEND_SERVICE_RESPONSE(cancel)
+}
+
+static int rcl_lua_action_server_get_exec (lua_State* L)
+{
+  /* arg1 - action server */
+  rcl_action_server_t* srv = lua_touserdata(L, 1);
+
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);  // push table
+  lua_rawgeti(L, -1, ACT_SRV_REG_EXEC_CB);  // push method for execution
+
+  return 1;
 }
 
 static int rcl_lua_action_server_publish_feedback (lua_State* L)
@@ -377,7 +414,29 @@ static int rcl_lua_action_server_add_waitset (lua_State* L)
 
 static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
 {
-  return 0;
+  /* arg1 - action server */
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
+  /* arg2 - cancel request */
+  idl_lua_msg_t* req = lua_touserdata(L, 1);
+
+  /* make response message */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);
+  lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE);
+  lua_getfield(L, -1, "CancelGoal");
+  lua_getfield(L, -1, "Response");
+  lua_getfield(L, -1, "_new");
+  lua_rotate(L, -3, 1); lua_pop(L, 2);
+  lua_call(L, 0, 1);
+  idl_lua_msg_t* resp = lua_touserdata(L, -1);
+
+  rcl_action_cancel_response_t rcl_resp = rcl_action_get_zero_initialized_cancel_response();
+
+  rcl_ret_t ret = rcl_action_process_cancel_request(srv, req->obj, resp->obj);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "Failed to process cancel request");
+  }
+
+  return 1;
 }
 
 static int rcl_lua_actoin_server_expire_goals (lua_State* L)
@@ -411,6 +470,8 @@ static const struct luaL_Reg act_srv_methods[] = {
   {"get_num_entities", rcl_lua_action_server_num_entities},
   {"is_ready", rcl_lua_action_server_is_ready},
   {"add_to_waitset", rcl_lua_action_server_add_waitset},
+  {"get_interface", rcl_lua_action_server_get_interface},
+  {"get_executable", rcl_lua_action_server_get_exec},
   {NULL, NULL}
 };
 

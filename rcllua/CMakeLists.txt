@@ -19,7 +19,7 @@ find_package(Lua REQUIRED)  # >= 5.3
 find_package(rcllua_cmake REQUIRED)
 find_package(rosidl_luacommon REQUIRED)
 
-include_directories(include)
+include_directories(include ${LUA_INCLUDE_DIR})
 
 set(LIB_NAME rclbind)
 

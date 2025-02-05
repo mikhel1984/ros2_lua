@@ -65,6 +65,7 @@ enum ActSrvOut {
 
 
 const char* MT_ACTION_SERVER = "ROS2.ActionServer";
+const char* MT_ACTION_GOAL_HANDLE = "ROS2.ActionGoalHandle";
 
 static int rcl_lua_action_server_init (lua_State* L)
 {
@@ -456,6 +457,80 @@ static int rcl_lua_actoin_server_expire_goals (lua_State* L)
   }
 }
 
+static int rcl_lua_action_goal_handle_init (lua_State* L)
+{
+  /* arg1 - action server */
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
+  /* arg2 - GoalInfo message */
+  luaL_argcheck(L, lua_isuserdata(L, 2), 2, "expected GoalInfo message");
+  idl_lua_msg_t* msg = lua_touserdata(L, 2);
+
+  rcl_action_goal_info_t* goal_info_ptr = (rcl_action_goal_info_t*) msg->obj;
+  rcl_action_goal_handle_t* rcl_handle = rcl_action_accept_new_goal(srv, goal_info_ptr);
+  if (!goal_info_ptr) {
+    luaL_error(L, "failed to accept new goal");
+  }
+
+  rcl_action_goal_handle_t* action_goal_handle = lua_newuserdata(L, sizeof(rcl_action_goal_handle_t));
+  *action_goal_handle = *rcl_handle;
+
+  /* set metatable */
+  luaL_getmetatable(L, MT_ACTION_GOAL_HANDLE);
+  lua_setmetatable(L, -2);
+
+  return 1;
+}
+
+static int rcl_lua_action_goal_handle_free (lua_State* L)
+{
+  /* arg1 - action goal handle */
+  rcl_action_goal_handle_t* handle = lua_touserdata(L, 1);
+
+  rcl_action_goal_handle_fini(handle);
+
+  return 0;
+}
+
+static int rcl_lua_action_goal_handle_get_status (lua_State* L)
+{
+  /* arg1 - action goal handle */
+  rcl_action_goal_handle_t* handle = lua_touserdata(L, 1);
+
+  rcl_action_goal_state_t status;
+  rcl_ret_t ret = rcl_action_goal_handle_get_status(handle, &status);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to get goal status");
+  }
+
+  lua_pushinteger(L, status);
+  return 1;
+}
+
+static int rcl_lua_action_goal_handle_set_status (lua_State* L)
+{
+  /* arg1 - action goal handle */
+  rcl_action_goal_handle_t* handle = luaL_checkudata(L, MT_ACTION_GOAL_HANDLE);
+  /* arg2 - event */
+  lua_Integer ev = luaL_checkinteger(L, 2);
+
+  rcl_action_goal_event_t event = ev;
+  rcl_ret_t ret = rcl_action_update_goal_state(handle, event);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to update goal status");
+  }
+
+  return 0;
+}
+
+static int rcl_lua_action_goal_handle_is_active (lua_State* L)
+{
+  /* arg1 - action goal handle */
+  rcl_action_goal_handle_t* handle = lua_touserdata(L, 1);
+
+  lua_pushboolean(L, rcl_action_goal_handle_is_active(L, handle));
+  return 1;
+}
+
 
 static const struct luaL_Reg act_srv_methods[] = {
   {"__gc", rcl_lua_action_server_free},
@@ -475,6 +550,15 @@ static const struct luaL_Reg act_srv_methods[] = {
   {NULL, NULL}
 };
 
+static const struct luaL_Reg act_srv_handle_methods[] = {
+  {"__gc", rcl_lua_action_goal_handle_free},
+  {"get_status", rcl_lua_action_goal_handle_get_status},
+  {"update_status", rcl_lua_action_goal_handle_set_status},
+  {"is_active", rcl_lua_action_goal_handle_is_active},
+  {NULL, NULL}
+};
+
+
 void rcl_lua_add_action_server_methods (lua_State* L)
 {
   /* constructor */
@@ -483,4 +567,10 @@ void rcl_lua_add_action_server_methods (lua_State* L)
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_ACTION_SERVER, act_srv_methods);
+
+  lua_pushcfunction(L, rcl_lua_action_goal_handle_init);
+  lua_setfield(L, -2, "new_action_goal_handle");
+
+  /* metamethods */
+  rcl_lua_utils_add_mt(L, MT_ACTION_GOAL_HANDLE, act_srv_handle_methods);
 }

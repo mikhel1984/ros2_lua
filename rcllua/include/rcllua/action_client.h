@@ -20,7 +20,7 @@
 extern const char* MT_ACTION_CLIENT;
 
 /**
- * Create client metatable, add constructor to library.
+ * Create action client metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */

@@ -18,19 +18,22 @@
 #include <rcl_action/wait.h>
 #include <rcl/error_handling.h>
 
+#include <rosidl_luacommon/definition.h>
+
+#include "rcllua/action_server.h"
 #include "rcllua/node.h"
 #include "rcllua/clock.h"
 #include "rcllua/wait_set.h"
+#include "rcllua/qos.h"
 #include "rcllua/utils.h"
+
 
 /** Indices of action server binding in register. */
 enum ActSrvReg {
   /** node reference */
   ACT_SRV_REG_NODE = 1,
 
-  ACT_SRV_REG_GOAL_NEW_REQ,
-  ACT_SRV_REG_RESULT_NEW_REQ,
-  ACT_SRV_REG_CANCEL_NEW_REQ,
+  ACT_SRV_REG_INTERFACE,
 
   ACT_SRV_REG_EXEC_CB,
 
@@ -40,13 +43,9 @@ enum ActSrvReg {
 
   ACT_SRV_REG_FEEDBACK_MT,
 
-  ACT_SRV_REG_GOAL_NEW_RESP,
-  ACT_SRV_REG_RESULT_NEW_RESP,
-  ACT_SRV_REG_RESULT_CB,
-  ACT_SRV_REG_CANCEL_NEW_RESP,
   /** number of elements + 1 */
   ACT_SRV_REG_NUMBER
-}
+};
 
 /** List of output elements. */
 enum ActSrvOut {
@@ -54,11 +53,8 @@ enum ActSrvOut {
   ACT_SRV_OUT_REQUEST = 1,
   /** callback funciton */
   ACT_SRV_OUT_CALLBACK,
-
   /** header */
   ACT_SRV_OUT_HEADER,
-  /** light userdata */
-  ACT_SRV_OUT_REF,
   /** number of elements + 1 */
   ACT_SRV_OUT_NUMBER
 };
@@ -132,7 +128,7 @@ static int rcl_lua_action_server_init (lua_State* L)
   rcl_action_server_t *srv = lua_newuserdata(L, sizeof(rcl_action_server_t));
   *srv = rcl_action_get_zero_initialized_server();
 
-  rcl_ret_t ret = rcl_action_server_init(src, node, clock, ts, srv_name, &action_server_ops);
+  rcl_ret_t ret = rcl_action_server_init(srv, node, clock, ts, srv_name, &action_server_ops);
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_ACTION_NAME_INVALID:
@@ -176,8 +172,12 @@ static int rcl_lua_action_server_init (lua_State* L)
     lua_rotate(L, -3, 1);                // key, key, value
     lua_rawset(L, -4);                   // pop key and value
   }
-  lua_rawseti(L, -2, ACT_CLI_REG_INTERFACE);  // pop interface
+  lua_rawseti(L, -2, ACT_SRV_REG_INTERFACE);  // pop interface
 
+  lua_getfield(L, 2, "FeedbackMessage");
+  lua_getfield(L, -1, "_metatable");
+  lua_rawseti(L, -3, ACT_SRV_REG_FEEDBACK_MT);
+  lua_pop(L, 1);
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, srv);  // pop table, save to registry
 
@@ -190,7 +190,7 @@ static int rcl_lua_action_server_free (lua_State* L)
   rcl_action_server_t* srv = lua_touserdata(L, 1);
 
   /* get node */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);  // push table
   lua_rawgeti(L, -1, ACT_SRV_REG_NODE);        // push node
   rcl_node_t* node = lua_touserdata(L, -1);
 
@@ -207,14 +207,45 @@ static int rcl_lua_action_server_free (lua_State* L)
   return 0;
 }
 
+/**
+ * Get message constructor for the specific action structure.
+ *
+ * Arguments:
+ * - action server
+ * - interface name
+ *
+ * Return:
+ * - found interface table or nil
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_action_server_get_interface (lua_State* L)
+{
+  /* arg1 - action client */
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
+  /* arg2 - interface name */
+  const char* type = luaL_checkstring(L, 2);
 
-#define TAKE_SERVICE_REQUEST(Type, NEW_REQ_ID, CB_REQ_ID) \
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);
+  lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE);
+
+  lua_getfield(L, -1, type);
+  return 1;
+}
+
+
+#define TAKE_SERVICE_REQUEST(Type, TBL_NAME, CB_REQ_ID) \
   /* arg1 - action server */ \
   rcl_action_server_t* srv = lua_touserdata(L, 1); \
   lua_createtable(L, ACT_SRV_OUT_NUMBER-1, 0); \
   /* prepare request message */ \
   lua_rawgetp(L, LUA_REGISTRYINDEX, srv); \
-  lua_rawgeti(L, -1, NEW_REQ_ID); \
+  lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE); \
+  lua_getfield(L, -1, TBL_NAME); \
+  lua_getfield(L, -1, "Request"); \
+  lua_getfield(L, -1, "_new"); \
+  lua_rotate(L, -3, 1); lua_pop(L, 2); \
   lua_call(L, 0, 1); \
   idl_lua_msg_t *msg = lua_touserdata(L, -1); \
   /* get request */ \
@@ -223,7 +254,7 @@ static int rcl_lua_action_server_free (lua_State* L)
   switch (ret) { \
     case RCL_RET_OK: break; \
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED: \
-    case RCL_RET_ACTION_SERVICE_TAKE_FAILED: \
+    case RCL_RET_ACTION_SERVER_TAKE_FAILED: \
       lua_pushnil(L); \
       return 1; \
     default: \
@@ -242,17 +273,17 @@ static int rcl_lua_action_server_free (lua_State* L)
  
 static int rcl_lua_action_server_goal_request (lua_State* L)
 {
-  TAKE_SERVICE_REQUEST(goal, ACT_SRV_REG_GOAL_NEW_REQ, ACT_SRV_REG_GOAL_CB)
+  TAKE_SERVICE_REQUEST(goal, "SendGoal", ACT_SRV_REG_GOAL_CB)
 }
 
 static int rcl_lua_action_server_result_request (lua_State* L)
 {
-  TAKE_SERVICE_REQUEST(result, ACT_SRV_REG_RESULT_NEW_REQ, -1)
+  TAKE_SERVICE_REQUEST(result, "GetResult", -1)
 }
 
 static int rcl_lua_action_server_cancel_request (lua_State* L)
 {
-  TAKE_SERVICE_REQUEST(cancel, ACT_SRV_REG_CANCEL_NEW_REQ, ACT_SRV_REG_CANCEL_CB)
+  TAKE_SERVICE_REQUEST(cancel, "CancelGoal", ACT_SRV_REG_CANCEL_CB)
 }
 
 #define SEND_SERVICE_RESPONSE(Type) \
@@ -354,6 +385,9 @@ static int rcl_lua_action_server_notify_goal_done (lua_State* L)
   rcl_action_server_t* srv = lua_touserdata(L, 1);
 
   rcl_ret_t ret = rcl_action_notify_goal_done(srv);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to notify action server of goal done");
+  }
 
   return 0;
 }
@@ -364,7 +398,7 @@ static int rcl_lua_action_server_num_entities (lua_State* L)
   rcl_action_server_t* srv = lua_touserdata(L, 1);
 
   /* subscriptions, guards, timers, clients, services */
-  size_t count[] = {0, 0, 0, 0, 0, 0};
+  size_t count[5] = {0, 0, 0, 0, 0};
   rcl_ret_t ret = rcl_action_server_wait_set_get_num_entities(
     srv, count, count+1, count+2, count+3, count+4);
   if (RCL_RET_OK != ret) {
@@ -385,9 +419,9 @@ static int rcl_lua_action_server_is_ready (lua_State* L)
   rcl_wait_set_t* wait_set = luaL_checkudata(L, 2, MT_WAIT_SET);
 
   /* goal_req, cancel_req, result_req, goal_expired */
-  bool status[] = {false, false, false, false};
+  bool status[4] = {false, false, false, false};
   rcl_ret_t ret = rcl_action_server_wait_set_get_entities_ready(
-    wait_set, srv, status, status+1, status+2, status+3, status+4);
+    wait_set, srv, status, status+1, status+2, status+3);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to get ready action server entries");
   }
@@ -413,49 +447,49 @@ static int rcl_lua_action_server_add_waitset (lua_State* L)
   return 0;
 }
 
-static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
-{
-  /* arg1 - action server */
-  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
-  /* arg2 - cancel request */
-  idl_lua_msg_t* req = lua_touserdata(L, 1);
+//static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
+//{
+//  /* arg1 - action server */
+//  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
+//  /* arg2 - cancel request */
+//  idl_lua_msg_t* req = lua_touserdata(L, 1);
+//
+//  /* make response message */
+//  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);
+//  lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE);
+//  lua_getfield(L, -1, "CancelGoal");
+//  lua_getfield(L, -1, "Response");
+//  lua_getfield(L, -1, "_new");
+//  lua_rotate(L, -3, 1); lua_pop(L, 2);
+//  lua_call(L, 0, 1);
+//  idl_lua_msg_t* resp = lua_touserdata(L, -1);
+//
+//  rcl_action_cancel_response_t rcl_resp = rcl_action_get_zero_initialized_cancel_response();
+//
+//  rcl_ret_t ret = rcl_action_process_cancel_request(srv, req->obj, resp->obj);
+//  if (RCL_RET_OK != ret) {
+//    luaL_error(L, "Failed to process cancel request");
+//  }
+//
+//  return 1;
+//}
 
-  /* make response message */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);
-  lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE);
-  lua_getfield(L, -1, "CancelGoal");
-  lua_getfield(L, -1, "Response");
-  lua_getfield(L, -1, "_new");
-  lua_rotate(L, -3, 1); lua_pop(L, 2);
-  lua_call(L, 0, 1);
-  idl_lua_msg_t* resp = lua_touserdata(L, -1);
-
-  rcl_action_cancel_response_t rcl_resp = rcl_action_get_zero_initialized_cancel_response();
-
-  rcl_ret_t ret = rcl_action_process_cancel_request(srv, req->obj, resp->obj);
-  if (RCL_RET_OK != ret) {
-    luaL_error(L, "Failed to process cancel request");
-  }
-
-  return 1;
-}
-
-static int rcl_lua_actoin_server_expire_goals (lua_State* L)
-{
-  /* arg1 - action server */
-  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
-  /* arg2 - max number */
-  int max_goals = luaL_checkinteger(L, 2);
-  luaL_argcheck(L, max_goals > 0, 2, "expected positive number");
-
-  rcl_action_goal_info_t* expired_goals = 
-    lua_newuserdata(L, max_goals*sizeof(rcl_action_goal_info_t));
-  size_t num_expired = 0;
-  rcl_ret_t ret = rcl_action_expire_goals(srv, expired_goals, max_goals, &num_expired);
-  if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to expire goals");
-  }
-}
+//static int rcl_lua_actoin_server_expire_goals (lua_State* L)
+//{
+//  /* arg1 - action server */
+//  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
+//  /* arg2 - max number */
+//  int max_goals = luaL_checkinteger(L, 2);
+//  luaL_argcheck(L, max_goals > 0, 2, "expected positive number");
+//
+//  rcl_action_goal_info_t* expired_goals = 
+//    lua_newuserdata(L, max_goals*sizeof(rcl_action_goal_info_t));
+//  size_t num_expired = 0;
+//  rcl_ret_t ret = rcl_action_expire_goals(srv, expired_goals, max_goals, &num_expired);
+//  if (RCL_RET_OK != ret) {
+//    luaL_error(L, "failed to expire goals");
+//  }
+//}
 
 static int rcl_lua_action_goal_handle_init (lua_State* L)
 {
@@ -486,7 +520,10 @@ static int rcl_lua_action_goal_handle_free (lua_State* L)
   /* arg1 - action goal handle */
   rcl_action_goal_handle_t* handle = lua_touserdata(L, 1);
 
-  rcl_action_goal_handle_fini(handle);
+  rcl_ret_t ret = rcl_action_goal_handle_fini(handle);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to fini action goal handle");
+  }
 
   return 0;
 }
@@ -509,7 +546,7 @@ static int rcl_lua_action_goal_handle_get_status (lua_State* L)
 static int rcl_lua_action_goal_handle_set_status (lua_State* L)
 {
   /* arg1 - action goal handle */
-  rcl_action_goal_handle_t* handle = luaL_checkudata(L, MT_ACTION_GOAL_HANDLE);
+  rcl_action_goal_handle_t* handle = luaL_checkudata(L, 1, MT_ACTION_GOAL_HANDLE);
   /* arg2 - event */
   lua_Integer ev = luaL_checkinteger(L, 2);
 
@@ -527,7 +564,7 @@ static int rcl_lua_action_goal_handle_is_active (lua_State* L)
   /* arg1 - action goal handle */
   rcl_action_goal_handle_t* handle = lua_touserdata(L, 1);
 
-  lua_pushboolean(L, rcl_action_goal_handle_is_active(L, handle));
+  lua_pushboolean(L, rcl_action_goal_handle_is_active(handle));
   return 1;
 }
 
@@ -542,6 +579,7 @@ static const struct luaL_Reg act_srv_methods[] = {
   {"send_cancel_response", rcl_lua_action_server_cancel_response},
   {"publish_feedback", rcl_lua_action_server_publish_feedback},
   {"publish_status", rcl_lua_action_server_publish_status},
+  {"notify_goal_done", rcl_lua_action_server_notify_goal_done},
   {"get_num_entities", rcl_lua_action_server_num_entities},
   {"is_ready", rcl_lua_action_server_is_ready},
   {"add_to_waitset", rcl_lua_action_server_add_waitset},

@@ -39,6 +39,7 @@ add_library(${LIB_NAME} SHARED
   src/client.c
   src/qos.c
   src/action_client.c
+  src/action_server.c
 )
 
 ament_target_dependencies(${LIB_NAME}

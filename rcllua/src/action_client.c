@@ -23,6 +23,7 @@
 
 #include <rosidl_luacommon/definition.h>
 
+#include "rcllua/action_client.h"
 #include "rcllua/node.h"
 #include "rcllua/qos.h"
 #include "rcllua/wait_set.h"
@@ -543,7 +544,7 @@ static int rcl_lua_action_client_num_entities (lua_State* L)
   /* arg1 - action client */
   rcl_action_client_t* cli = lua_touserdata(L, 1);
 
-  size_t count[] = {0, 0, 0, 0, 0};
+  size_t count[5] = {0, 0, 0, 0, 0};
   rcl_ret_t ret = rcl_action_client_wait_set_get_num_entities(
     cli, count, count+1, count+2, count+3, count+4);
   if (RCL_RET_OK != ret) {
@@ -639,7 +640,7 @@ static int rcl_lua_action_client_is_ready (lua_State* L)
   /* arg2 - WaitSet */
   rcl_wait_set_t* wait_set = luaL_checkudata(L, 2, MT_WAIT_SET);
 
-  bool status[] = {false, false, false, false, false};
+  bool status[5] = {false, false, false, false, false};
   rcl_ret_t ret = rcl_action_client_wait_set_get_entities_ready(
     wait_set, cli, status, status+1, status+2, status+3, status+4);
   if (RCL_RET_OK != ret) {

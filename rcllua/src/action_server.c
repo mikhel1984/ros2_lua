@@ -67,7 +67,6 @@ static int rcl_lua_action_server_init (lua_State* L)
 {
   /* arg1 - node */
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
-
   /* arg2 - clock */
   rcl_clock_t* clock = luaL_checkudata(L, 2, MT_CLOCK);
 
@@ -151,19 +150,25 @@ static int rcl_lua_action_server_init (lua_State* L)
   if (lua_istable(L, 5)) {
     if (lua_getfield(L, 5, "goal_callback") != LUA_TNIL) {  // push
       lua_rawseti(L, -2, ACT_SRV_REG_GOAL_CB);    // pop
+    } else {
+      lua_pop(L, 1);
     }
     if (lua_getfield(L, 5, "handle_accepted_callback") != LUA_TNIL) {  // push
       lua_rawseti(L, -2, ACT_SRV_REG_ACCEPT_CB);  // pop
+    } else {
+      lua_pop(L, 1);
     }
     if (lua_getfield(L, 5, "cancel_callback") != LUA_TNIL) {  // push
       lua_rawseti(L, -2, ACT_SRV_REG_CANCEL_CB);  // pop
+    } else {
+      lua_pop(L, 1);
     }
   }
 
   /* copy interfaces */
   lua_newtable(L);                       // push interface table
   lua_pushnil(L);                        // push key
-  while (lua_next(L, 2) != 0) {
+  while (lua_next(L, 3) != 0) {
     if (strcmp(lua_tostring(L, -2), "_type_support") == 0) {
       lua_pop(L, 1);
       continue;
@@ -174,7 +179,7 @@ static int rcl_lua_action_server_init (lua_State* L)
   }
   lua_rawseti(L, -2, ACT_SRV_REG_INTERFACE);  // pop interface
 
-  lua_getfield(L, 2, "FeedbackMessage");
+  lua_getfield(L, 3, "FeedbackMessage");
   lua_getfield(L, -1, "_metatable");
   lua_rawseti(L, -3, ACT_SRV_REG_FEEDBACK_MT);
   lua_pop(L, 1);
@@ -245,7 +250,7 @@ static int rcl_lua_action_server_get_interface (lua_State* L)
   lua_getfield(L, -1, TBL_NAME); \
   lua_getfield(L, -1, "Request"); \
   lua_getfield(L, -1, "_new"); \
-  lua_rotate(L, -3, 1); lua_pop(L, 2); \
+  lua_rotate(L, -4, 1); lua_pop(L, 3); \
   lua_call(L, 0, 1); \
   idl_lua_msg_t *msg = lua_touserdata(L, -1); \
   /* get request */ \

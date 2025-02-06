@@ -16,6 +16,7 @@
 
 #include <rcl_action/action_server.h>
 #include <rcl_action/wait.h>
+#include <rcl_action/types.h>
 #include <rcl/error_handling.h>
 
 #include <rosidl_luacommon/definition.h>
@@ -178,6 +179,9 @@ static int rcl_lua_action_server_init (lua_State* L)
     lua_rawset(L, -4);                   // pop key and value
   }
   lua_rawseti(L, -2, ACT_SRV_REG_INTERFACE);  // pop interface
+
+  lua_pushvalue(L, 6);
+  lua_rawseti(L, -2, ACT_SRV_REG_EXEC_CB);
 
   lua_getfield(L, 3, "FeedbackMessage");
   lua_getfield(L, -1, "_metatable");
@@ -596,11 +600,19 @@ static const struct luaL_Reg act_srv_methods[] = {
 static const struct luaL_Reg act_srv_handle_methods[] = {
   {"__gc", rcl_lua_action_goal_handle_free},
   {"get_status", rcl_lua_action_goal_handle_get_status},
-  {"update_status", rcl_lua_action_goal_handle_set_status},
+  {"update_goal_state", rcl_lua_action_goal_handle_set_status},
   {"is_active", rcl_lua_action_goal_handle_is_active},
   {NULL, NULL}
 };
 
+static const rcl_lua_enum enum_event_types[] = {
+  {"EXECUTE", GOAL_EVENT_EXECUTE},
+  {"CANCEL_GOAL", GOAL_EVENT_CANCEL_GOAL},
+  {"SUCCEED", GOAL_EVENT_SUCCEED},
+  {"ABORT", GOAL_EVENT_ABORT},
+  {"CANCELED", GOAL_EVENT_CANCELED},
+  {NULL, -1}
+};
 
 void rcl_lua_add_action_server_methods (lua_State* L)
 {
@@ -616,4 +628,6 @@ void rcl_lua_add_action_server_methods (lua_State* L)
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_ACTION_GOAL_HANDLE, act_srv_handle_methods);
+
+  rcl_lua_utils_add_enum(L, "GoalEvent", enum_event_types);
 }

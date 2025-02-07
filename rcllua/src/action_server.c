@@ -123,6 +123,14 @@ static int rcl_lua_action_server_init (lua_State* L)
 
   /* arg6 - execute callback */
   luaL_argcheck(L, lua_isfunction(L, 6), 6, "function is expected");
+  
+  /* arg7 - cancel interface */
+  bool is_interface = false;
+  if (lua_istable(L, 7)) {
+    is_interface = (lua_getfield(L, 7, "_type_support") == LUA_TLIGHTUSERDATA);
+    lua_pop(L, 1);
+  }
+  luaL_argcheck(L, is_interface, 7, "CancelGoal interface is expected");
 
   /* new action server */
   rcl_action_server_t *srv = lua_newuserdata(L, sizeof(rcl_action_server_t));
@@ -178,6 +186,8 @@ static int rcl_lua_action_server_init (lua_State* L)
     lua_rotate(L, -3, 1);                // key, key, value
     lua_rawset(L, -4);                   // pop key and value
   }
+  lua_pushvalue(L, 7);
+  lua_setfield(L, -2, "CancelGoal");
   lua_rawseti(L, -2, ACT_SRV_REG_INTERFACE);  // pop interface
 
   lua_pushvalue(L, 6);
@@ -456,49 +466,51 @@ static int rcl_lua_action_server_add_waitset (lua_State* L)
   return 0;
 }
 
-//static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
-//{
-//  /* arg1 - action server */
-//  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
-//  /* arg2 - cancel request */
-//  idl_lua_msg_t* req = lua_touserdata(L, 1);
-//
-//  /* make response message */
-//  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);
-//  lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE);
-//  lua_getfield(L, -1, "CancelGoal");
-//  lua_getfield(L, -1, "Response");
-//  lua_getfield(L, -1, "_new");
-//  lua_rotate(L, -3, 1); lua_pop(L, 2);
-//  lua_call(L, 0, 1);
-//  idl_lua_msg_t* resp = lua_touserdata(L, -1);
-//
-//  rcl_action_cancel_response_t rcl_resp = rcl_action_get_zero_initialized_cancel_response();
-//
-//  rcl_ret_t ret = rcl_action_process_cancel_request(srv, req->obj, resp->obj);
-//  if (RCL_RET_OK != ret) {
-//    luaL_error(L, "Failed to process cancel request");
-//  }
-//
-//  return 1;
-//}
+static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
+{
+  /* arg1 - action server */
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
+  /* arg2 - cancel request */
+  idl_lua_msg_t* req = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != req, 2, "CancelGoal request is expected");
 
-//static int rcl_lua_actoin_server_expire_goals (lua_State* L)
-//{
-//  /* arg1 - action server */
-//  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
-//  /* arg2 - max number */
-//  int max_goals = luaL_checkinteger(L, 2);
-//  luaL_argcheck(L, max_goals > 0, 2, "expected positive number");
-//
-//  rcl_action_goal_info_t* expired_goals = 
-//    lua_newuserdata(L, max_goals*sizeof(rcl_action_goal_info_t));
-//  size_t num_expired = 0;
-//  rcl_ret_t ret = rcl_action_expire_goals(srv, expired_goals, max_goals, &num_expired);
-//  if (RCL_RET_OK != ret) {
-//    luaL_error(L, "failed to expire goals");
-//  }
-//}
+  /* produce response */
+  rcl_action_cancel_response_t rcl_resp = rcl_action_get_zero_initialized_cancel_response();
+
+  rcl_ret_t ret = rcl_action_process_cancel_request(srv, req->obj, &rcl_resp);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "Failed to process cancel request");
+  }
+
+  return 1;
+}
+
+static int rcl_lua_action_server_expire_goals (lua_State* L)
+{
+  /* arg1 - action server */
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
+  /* arg2 - max number */
+  int max_goals = luaL_checkinteger(L, 2);
+  luaL_argcheck(L, max_goals > 0, 2, "expected positive number");
+
+  rcl_action_goal_info_t* expired_goals = 
+    lua_newuserdata(L, max_goals*sizeof(rcl_action_goal_info_t));
+  size_t num_expired = 0;
+  rcl_ret_t ret = rcl_action_expire_goals(srv, expired_goals, max_goals, &num_expired);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to expire goals");
+  }
+
+  /* UUID as strings strings */
+  lua_createtable(L, num_expired, 0);
+  for (size_t i = 0; i < num_expired; i++) {
+    const char *str = (char*) expired_goals[i].goal_id.uuid;
+    lua_pushlstring(L, str, 16);
+    lua_rawseti(L, -2, i+1);
+  }
+
+  return 1;
+}
 
 static int rcl_lua_action_goal_handle_init (lua_State* L)
 {
@@ -594,6 +606,8 @@ static const struct luaL_Reg act_srv_methods[] = {
   {"add_to_waitset", rcl_lua_action_server_add_waitset},
   {"get_interface", rcl_lua_action_server_get_interface},
   {"get_executable", rcl_lua_action_server_get_exec},
+  {"expire_goals", rcl_lua_action_server_expire_goals},
+  {"process_cancel_request", rcl_lua_action_server_proc_cancel_request},
   {NULL, NULL}
 };
 

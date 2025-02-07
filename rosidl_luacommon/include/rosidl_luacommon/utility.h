@@ -102,5 +102,7 @@ void* rosidl_luacommon_list_info (const idl_lua_msg_t* msg, size_t* size, size_t
  */
 int rosidl_luacommon_push_msg_keys (lua_State* L, const char* table);
 
+void rosidl_luacommon_struct_to_msg (lua_State* L, int pos, void* data);
+
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
 

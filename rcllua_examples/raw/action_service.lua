@@ -5,6 +5,7 @@ local rclbind = require("rcllua.rclbind")
 local Fibonacci = require("action_tutorials_interfaces.action").Fibonacci
 
 local action_msg = require("action_msgs.msg")
+local action_srv = require("action_msgs.srv")
 
 -- Init ROS environment
 rclbind.context_init(arg)
@@ -30,6 +31,12 @@ local function sleep (timeout)
   yielded[co] = nil
 end
 
+local function set_time (msg)
+  local now = clock:now()
+  msg.stamp.sec = now.sec
+  msg.stamp.nanosec = now.nanosec
+end
+
 
 local function action_exec (goal, srv, handle, uuid)
   local feedback_full = Fibonacci.FeedbackMessage()
@@ -53,7 +60,9 @@ end
 
 -- Make objects
 local node = rclbind.new_node('raw_action_service')
-local act_srv = rclbind.new_action_server(node, clock, Fibonacci, 'fibonacci', {}, action_exec)
+local act_srv = rclbind.new_action_server(
+  node, clock, Fibonacci, 'fibonacci', {}, 
+  action_exec, action_srv.CancelGoal)
 
 local sub_no, guard_no, timer_no, cli_no, srv_no = act_srv:get_num_entities()
 local wait_set = rclbind.new_wait_set(sub_no, guard_no, timer_no, cli_no, srv_no, 0)
@@ -73,27 +82,30 @@ while rclbind.context_ok() do
   if is_goal then data['goal'] = act_srv:take_goal_request() end
   if is_cancel then data['cancel'] = act_srv:take_cancel_request() end
   if is_result then data['result'] = act_srv:take_result_request() end
-  --if is_expired then data['expired'] = act_srv:expire_goals() end
+  if is_expired then 
+    local n = 0 
+    for _ in pairs(process) do n = n + 1 end
+    print('number', n)
+    data['expired'] = act_srv:expire_goals(n) 
+  end
 
   if data['goal'] then
     print "goal"
     local req, _, header = table.unpack(data["goal"])
-    print(req)
     local uuid_str = rclbind.uuid_to_str(req.goal_id.uuid)
-    local resp_interface = act_srv:get_interface "SendGoal"
-    local resp = resp_interface.Response()
-    resp.accepted = process[uuid_str] ~= nil
-    local now = clock:now()
-    resp.stamp.sec = now.sec
-    resp.stamp.nanosec = now.nanosec
+    local resp = act_srv:get_interface("SendGoal").Response()
+    resp.accepted = process[uuid_str] == nil
+    set_time(resp)
     act_srv:send_goal_response(resp, header)
 
     if not process[uuid_str] then
-      local co = coroutine.create(act_srv:get_executable())
-      process[uuid_str] = co
-      handles[uuid_str] = rclbind.new_action_goal_handle(act_srv, action_msg.GoalInfo())
+      process[uuid_str] = coroutine.create(act_srv:get_executable())
+      local goal_info = action_msg.GoalInfo {goal_id = req.goal_id}
+      goal_info.stamp = resp.stamp
+      handles[uuid_str] = rclbind.new_action_goal_handle(act_srv, goal_info)
       update_state(rclbind.GoalEvent.EXECUTE, handles[uuid_str], act_srv)
-      local v, err = coroutine.resume(co, req.goal, act_srv, handles[uuid_str], req.goal_id)
+      local v, err = coroutine.resume(
+        process[uuid_str], req.goal, act_srv, handles[uuid_str], req.goal_id)
       print(v, err)
     end
   end
@@ -101,28 +113,41 @@ while rclbind.context_ok() do
 --  if data["cancel"] then
 --  end
 --
---  if data["result"] then
---    local req, _, header = table.unpack(data["result"])
---    local uuid_str = rclbind.uuid_to_str(req.goal_id.uuid)
---    if goals[uuid_str] then
---      results[uuid_str] = header
---    else
---      local resp_interface = act_srv:get_interface "GetResult"
---      local resp = resp_interface.Response()
---      resp.status = action_msg.GoalStatus.STATUS_UNKNOWN
---      act_srv:send_result_response(resp, header)
---    end
---  end
---
---  if data["expired"] then
---  end
---
+  if data["result"] then
+    print "result"
+    local req, _, header = table.unpack(data["result"])
+    local uuid_str = rclbind.uuid_to_str(req.goal_id.uuid)
+    if process[uuid_str] then
+      results[uuid_str] = header
+    else
+      local resp = act_srv:get_interface("GetResult").Response()
+      resp.status = action_msg.GoalStatus.STATUS_UNKNOWN
+      act_srv:send_result_response(resp, header)
+    end
+  end
+
+  if data["expired"] then
+    local lst = data["expired"]
+    for _, uuid_str in ipairs(data["expired"]) do
+      process[uuid_str] = nil
+      handles[uuid_str] = nil
+      results[uuid_str] = nil
+    end
+  end
+
   for id, co in pairs(process) do
     if coroutine.status(co) == 'dead' then
       process[id] = nil
       handles[id] = nil
+      results[id] = nil
     elseif yielded[co] and yielded[co] <= clock:now() then
       local ok, res = coroutine.resume(co)
+      if ok and coroutine.status(co) == 'dead' then
+        local resp = act_srv:get_interface("GetResult").Response()
+        resp.status = handles[id]:get_status()
+        resp.result = res
+        act_srv:send_result_response(resp, results[id])
+      end
     end
   end
 

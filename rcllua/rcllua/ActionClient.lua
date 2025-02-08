@@ -84,7 +84,7 @@ local function new_goal_handle (action_client, goal_id, goal_response)
     _goal_response = goal_response,
     _status = action_msg.GoalStatus.STATUS_UNKNOWN,
   }
-  local s = rclbind.uuid_to_str(goal_id.uuid)
+  local s = rclbind.uuid.str(goal_id.uuid)
   action_client._uuid_handle[s] = o
   return setmetatable(o, ClientGoalHandle)
 end
@@ -107,7 +107,7 @@ function ActionClient.send_goal_async (self, goal, cb_feedback, uuid)
   if uuid then
     request.goal_id = uuid       -- UUID message
   else
-    request.goal_id.uuid(rclbind.get_uuid())   -- make from array
+    request.goal_id.uuid(rclbind.uuid.new())   -- make from array
   end
   -- register callback
   if cb_feedback then
@@ -205,7 +205,7 @@ function ActionClient.execute (self, data)
   if value then
     local goal_status = action_msg.GoalStatus
     for _, msg in ipairs(value.status_list) do
-      local s = rclbind.uuid_to_str(msg.goal_info.goal_id.uuid)
+      local s = rclbind.uuid.str(msg.goal_info.goal_id.uuid)
       local handle = self._uuid_handle[s]
       if handle then
         local status = msg.status

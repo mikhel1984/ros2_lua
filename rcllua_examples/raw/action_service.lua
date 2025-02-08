@@ -92,7 +92,7 @@ while rclbind.context_ok() do
   if data['goal'] then
     print "goal"
     local req, _, header = table.unpack(data["goal"])
-    local uuid_str = rclbind.uuid_to_str(req.goal_id.uuid)
+    local uuid_str = rclbind.uuid.str(req.goal_id.uuid)
     local resp = act_srv:get_interface("SendGoal").Response()
     resp.accepted = process[uuid_str] == nil
     set_time(resp)
@@ -116,7 +116,7 @@ while rclbind.context_ok() do
     local response = act_srv:process_cancel_request(req)
     local upd = {}
     for _, goal in ipairs(response.goals_canceling) do
-      local uuid_str = rclbind.uuid_to_str(goal.goal_id.uuid)
+      local uuid_str = rclbind.uuid.str(goal.goal_id.uuid)
       if process[uuid_str] then
         upd[#upd+1] = goal
         update_state(rclbind.GoalEvent.CANCEL_GOAL, handles[uuid_str], act_srv)
@@ -129,7 +129,7 @@ while rclbind.context_ok() do
   if data["result"] then
     print "result"
     local req, _, header = table.unpack(data["result"])
-    local uuid_str = rclbind.uuid_to_str(req.goal_id.uuid)
+    local uuid_str = rclbind.uuid.str(req.goal_id.uuid)
     if process[uuid_str] then
       results[uuid_str] = header
     else

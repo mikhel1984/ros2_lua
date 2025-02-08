@@ -191,15 +191,16 @@ void rcl_lua_add_util_methods (lua_State* L)
   lua_pushcfunction(L, rcl_lua_utils_sleep_thread);  // push function
   lua_setfield(L, -2, "sleep_thread");               // pop, lib['sleep_thread'] = fn
 
+  lua_createtable(L, 0, 2);                          // push table
   /* generate uuid */
-  lua_pushcfunction(L, rcl_lua_utils_get_uuid);  // push function
-  lua_setfield(L, -2, "get_uuid");               // pop, lib['get_uuid'] = fn
-
-  /* Make string key for UUID */
-  lua_pushcfunction(L, rcl_lua_utils_uuid_to_str);  // push function
-  lua_setfield(L, -2, "uuid_to_str");            // pop, lib['uuid_to_str'] = fn
+  lua_pushcfunction(L, rcl_lua_utils_get_uuid);      // push function
+  lua_setfield(L, -2, "new");                        // pop, lib.uuid.new = fn
+  /* make string key for UUID */
+  lua_pushcfunction(L, rcl_lua_utils_uuid_to_str);   // push function
+  lua_setfield(L, -2, "str");                        // pop, lib.uuid.str = fn
+  lua_setfield(L, -2, "uuid");                       // pop, lib['uuid'] = tbl
 
   /* check message type */
-  lua_pushcfunction(L, rcl_lua_utils_is_instance);  // push function
-  lua_setfield(L, -2, "is_instance");               // pop, lib['is_instance'] = fn
+  lua_pushcfunction(L, rcl_lua_utils_is_instance);   // push function
+  lua_setfield(L, -2, "is_instance");                // pop, lib['is_instance'] = fn
 }

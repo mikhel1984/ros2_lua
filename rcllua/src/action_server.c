@@ -20,6 +20,7 @@
 #include <rcl/error_handling.h>
 
 #include <rosidl_luacommon/definition.h>
+#include <rosidl_luacommon/utility.h>
 
 #include "rcllua/action_server.h"
 #include "rcllua/node.h"
@@ -75,11 +76,10 @@ static int rcl_lua_action_server_init (lua_State* L)
   rosidl_action_type_support_t* ts = NULL;
   /* check table */
   if (lua_istable(L, 3)) {
-    lua_getfield(L, 3, "_type_support");   // push pointer
-    if (lua_islightuserdata(L, -1)) {
+    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 3) == LUA_TLIGHTUSERDATA) {  // push pointer
       ts = lua_touserdata(L, -1);
-      lua_pop(L, 1);                       // pop pointer
     }
+    lua_pop(L, 1);                       // pop pointer
   }
   if (NULL == ts) {
     luaL_argerror(L, 3, "expected action type");
@@ -127,7 +127,7 @@ static int rcl_lua_action_server_init (lua_State* L)
   /* arg7 - cancel interface */
   bool is_interface = false;
   if (lua_istable(L, 7)) {
-    is_interface = (lua_getfield(L, 7, "_type_support") == LUA_TLIGHTUSERDATA);
+    is_interface = (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 7) == LUA_TLIGHTUSERDATA);
     lua_pop(L, 1);
   }
   luaL_argcheck(L, is_interface, 7, "CancelGoal interface is expected");
@@ -194,7 +194,7 @@ static int rcl_lua_action_server_init (lua_State* L)
   lua_rawseti(L, -2, ACT_SRV_REG_EXEC_CB);
 
   lua_getfield(L, 3, "FeedbackMessage");
-  lua_getfield(L, -1, "_metatable");
+  ROSIDL_LUA_PUSH_MT(L, -1);
   lua_rawseti(L, -3, ACT_SRV_REG_FEEDBACK_MT);
   lua_pop(L, 1);
 
@@ -263,13 +263,13 @@ static int rcl_lua_action_server_get_interface (lua_State* L)
   lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE); \
   lua_getfield(L, -1, TBL_NAME); \
   lua_getfield(L, -1, "Request"); \
-  lua_getfield(L, -1, "_new"); \
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, -1); \
   lua_rotate(L, -4, 1); lua_pop(L, 3); \
   lua_call(L, 0, 1); \
   idl_lua_msg_t *msg = lua_touserdata(L, -1); \
   /* get request */ \
   rmw_request_id_t header; \
-  rcl_ret_t ret = rcl_action_take_ ## Type ## _request(srv, &header, msg->obj); \
+  rcl_ret_t ret = rcl_action_take_ ## Type ## _request(srv, &header, ROSIDL_LUA_GET_MSG(msg)); \
   switch (ret) { \
     case RCL_RET_OK: break; \
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED: \
@@ -313,7 +313,7 @@ static int rcl_lua_action_server_cancel_request (lua_State* L)
   /* arg3 - header */ \
   rmw_request_id_t* header = lua_touserdata(L, 3); \
   /* send response */ \
-  rcl_ret_t ret = rcl_action_send_ ## Type ## _response(srv, header, resp->obj); \
+  rcl_ret_t ret = rcl_action_send_ ## Type ## _response(srv, header, ROSIDL_LUA_GET_MSG(resp)); \
   switch (ret) { \
     case RCL_RET_OK: break; \
     case RCL_RET_TIMEOUT: \
@@ -365,7 +365,7 @@ static int rcl_lua_action_server_publish_feedback (lua_State* L)
   idl_lua_msg_t *msg = luaL_checkudata(L, 2, mt);
 
   /* send */
-  rcl_ret_t ret = rcl_action_publish_feedback(srv, msg->obj);
+  rcl_ret_t ret = rcl_action_publish_feedback(srv, ROSIDL_LUA_GET_MSG(msg));
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to publish feedback");
   }
@@ -477,9 +477,21 @@ static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
   /* produce response */
   rcl_action_cancel_response_t rcl_resp = rcl_action_get_zero_initialized_cancel_response();
 
-  rcl_ret_t ret = rcl_action_process_cancel_request(srv, req->obj, &rcl_resp);
+  rcl_ret_t ret = rcl_action_process_cancel_request(srv, ROSIDL_LUA_GET_MSG(req), &rcl_resp);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "Failed to process cancel request");
+    luaL_error(L, "failed to process cancel request");
+  }
+
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv); 
+  lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE);
+  lua_getfield(L, -1, "CancelGoal");
+  lua_getfield(L, -1, "Response");
+
+  rosidl_luacommon_struct_to_msg(L, -1, &rcl_resp.msg);  // push message
+
+  ret = rcl_action_cancel_response_fini(&rcl_resp);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to finalize cancel response: %s", rcl_get_error_string().str);
   }
 
   return 1;
@@ -520,7 +532,7 @@ static int rcl_lua_action_goal_handle_init (lua_State* L)
   luaL_argcheck(L, lua_isuserdata(L, 2), 2, "expected GoalInfo message");
   idl_lua_msg_t* msg = lua_touserdata(L, 2);
 
-  rcl_action_goal_info_t* goal_info_ptr = (rcl_action_goal_info_t*) msg->obj;
+  rcl_action_goal_info_t* goal_info_ptr = (rcl_action_goal_info_t*) ROSIDL_LUA_GET_MSG(msg);
   rcl_action_goal_handle_t* rcl_handle = rcl_action_accept_new_goal(srv, goal_info_ptr);
   if (!goal_info_ptr) {
     luaL_error(L, "failed to accept new goal");

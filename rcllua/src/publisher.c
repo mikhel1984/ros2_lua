@@ -64,11 +64,10 @@ static int rcl_lua_publisher_init (lua_State* L)
   rosidl_message_type_support_t *ts = NULL;
   /* check table */
   if (lua_istable(L, 2)) {
-    lua_getfield(L, 2, "_type_support");   // push pointer
-    if (lua_islightuserdata(L, -1)) {
+    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 2) == LUA_TLIGHTUSERDATA) {
       ts = lua_touserdata(L, -1);
-      lua_pop(L, 1);                       // pop pointer
     }
+    lua_pop(L, 1);                       // pop pointer
   }
   if (NULL == ts) {
     luaL_argerror(L, 2, "expected message type");
@@ -105,7 +104,7 @@ static int rcl_lua_publisher_init (lua_State* L)
   lua_pushvalue(L, 1);                 // push node
   lua_rawseti(L, -2, PUB_REG_NODE);    // pop node, a[1] = node
 
-  lua_getfield(L, 2, "_metatable");    // push name
+  ROSIDL_LUA_PUSH_MT(L, 2);            // push name
   lua_rawseti(L, -2, PUB_REG_MT);      // pop name, a[2] = name
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, publisher);  // pop table a, reg[pub] = a
@@ -168,7 +167,7 @@ static int rcl_lua_publisher_publish (lua_State* L)
   idl_lua_msg_t *msg = luaL_checkudata(L, 2, mt);
 
   /* send */
-  rcl_ret_t ret = rcl_publish(publisher, msg->obj, NULL);
+  rcl_ret_t ret = rcl_publish(publisher, ROSIDL_LUA_GET_MSG(msg), NULL);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to publish");
   }

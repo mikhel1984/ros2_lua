@@ -97,10 +97,10 @@ static int rcl_lua_action_client_init (lua_State* L)
   rosidl_action_type_support_t* ts = NULL;
   /* check table */
   if (lua_istable(L, 2)) {
-    if (lua_getfield(L, 2, "_type_support") == LUA_TLIGHTUSERDATA) {   // push pointer
+    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 2) == LUA_TLIGHTUSERDATA) {   // push pointer
       ts = lua_touserdata(L, -1);
-      lua_pop(L, 1);                       // pop pointer
     }
+    lua_pop(L, 1);                       // pop pointer
   }
   if (NULL == ts) {
     luaL_argerror(L, 2, "expected action type");
@@ -137,7 +137,7 @@ static int rcl_lua_action_client_init (lua_State* L)
   /* arg5 - cancel interface */
   bool is_interface = false;
   if (lua_istable(L, 5)) {
-    is_interface = (lua_getfield(L, 5, "_type_support") == LUA_TLIGHTUSERDATA);
+    is_interface = (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 5) == LUA_TLIGHTUSERDATA);
     lua_pop(L, 1);
   }
   luaL_argcheck(L, is_interface, 5, "CancelGoal interface is expected");
@@ -145,7 +145,7 @@ static int rcl_lua_action_client_init (lua_State* L)
   /* arg6 - state */
   is_interface = false;
   if (lua_istable(L, 6)) {
-    is_interface = (lua_getfield(L, 6, "_type_support") == LUA_TLIGHTUSERDATA);
+    is_interface = (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 6) == LUA_TLIGHTUSERDATA);
     lua_pop(L, 1);
   }
   luaL_argcheck(L, is_interface, 6, "GoalStatus interface is expected");
@@ -196,11 +196,11 @@ static int rcl_lua_action_client_init (lua_State* L)
   lua_rawseti(L, -2, ACT_CLI_REG_INTERFACE);  // pop interface
 
   lua_getfield(L, 2, "FeedbackMessage");  // push table
-  lua_getfield(L, -1, "_new");            // push constructor
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, -1);            // push constructor
   lua_rawseti(L, -3, ACT_CLI_REG_FEEDBACK_NEW);  // pop constructor
   lua_pop(L, 1);                         // pop table
 
-  lua_getfield(L, 6, "_new");            // push constructor
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, 6);            // push constructor
   lua_rawseti(L, -2, ACT_CLI_REG_STATUS_NEW);  // pop constructor
 
   /* prepare tables */
@@ -260,7 +260,7 @@ static int rcl_lua_action_client_free (lua_State* L)
   luaL_argcheck(L, lua_isfunction(L, 3), 3, "callback is expected"); \
   /* send */ \
   int64_t seq_num = 0; \
-  rcl_ret_t ret = rcl_action_send_ ## Type ## _request(cli, req->obj, &seq_num); \
+  rcl_ret_t ret = rcl_action_send_ ## Type ## _request(cli, ROSIDL_LUA_GET_MSG(req), &seq_num); \
   if (RCL_RET_OK != ret) { \
     luaL_error(L, "failed to send " #Type " request"); \
   } \
@@ -343,13 +343,13 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
   lua_rawgeti(L, -1, ACT_CLI_REG_INTERFACE); \
   lua_getfield(L, -1, TBL_NAME); \
   lua_getfield(L, -1, "Response"); \
-  lua_getfield(L, -1, "_new"); \
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, -1); \
   lua_rotate(L, -3, 1); lua_pop(L, 2); \
   lua_call(L, 0, 1); \
   idl_lua_msg_t* msg = lua_touserdata(L, -1); \
   /* get response */ \
   rmw_request_id_t header; \
-  rcl_ret_t ret = rcl_action_take_ ## Type ## _response(cli, &header, msg->obj); \
+  rcl_ret_t ret = rcl_action_take_ ## Type ## _response(cli, &header, ROSIDL_LUA_GET_MSG(msg)); \
   switch (ret) { \
     case RCL_RET_OK: break; \
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED: \
@@ -453,7 +453,7 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
   idl_lua_msg_t *msg = lua_touserdata(L, -1);
 
   /* get message */
-  rcl_ret_t ret = rcl_action_take_feedback(cli, msg->obj);
+  rcl_ret_t ret = rcl_action_take_feedback(cli, ROSIDL_LUA_GET_MSG(msg));
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED:
@@ -510,7 +510,7 @@ static int rcl_lua_action_client_take_status (lua_State* L)
   idl_lua_msg_t *msg = lua_touserdata(L, -1);
 
   /* get message */
-  rcl_ret_t ret = rcl_action_take_status(cli, msg->obj);
+  rcl_ret_t ret = rcl_action_take_status(cli, ROSIDL_LUA_GET_MSG(msg));
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED:

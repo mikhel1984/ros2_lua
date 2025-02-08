@@ -78,11 +78,10 @@ static int rcl_lua_subscription_init (lua_State* L)
   /* arg2 - message type */
   rosidl_message_type_support_t *ts = NULL;
   if (lua_istable(L, 2)) {
-    lua_getfield(L, 2, "_type_support");  // push pointer
-    if (lua_islightuserdata(L, -1)) {
+    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 2) == LUA_TLIGHTUSERDATA) {  // push pointer
       ts = lua_touserdata(L, -1);
-      lua_pop(L, 1);                      // pop pointer
     }
+    lua_pop(L, 1);                      // pop pointer
   }
   if (NULL == ts) {
     luaL_error(L, "message not found");
@@ -121,10 +120,10 @@ static int rcl_lua_subscription_init (lua_State* L)
   lua_pushvalue(L, 1);                    // push node
   lua_rawseti(L, -2, SUB_REG_NODE);       // pop node, a[1] = node
 
-  lua_getfield(L, 2, "_metatable");       // push name
+  ROSIDL_LUA_PUSH_MT(L, 2);       // push name
   lua_rawseti(L, -2, SUB_REG_MT);         // pop name, a[2] = name
 
-  lua_getfield(L, 2, "_new");             // push function
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, 2);             // push function
   lua_rawseti(L, -2, SUB_REG_NEW);        // pop function, a[3] = function
 
   lua_pushvalue(L, 4);                    // push callback
@@ -191,8 +190,7 @@ bool rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t*
   lua_createtable(L, SUB_OUT_NUMBER-1, 0);  // push table a
 
   /* get message constructor */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, sub);  // push table b
-  if (lua_isnil(L, -1)) {
+  if (lua_rawgetp(L, LUA_REGISTRYINDEX, sub) == LUA_TNIL) {  // push table b
     lua_pop(L, 2);
     return false;
   }
@@ -204,7 +202,7 @@ bool rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t*
 
   /* get and save message */
   rmw_message_info_t message_info;
-  rcl_ret_t ret = rcl_take(sub, msg->obj, &message_info, NULL);
+  rcl_ret_t ret = rcl_take(sub, ROSIDL_LUA_GET_MSG(msg), &message_info, NULL);
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_BAD_ALLOC:

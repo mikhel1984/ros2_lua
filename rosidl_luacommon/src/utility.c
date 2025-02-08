@@ -221,12 +221,15 @@ int rosidl_luacommon_push_msg_keys (lua_State* L, const char* table)
 
 void rosidl_luacommon_struct_to_msg (lua_State* L, int pos, void* data)
 {
-  lua_getfield(L, pos, "_metatable");     // push name
+  if (pos < 0) {
+    pos = lua_gettop(L) + pos + 1;
+  }
+  ROSIDL_LUA_PUSH_MT(L, pos);         // push name
   const char* mt = lua_tostring(L, -1);
   lua_pop(L, 1);                      // pop name
   luaL_getmetatable(L, mt);           // push metatable
 
-  lua_getfield(L, pos, "_new");       // push constructor
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, pos);   // push constructor
   lua_call(L, 0, 1);                  // pop constructor, push message
   
   lua_getfield(L, -2, "copy");        // push function

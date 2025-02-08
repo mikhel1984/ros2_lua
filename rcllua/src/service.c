@@ -82,11 +82,10 @@ static int rcl_lua_service_init (lua_State* L)
   rosidl_service_type_support_t *ts = NULL;
   /* check table */
   if (lua_istable(L, 2)) {
-    lua_getfield(L, 2, "_type_support");   // push pointer
-    if (lua_islightuserdata(L, -1)) {
+    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 2) == LUA_TLIGHTUSERDATA) {
       ts = lua_touserdata(L, -1);
-      lua_pop(L, 1);                       // pop pointer
     }
+    lua_pop(L, 1);                       // pop pointer
   }
   if (NULL == ts) {
     luaL_argerror(L, 2, "expected service type");
@@ -130,12 +129,12 @@ static int rcl_lua_service_init (lua_State* L)
   lua_rawseti(L, -2, SRV_REG_CALLBACK);    // pop function, a[.] = callback
 
   lua_getfield(L, 2, "Request");       // push table b
-  lua_getfield(L, -1, "_new");         // push function
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, -1);         // push function
   lua_rawseti(L, -3, SRV_REG_NEW_REQUEST);  // pop funciton, a[.] = function
   lua_pop(L, 1);                       // pop table b
 
   lua_getfield(L, 2, "Response");      // push table b
-  lua_getfield(L, -1, "_metatable");   // push name
+  ROSIDL_LUA_PUSH_MT(L, -1);   // push name
   lua_rawseti(L, -3, SRV_REG_MT_RESPONSE);  // pop name, a[.] = metatable
   lua_pop(L, 1);                       // pop table b
 
@@ -256,7 +255,7 @@ static int rcl_lua_service_send_response (lua_State* L)
   idl_lua_msg_t *resp = luaL_checkudata(L, 2, mt);
 
   /* send response */
-  rcl_ret_t ret = rcl_send_response(srv, &header->request_id, resp->obj);
+  rcl_ret_t ret = rcl_send_response(srv, &header->request_id, ROSIDL_LUA_GET_MSG(resp));
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_TIMEOUT:
@@ -305,8 +304,7 @@ bool rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
   lua_rawseti(L, -2, SRV_OUT_REF);          // pop pointer, a[.] = srv
 
   /* prepare request message */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);   // push table b (bindings)
-  if (lua_isnil(L, -1)) {
+  if (lua_rawgetp(L, LUA_REGISTRYINDEX, srv) == LUA_TNIL) {  // push table b (bindings)
     lua_pop(L, 2);
     return false;
   }
@@ -316,7 +314,7 @@ bool rcl_lua_service_push_callback (lua_State* L, const rcl_service_t* srv)
 
   /* get request */
   rmw_service_info_t header;
-  rcl_ret_t ret = rcl_take_request_with_info(srv, &header, msg->obj);
+  rcl_ret_t ret = rcl_take_request_with_info(srv, &header, ROSIDL_LUA_GET_MSG(msg));
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_SERVICE_TAKE_FAILED:

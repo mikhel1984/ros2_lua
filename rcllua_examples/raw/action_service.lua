@@ -109,10 +109,23 @@ while rclbind.context_ok() do
       print(v, err)
     end
   end
---
---  if data["cancel"] then
---  end
---
+
+  if data["cancel"] then
+    print "cancel"
+    local req, _, header = table.unpack(data["cancel"])
+    local response = act_srv:process_cancel_request(req)
+    local upd = {}
+    for _, goal in ipairs(response.goals_canceling) do
+      local uuid_str = rclbind.uuid_to_str(goal.goal_id.uuid)
+      if process[uuid_str] then
+        upd[#upd+1] = goal
+        update_state(rclbind.GoalEvent.CANCEL_GOAL, handles[uuid_str], act_srv)
+      end
+    end
+    response.goals_canceling(upd)  -- update
+    act_srv:send_cancel_response(response, header)
+  end
+
   if data["result"] then
     print "result"
     local req, _, header = table.unpack(data["result"])

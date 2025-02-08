@@ -219,11 +219,14 @@ int rosidl_luacommon_push_msg_keys (lua_State* L, const char* table)
   return 1;
 }
 
+/* Make message, fill from C structure. */
 void rosidl_luacommon_struct_to_msg (lua_State* L, int pos, void* data)
 {
   if (pos < 0) {
     pos = lua_gettop(L) + pos + 1;
   }
+
+  /* new message */
   ROSIDL_LUA_PUSH_MT(L, pos);         // push name
   const char* mt = lua_tostring(L, -1);
   lua_pop(L, 1);                      // pop name
@@ -233,14 +236,16 @@ void rosidl_luacommon_struct_to_msg (lua_State* L, int pos, void* data)
   lua_call(L, 0, 1);                  // pop constructor, push message
   
   lua_getfield(L, -2, "copy");        // push function
-  lua_pushvalue(L, -2);               // push dst
+  lua_pushvalue(L, -2);               // push dst message
 
+  /* temporary message */
   idl_lua_msg_t *tmp = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push
   tmp->obj = data;
   tmp->value = IDL_LUA_PTR;
-  lua_rotate(L, -5, -1);
+  lua_rotate(L, -5, -1);              // move metatable to the top
   lua_setmetatable(L, -2);            // pop metatable
 
+  /* copy */
   lua_call(L, 2, 1);                  // pop src and dst, push bool
   lua_pop(L, 1);                      // pop bool
 }

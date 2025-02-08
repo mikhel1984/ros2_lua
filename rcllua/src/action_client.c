@@ -457,7 +457,6 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_ACTION_CLIENT_TAKE_FAILED:
-      puts("cannot take");
       lua_pushnil(L);
       return 1;
     default:
@@ -472,7 +471,6 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
   lua_rawgeti(L, -4, ACT_CLI_REG_FEEDBACK_LIST);  // push table b
   lua_replace(L, -3);               // pop, replace userdata
   if (lua_rawget(L, -2) == LUA_TNIL) {    // pop uuid, push callback or nil
-    puts("wrong UUID");
     return 1;  // callback not found
   }
 

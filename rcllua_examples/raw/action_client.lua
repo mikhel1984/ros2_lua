@@ -75,9 +75,9 @@ while rclbind.context_ok() do
     break
   end
 
-  local is_feedback, is_status, is_goal, is_cancel, is_result = act_cli:is_ready(wait_set)
-
+  -- check intput
   local data = {}
+  local is_feedback, is_status, is_goal, is_cancel, is_result = act_cli:is_ready(wait_set)
   if is_feedback then data['feedback'] = act_cli:take_feedback() end
   if is_status   then data['status'] = act_cli:take_status() end
   if is_goal     then data['goal'] = act_cli:take_goal_response() end
@@ -85,7 +85,6 @@ while rclbind.context_ok() do
   if is_result   then data['result'] = act_cli:take_result_response() end
 
   -- processing
-
   if data['goal'] then
     local resp, fn, seq = table.unpack(data['goal'])
     -- fn(resp)

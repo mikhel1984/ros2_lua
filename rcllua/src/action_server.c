@@ -167,7 +167,7 @@ static int rcl_lua_action_server_init (lua_State* L)
 
   /* arg6 - execute callback */
   luaL_argcheck(L, lua_isfunction(L, 6), 6, "function is expected");
-  
+
   /* arg7 - cancel interface */
   bool is_interface = false;
   if (lua_istable(L, 7)) {
@@ -187,7 +187,7 @@ static int rcl_lua_action_server_init (lua_State* L)
       luaL_error(L, "failed topic name %s", srv_name); break;
     default:
       luaL_error(L, "failed to create action server");
-  }  
+  }
 
   /* set metamethods */
   luaL_getmetatable(L, MT_ACTION_SERVER);  // push metatable
@@ -549,7 +549,7 @@ static int rcl_lua_action_server_publish_status (lua_State* L)
   /* arg1 - action server */
   rcl_action_server_t* srv = lua_touserdata(L, 1);
 
-  rcl_action_goal_status_array_t status_message = 
+  rcl_action_goal_status_array_t status_message =
     rcl_action_get_zero_initialized_goal_status_array();
   rcl_ret_t ret = rcl_action_get_goal_status_array(srv, &status_message);
   if (RCL_RET_OK != ret) {
@@ -619,7 +619,7 @@ static int rcl_lua_action_server_num_entities (lua_State* L)
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to get number of entities");
   }
-  
+
   for(size_t i = 0; i < 5; i++) {
     lua_pushinteger(L, count[i]);
   }
@@ -716,9 +716,9 @@ static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to process cancel request");
   }
-  
+
   /* fill message */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, srv); 
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);
   lua_rawgeti(L, -1, ACT_SRV_REG_INTERFACE);
   lua_getfield(L, -1, "CancelGoal");
   lua_getfield(L, -1, "Response");
@@ -754,7 +754,7 @@ static int rcl_lua_action_server_expire_goals (lua_State* L)
   int max_goals = luaL_checkinteger(L, 2);
   luaL_argcheck(L, max_goals > 0, 2, "expected positive number");
 
-  rcl_action_goal_info_t* expired_goals = 
+  rcl_action_goal_info_t* expired_goals =
     lua_newuserdata(L, max_goals*sizeof(rcl_action_goal_info_t));
   size_t num_expired = 0;
   rcl_ret_t ret = rcl_action_expire_goals(srv, expired_goals, max_goals, &num_expired);
@@ -802,7 +802,7 @@ static int rcl_lua_action_goal_handle_init (lua_State* L)
   }
 
   /* make object */
-  rcl_action_goal_handle_t* action_goal_handle = 
+  rcl_action_goal_handle_t* action_goal_handle =
     lua_newuserdata(L, sizeof(rcl_action_goal_handle_t));  // push object
   *action_goal_handle = *rcl_handle;
 
@@ -890,7 +890,7 @@ static int rcl_lua_action_goal_handle_set_status (lua_State* L)
 
 /**
  * Check if the goal is active.
- * 
+ *
  * Arguments:
  * - goal handle
  *
@@ -966,7 +966,7 @@ void rcl_lua_add_action_server_methods (lua_State* L)
 
   /* goal handle metamethods */
   rcl_lua_utils_add_mt(L, MT_ACTION_GOAL_HANDLE, act_srv_handle_methods);
-  
+
   /* events */
   rcl_lua_utils_add_enum(L, "GoalEvent", enum_event_types);
 }

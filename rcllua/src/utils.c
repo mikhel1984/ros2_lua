@@ -70,7 +70,7 @@ static int rcl_lua_utils_sleep_thread (lua_State* L)
   struct timespec time;
   time.tv_sec = full;
   time.tv_nsec = part;
-  
+
   thrd_sleep(&time, NULL);
 
   return 0;
@@ -78,7 +78,7 @@ static int rcl_lua_utils_sleep_thread (lua_State* L)
 
 /**
  * Generate UUID value.
- * 
+ *
  * Return:
  * - table form uint8[16]
  * - string form
@@ -116,7 +116,7 @@ static int rcl_lua_utils_get_uuid (lua_State* L)
     lua_pushinteger(L, seq[i]);
     lua_rawseti(L, -2, i+1);
   }
-  
+
   /* as string */
   lua_pushlstring(L, uuid, 16);
   return 2;
@@ -140,7 +140,7 @@ void rcl_lua_utils_push_uuid_str (lua_State* L, int pos)
  *
  * Arguments:
  * - message field or table with 16 uint.
- * 
+ *
  * Return:
  * - uuid as string.
  *

@@ -73,7 +73,7 @@ const char* MT_ACTION_CLIENT = "ROS2.ActionClient";
  * - node object
  * - action type (table)
  * - action name
- * - QoS table (={})
+ * - QoS table (=nil)
  * -- goal_service_qos
  * -- result_service_qos
  * -- cancel_service_qos
@@ -137,8 +137,8 @@ static int rcl_lua_action_client_init (lua_State* L)
   /* arg5 - cancel interface */
   bool is_interface = false;
   if (lua_istable(L, 5)) {
-    is_interface = (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 5) == LUA_TLIGHTUSERDATA);
-    lua_pop(L, 1);
+    is_interface = (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 5) == LUA_TLIGHTUSERDATA);  // push
+    lua_pop(L, 1);             // pop
   }
   luaL_argcheck(L, is_interface, 5, "CancelGoal interface is expected");
 
@@ -151,7 +151,7 @@ static int rcl_lua_action_client_init (lua_State* L)
   luaL_argcheck(L, is_interface, 6, "GoalStatus interface is expected");
 
   /* new action client */
-  rcl_action_client_t* cli = lua_newuserdata(L, sizeof(rcl_action_client_t));
+  rcl_action_client_t* cli = lua_newuserdata(L, sizeof(rcl_action_client_t));  // push object
   *cli = rcl_action_get_zero_initialized_client();
 
   rcl_ret_t ret = rcl_action_client_init(cli, node, ts, srv_name, &action_client_ops);
@@ -617,7 +617,7 @@ static int rcl_lua_action_client_add_wait_set (lua_State* L)
 }
 
 /**
- * Check if there are any ready entries.
+ * Check ready entries.
  *
  * Arguments:
  * - action client

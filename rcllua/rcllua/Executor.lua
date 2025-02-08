@@ -190,8 +190,8 @@ end
 function Executor.resume_waiters (self)
   for i = 1, #self._nodes do
     for co, condition in pairs(self._nodes[i]:get_waited_list()) do
-      if rclbind.context_ok() and condition() then 
-        coroutine.resume(co) 
+      if rclbind.context_ok() and condition() then
+        assert(coroutine.resume(co))
       end
     end
   end
@@ -216,7 +216,7 @@ end
 --- Run data spin.
 function Executor.spin (self)
   while rclbind.context_ok() and not self._is_shutdown do
-    Executor.spin_once(self)
+    Executor.spin_once(self, 3.0)
   end
 end
 

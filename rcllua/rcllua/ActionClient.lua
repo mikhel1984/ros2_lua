@@ -315,7 +315,9 @@ setmetatable(ActionClient,
 --  @return new ActionClient object.
 __call = function (self, node, action_type, action_name, qos)
   local client = rclbind.new_action_client(
-    node._node__object, action_type, action_name, qos,
+    node._node__object, 
+    action_type, action_name, 
+    qos,
     action_srv.CancelGoal, action_msg.GoalStatusArray)
   local o = {
     _client = client,

@@ -506,6 +506,30 @@ static int rcl_lua_action_server_get_exec (lua_State* L)
 }
 
 /**
+ * Get method that may do additional configuration and run the main process.
+ * The method takes goal handle and run execution.
+ *
+ * Arguments:
+ * - action server object
+ *
+ * Return:
+ * - function
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_action_server_get_handle_check (lua_State* L)
+{
+  /* arg1 - action server */
+  rcl_action_server_t* srv = lua_touserdata(L, 1);
+
+  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);     // push table
+  lua_rawgeti(L, -1, ACT_SRV_REG_HANDLE_CB);  // push method for goal handle run
+
+  return 1;
+}
+
+/**
  * Send feedback message.
  *
  * Arguments:
@@ -926,6 +950,7 @@ static const struct luaL_Reg act_srv_methods[] = {
   {"add_to_waitset", rcl_lua_action_server_add_waitset},
   {"get_interface", rcl_lua_action_server_get_interface},
   {"get_executable", rcl_lua_action_server_get_exec},
+  {"get_handle_preprocessing", rcl_lua_action_server_get_handle_check},
   {"expire_goals", rcl_lua_action_server_expire_goals},
   {"process_cancel_request", rcl_lua_action_server_proc_cancel_request},
   {NULL, NULL}

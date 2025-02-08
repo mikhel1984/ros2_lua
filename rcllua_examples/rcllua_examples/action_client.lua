@@ -20,7 +20,10 @@ local FibonacciActionClient = Node {
 
   -- node constructor
   init = function (self)
-    self.action_client = ActionClient(self, Fibonacci, 'fibonacci')
+    self.action_client = ActionClient(
+      self, 
+      Fibonacci, 
+      'fibonacci')
   end,
 
   -- call to set goal

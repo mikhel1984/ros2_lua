@@ -25,6 +25,7 @@
 #include "rcllua/qos.h"
 #include "rcllua/wait_set.h"
 #include "rcllua/action_client.h"
+#include "rcllua/action_server.h"
 #include "rcllua/utils.h"
 
 /**
@@ -55,6 +56,7 @@ int luaopen_rcllua_rclbind (lua_State* L)
   rcl_lua_add_wait_set_methods(L);
 
   rcl_lua_add_action_client_methods(L);
+  rcl_lua_add_action_server_methods(L);
 
   rcl_lua_add_util_methods(L);
 

@@ -79,11 +79,10 @@ static int rcl_lua_client_init (lua_State* L)
   rosidl_service_type_support_t *ts = NULL;
   /* check table */
   if (lua_istable(L, 2)) {
-    lua_getfield(L, 2, "_type_support");   // push pointer
-    if (lua_islightuserdata(L, -1)) {
+    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, 2) == LUA_TLIGHTUSERDATA) {
       ts = lua_touserdata(L, -1);
-      lua_pop(L, 1);                       // pop pointer
     }
+    lua_pop(L, 1);                       // pop pointer
   }
   if (NULL == ts) {
     luaL_argerror(L, 2, "expected service type");
@@ -124,12 +123,12 @@ static int rcl_lua_client_init (lua_State* L)
   lua_rawseti(L, -2, CLI_REG_LIST_REQ);  // pop table, a[.] = table
 
   lua_getfield(L, 2, "Request");       // push table b
-  lua_getfield(L, -1, "_metatable");   // push name
+  ROSIDL_LUA_PUSH_MT(L, -1);           // push name
   lua_rawseti(L, -3, CLI_REG_MT_REQUEST);  // pop name, a[.] = name
   lua_pop(L, 1);                       // pop table b
 
   lua_getfield(L, 2, "Response");      // push table b
-  lua_getfield(L, -1, "_new");         // push function
+  ROSIDL_LUA_PUSH_CONSTRUCTOR(L, -1);         // push function
   lua_rawseti(L, -3, CLI_REG_NEW_RESPONSE);  // pop function, a[.] = function
   lua_pop(L, 1);                       // pop table b
 
@@ -233,7 +232,7 @@ static int rcl_lua_client_send_request (lua_State* L)
 
   /* send */
   int64_t seq_num = 0;
-  rcl_ret_t ret = rcl_send_request(cli, req->obj, &seq_num);
+  rcl_ret_t ret = rcl_send_request(cli, ROSIDL_LUA_GET_MSG(req), &seq_num);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to send request");
   }
@@ -313,7 +312,7 @@ bool rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
 
   /* get response */
   rmw_service_info_t header;
-  rcl_ret_t ret = rcl_take_response_with_info(cli, &header, msg->obj);
+  rcl_ret_t ret = rcl_take_response_with_info(cli, &header, ROSIDL_LUA_GET_MSG(msg));
   switch (ret) {
     case RCL_RET_OK: break;
     case RCL_RET_CLIENT_TAKE_FAILED:

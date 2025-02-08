@@ -19,6 +19,9 @@ local client_lib = require("rcllua.client").Client
 local node_params = nil  -- parameter methods
 local builtin_msg = nil  -- builtin interfaces
 
+local get_true = function () return true end
+local long_to_short = function (a, b) return a > b end
+
 --- List of predefined Node keywords.
 local protected = {
   name=true, namespace=true, init=true, bind=true,
@@ -168,6 +171,14 @@ function Node.wrap (self, name)
   return coroutine.wrap(Node.bind(self, name))
 end
 
+function Node._set_wait_time (self, time)
+  local lst = self._resume__time
+  table.insert(lst, time)
+  if #lst > 1 then
+    table.sort(lst, long_to_short)
+  end
+end
+
 --- "Sleep" until the condition is fulfilled.
 --  @param condition Function funciton() -> bool or timeout in seconds.
 --  @param timeout Timeout in seconds or nil.
@@ -179,13 +190,18 @@ function Node.wait (self, condition, timeout)
   end
   local time_fn = nil
   if timeout then
-    assert(timeout >= 0, 'Expected positive duration')
-    local clock = self._clock__object
-    local finish = clock:now() + rclbind.new_duration_sec(timeout)
-    time_fn = function ()
-      return clock:now() > finish
+    if timeout > 0 then
+      local clock = self._clock__object
+      local finish = clock:now() + rclbind.new_duration_sec(timeout)
+      time_fn = function ()
+        return clock:now() > finish
+      end
+      Node._set_wait_time(self, finish)
+    elseif timeout == 0 then
+      condition, timeout = get_true, nil
+    else
+      error "Expected positive duration"
     end
-    -- TODO update spin once timeout
   end
   -- make/choose function
   local fn = nil
@@ -211,6 +227,25 @@ function Node.get_waited_list (self)
   local t = {}
   for k, v in pairs(self._resume__list) do t[k] = v end
   return t
+end
+
+--- Check if there is wait time in queue.
+--  @return non-negative duration or infinity if the queue is empty.
+function Node.get_shortest_time (self)
+  local lst = self._resume__time
+  if #lst == 0 then 
+    return math.huge 
+  end
+  local now, removed = self._clock__object:now(), nil
+  while #lst > 0 do
+    local t = lst[#lst]
+    if t > now then
+      return (t - now):seconds()
+    else
+      removed = table.remove(lst)  -- notify about condition
+    end
+  end
+  return removed and 0 or math.huge
 end
 
 --- Get time as builtin_interfaces.Time object.
@@ -292,6 +327,7 @@ function Node.__call (self, ...)
   o._executor__weak = setmetatable({ref=nil}, {__mode='v'})
   -- wait for resume
   o._resume__list = {}
+  o._resume__time = {}
   -- references
   o._timer__list = {}
   o._subscription__list = {}

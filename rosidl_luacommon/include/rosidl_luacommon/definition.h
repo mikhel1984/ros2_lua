@@ -55,4 +55,12 @@ typedef struct {
   lua_call(L, 1, 2); \
   lua_pop(L, 3);
 
+#define ROSIDL_LUA_GET_MSG(ref) (ref)->obj
+
+#define ROSIDL_LUA_PUSH_MT(L, pos) lua_getfield(L, pos, "_metatable")
+
+#define ROSIDL_LUA_PUSH_CONSTRUCTOR(L, pos) lua_getfield(L, pos, "_new")
+
+#define ROSIDL_LUA_PUSH_TYPESUPPORT(L, pos) lua_getfield(L, pos, "_type_support")
+
 #endif  // ROSIDL_LUACOMMON__DEFINITION_H_

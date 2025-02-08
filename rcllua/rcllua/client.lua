@@ -105,8 +105,10 @@ end
 --  @param timeout_sec (=nil) Wait time (optional).
 --  @return response object or nil (in the case of time out).
 function Client.call (self, req, timeout_sec)
-  local future = Client.call_async(self, req, timeout_sec)
-  self._weak.node:wait(function () return future._is_done end)
+  local future = Client.call_async(self, req)
+  self._weak.node:wait(
+    function () return future._is_done end, 
+    timeout_sec)
   return future:result()
 end
 

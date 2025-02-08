@@ -24,10 +24,12 @@ local MinimalService = Node {
 }
 
 -- Main service function
-function MinimalService.call_trigger (self, _, resp)
+function MinimalService.call_trigger (self, req)
   self.is_on = not self.is_on
+  resp = std_srvs.Trigger.Response()
   resp.success = true
   resp.message = self.is_on and 'Node is on' or 'Node is off'
+  return resp
 end
 
 -- Execute

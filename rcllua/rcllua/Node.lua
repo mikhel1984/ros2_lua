@@ -229,13 +229,14 @@ function Node.get_waited_list (self)
   return t
 end
 
+--- Check if there is wait time in queue.
+--  @return non-negative duration or infinity if the queue is empty.
 function Node.get_shortest_time (self)
   local lst = self._resume__time
   if #lst == 0 then 
     return math.huge 
   end
-  local now = self._clock__object:now()
-  local removed = nil
+  local now, removed = self._clock__object:now(), nil
   while #lst > 0 do
     local t = lst[#lst]
     if t > now then
@@ -245,10 +246,6 @@ function Node.get_shortest_time (self)
     end
   end
   return removed and 0 or math.huge
-end
-
-function Node.pop_resume_time (self)
-  table.remove(self._resume__time)
 end
 
 --- Get time as builtin_interfaces.Time object.

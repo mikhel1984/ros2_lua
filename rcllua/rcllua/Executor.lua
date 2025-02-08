@@ -202,21 +202,20 @@ end
 --  @return minimal timeout amont requests or -1.
 function Executor.resume_time (self, spin_timeout)
   local tmin = spin_timeout and spin_timeout >=0 and spin_timeout or math.huge
-  local ind = nil
   for i = 1, #self._nodes do
     local ti = self._nodes[i]:get_shortest_time()
     if ti < tmin then
-      tmin, ind = ti, i
+      tmin = ti
     end
   end
-  if ind then self._nodes[ind]:pop_resume_time() end
   return (tmin < math.huge) and tmin or -1
 end
 
 --- Run data spin.
 function Executor.spin (self)
   while rclbind.context_ok() and not self._is_shutdown do
-    Executor.spin_once(self, 3.0)
+    -- check context status after some time
+    Executor.spin_once(self, 5.0)
   end
 end
 

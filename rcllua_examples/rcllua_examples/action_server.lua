@@ -1,5 +1,5 @@
 -- rcllua example
--- Make action client
+-- Make action server
 
 -- Load libraries
 require "rcllua.rcllua"
@@ -16,9 +16,9 @@ local FibonacciActionServer = Node {
   -- node constructor
   init = function (self)
     self.action_server = ActionServer(
-      self, 
-      Fibonacci, 
-      'fibonacci', 
+      self,
+      Fibonacci,
+      'fibonacci',
       self:bind 'execute_callback')
   end,
 
@@ -31,6 +31,7 @@ local FibonacciActionServer = Node {
     for i = 1, goal_handle.request.order do
       sequence[#sequence+1] = sequence[#sequence-1] + sequence[#sequence]
       msg.partial_sequence(sequence)     -- copy from table
+      -- intermediate status
       self:get_logger():info("Feedback: %s", table.concat(sequence, ' '))
       goal_handle:publish_feedback(msg)
       self:wait(1.0)  -- yiel
@@ -38,6 +39,7 @@ local FibonacciActionServer = Node {
 
     goal_handle:succeed()
 
+    -- final result
     local result = Fibonacci.Result()
     result.sequence = msg.partial_sequence
     return result

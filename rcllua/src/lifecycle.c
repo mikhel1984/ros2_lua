@@ -15,6 +15,7 @@
 #include <lauxlib.h>
 
 #include <rcl_lifecycle/rcl_lifecycle.h>
+#include <rcl/service.h>
 #include <rcl/error_handling.h>
 
 #include <rosidl_runtime_c/message_type_support_struct.h>
@@ -24,6 +25,7 @@
 
 #include "rcllua/lifecycle.h"
 #include "rcllua/node.h"
+#include "rcllua/qos.h"
 #include "rcllua/utils.h"
 
 #define MAYBE_NULL(X) (X) ? (X) : ""
@@ -289,6 +291,30 @@ static int rcl_lua_lifecycle_print (lua_State* L)
   return 0;
 }
 
+static int rcl_lua_lifecycle_get_service (lua_State* L)
+{
+  /* arg1 - state machine */
+  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
+  /* arg2 - service name */
+  const char* name = luaL_checkstring(L, 2);
+
+  if (strcmp(name, "change_state") == 0) {
+    lua_pushlightuserdata(L, &fsm->com_interface.srv_change_state);
+  } else if (strcmp(name, "get_state") == 0) {
+    lua_pushlightuserdata(L, &fsm->com_interface.srv_get_state);
+  } else if (strcmp(name, "get_available_states") == 0) {
+    lua_pushlightuserdata(L, &fsm->com_interface.srv_get_available_states);
+  } else if (strcmp(name, "get_available_transitions") == 0) {
+    lua_pushlightuserdata(L, &fsm->com_interface.srv_get_available_transitions);
+  } else if (strcmp(name, "get_transition_graph") == 0) {
+    lua_pushlightuserdata(L, &fsm->com_interface.srv_get_transition_graph);
+  } else {
+    luaL_error(L, "unknown service type: %s", name);
+  }
+
+  return 1;
+}
+
 
 /** List of service methods */
 static const struct luaL_Reg lifecycle_methods[] = {
@@ -302,6 +328,7 @@ static const struct luaL_Reg lifecycle_methods[] = {
   {"available_transitions", rcl_lua_lifecycle_get_available_transitions},
   {"transition_graph", rcl_lua_lifecycle_get_transition_graph},
   {"print", rcl_lua_lifecycle_print},
+  {"get_service", rcl_lua_lifecycle_get_service},
   {NULL, NULL}
 };
 

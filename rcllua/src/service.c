@@ -28,8 +28,8 @@
 
 /** Indices of service bindings in register. */
 enum SrvReg {
-  /** node reference */
-  SRV_REG_NODE = 1,
+  /** service */
+  SRV_REG_SERVICE = 1,
   /** function */
   SRV_REG_CALLBACK,
   /** request message constructor */
@@ -54,11 +54,13 @@ enum SrvOut {
   SRV_OUT_NUMBER
 };
 
+
 /** Service object metatable name. */
 const char* MT_SERVICE = "ROS2.Service";
 
 /**
- * Create service object. Save bindings to register.
+ * Create service object or wrap the existed one C structure. 
+ * Save bindings to register.
  *
  * Arguments:
  * - node object
@@ -66,6 +68,7 @@ const char* MT_SERVICE = "ROS2.Service";
  * - topic name
  * - callback function: fn(request) -> response
  * - qos profile (optional)
+ * - rcl service object (optional)
  *
  * Return:
  * - service object
@@ -104,27 +107,41 @@ static int rcl_lua_service_init (lua_State* L)
     rmw_qos_profile_t* qos = luaL_checkudata(L, 5, MT_QOS);
     service_ops.qos = *qos;
   }
-  rcl_service_t *srv = lua_newuserdata(L, sizeof(rcl_service_t));  // push object
-  *srv = rcl_get_zero_initialized_service();
 
-  rcl_ret_t ret = rcl_service_init(srv, node, ts, srv_name, &service_ops);
-  switch (ret) {
-    case RCL_RET_OK: break;
-    case RCL_RET_SERVICE_NAME_INVALID:
-      luaL_error(L, "invalid service name %s", srv_name); break;
-    default:
-      luaL_error(L, "failed to create service");
+  /* make rcllua service object */
+  rcllua_service_wrap *wrap = lua_newuserdata(L, sizeof(rcllua_service_wrap));  // push object
+  wrap->node = node;
+
+    /* save reference objects into table */
+  lua_createtable(L, SRV_REG_NUMBER-1, 0);  // push table a
+
+  if (lua_islightuserdata(L, 6)) {
+    /* save existed service */
+    wrap->service = lua_touserdata(L, 6);
+
+  } else {
+    /* create new service */
+    rcl_service_t *srv = lua_newuserdata(L, sizeof(rcl_service_t));  // push object
+    *srv = rcl_get_zero_initialized_service();
+
+    rcl_ret_t ret = rcl_service_init(srv, node, ts, srv_name, &service_ops);
+    switch (ret) {
+      case RCL_RET_OK: break;
+      case RCL_RET_SERVICE_NAME_INVALID:
+        luaL_error(L, "invalid service name %s", srv_name); break;
+      default:
+        luaL_error(L, "failed to create service");
+    }
+
+    lua_rawseti(L, -2, SRV_REG_SERVICE);   // pop object
+    wrap->service = srv;
   }
 
   /* set metamethods */
   luaL_getmetatable(L, MT_SERVICE);  // push metatable
-  lua_setmetatable(L, -2);           // pop metatable
+  lua_setmetatable(L, -3);           // pop metatable
 
-  /* save reference objects */
-  lua_createtable(L, SRV_REG_NUMBER-1, 0);  // push table a
-  lua_pushvalue(L, 1);                 // push node
-  lua_rawseti(L, -2, SRV_REG_NODE);    // pop node, a[.] = node
-
+  /* the rest of bindings */
   lua_pushvalue(L, 4);                 // push function
   lua_rawseti(L, -2, SRV_REG_CALLBACK);    // pop function, a[.] = callback
 
@@ -138,7 +155,7 @@ static int rcl_lua_service_init (lua_State* L)
   lua_rawseti(L, -3, SRV_REG_MT_RESPONSE);  // pop name, a[.] = metatable
   lua_pop(L, 1);                       // pop table b
 
-  lua_rawsetp(L, LUA_REGISTRYINDEX, srv);  // pop table a
+  lua_rawsetp(L, LUA_REGISTRYINDEX, wrap->service);  // pop table a
 
   return 1;
 }
@@ -155,22 +172,23 @@ static int rcl_lua_service_init (lua_State* L)
 static int rcl_lua_service_free (lua_State* L)
 {
   /* arg1 - service object */
-  rcl_service_t* srv = lua_touserdata(L, 1);
+  rcllua_service_wrap *wrap = lua_touserdata(L, 1);
 
-  /* get node */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, srv);  // push table
-  lua_rawgeti(L, -1, SRV_REG_NODE);        // push node
-  rcl_node_t* node = lua_touserdata(L, -1);
+  /* get service */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, wrap->service);     // push table
+  if (lua_rawgeti(L, -1, SRV_REG_SERVICE) != LUA_TNIL) {    // push service
+    rcl_service_t* srv = lua_touserdata(L, -1);
 
-  /* finalize */
-  rcl_ret_t ret = rcl_service_fini(srv, node);
-  if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini service: %s", rcl_get_error_string().str);
+    /* finalize */
+    rcl_ret_t ret = rcl_service_fini(srv, wrap->node);
+    if (RCL_RET_OK != ret) {
+      luaL_error(L, "failed to fini service: %s", rcl_get_error_string().str);
+    }
+
   }
-
   /* free dependencies */
   lua_pushnil(L);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, srv);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, wrap->service);
 
   return 0;
 }
@@ -190,8 +208,8 @@ static int rcl_lua_service_free (lua_State* L)
 static int rcl_lua_service_get_name (lua_State* L)
 {
   /* arg1 - service object */
-  rcl_service_t* srv = luaL_checkudata(L, 1, MT_SERVICE);
-  const char* nm = rcl_service_get_service_name(srv);
+  rcllua_service_wrap* wrap = lua_touserdata(L, 1);
+  const char* nm = rcl_service_get_service_name(wrap->service);
 
   lua_pushstring(L, nm);
   return 1;
@@ -212,8 +230,8 @@ static int rcl_lua_service_get_name (lua_State* L)
 static int rcl_lua_service_get_qos (lua_State* L)
 {
   /* arg1 - service object */
-  rcl_service_t* srv = luaL_checkudata(L, 1, MT_SERVICE);
-  const rcl_service_options_t* options = rcl_service_get_options(srv);
+  rcllua_service_wrap* wrap = lua_touserdata(L, 1);
+  const rcl_service_options_t* options = rcl_service_get_options(wrap->service);
 
   rcl_lua_qos_push_copy(L, &(options->qos));
   return 1;

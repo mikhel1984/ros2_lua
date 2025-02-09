@@ -13,6 +13,7 @@
 
   <depend>rcl</depend>
   <depend>rcl_action</depend>
+  <depend>rcl_lifecycle</depend>
   <depend>rcutils</depend>
 
   <test_depend>ament_lint_auto</test_depend>

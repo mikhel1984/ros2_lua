@@ -75,9 +75,7 @@ static int rcl_lua_lifecycle_init (lua_State* L)
     rcl_lua_lifecycle_get_typesupport(L, 3, "GetAvailableStates");
   rosidl_service_type_support_t* ts_srv_get_available_transitions = 
     rcl_lua_lifecycle_get_typesupport(L, 3, "GetAvailableTransitions");
-  rosidl_service_type_support_t* ts_srv_get_transition_graph = 
-    rcl_lua_lifecycle_get_typesupport(L, 3, "GetAvailableTransitions");
-
+  rosidl_service_type_support_t* ts_srv_get_transition_graph = ts_srv_get_available_transitions;
 
   rcl_lifecycle_state_machine_t *fsm = lua_newuserdata(L, sizeof(rcl_lifecycle_state_machine_t));
   *fsm = rcl_lifecycle_get_zero_initialized_state_machine();
@@ -190,11 +188,14 @@ static int rcl_lua_lifecycle_get_by_label (lua_State* L)
   const rcl_lifecycle_transition_t* transition = 
     rcl_lifecycle_get_transition_by_label(fsm->current_state, label);
   if (NULL == transition) {
-    luaL_error(L, "failed to get transition from label");
+    lua_pushboolean(L, false);
+    lua_pushliteral(L, "failed to get transition from label");
+    return 2;
   }
 
+  lua_pushboolean(L, true);
   lua_pushinteger(L, transition->id);
-  return 1;
+  return 2;
 }
 
 static int rcl_lua_lifecycle_get_state (lua_State* L)
@@ -298,15 +299,15 @@ static int rcl_lua_lifecycle_get_service (lua_State* L)
   /* arg2 - service name */
   const char* name = luaL_checkstring(L, 2);
 
-  if (strcmp(name, "change_state") == 0) {
+  if (strcmp(name, "ChangeState") == 0) {
     lua_pushlightuserdata(L, &fsm->com_interface.srv_change_state);
-  } else if (strcmp(name, "get_state") == 0) {
+  } else if (strcmp(name, "GetState") == 0) {
     lua_pushlightuserdata(L, &fsm->com_interface.srv_get_state);
-  } else if (strcmp(name, "get_available_states") == 0) {
+  } else if (strcmp(name, "GetAvailableStates") == 0) {
     lua_pushlightuserdata(L, &fsm->com_interface.srv_get_available_states);
-  } else if (strcmp(name, "get_available_transitions") == 0) {
+  } else if (strcmp(name, "GetAvailableTransitions") == 0) {
     lua_pushlightuserdata(L, &fsm->com_interface.srv_get_available_transitions);
-  } else if (strcmp(name, "get_transition_graph") == 0) {
+  } else if (strcmp(name, "GetTransitionGraph") == 0) {
     lua_pushlightuserdata(L, &fsm->com_interface.srv_get_transition_graph);
   } else {
     luaL_error(L, "unknown service type: %s", name);

@@ -33,6 +33,8 @@
 enum FsmReg {
   /** node reference */
   FSM_REG_NODE = 1,
+  /** labels */
+  FSM_REG_LABEL = 2,
   /** number of elements + 1 */
   FSM_REG_NUMBER
 };
@@ -40,7 +42,7 @@ enum FsmReg {
 
 const char* MT_LIFECYCLE = "ROS2.Lifecycle";
 
-void* rcl_lua_lifecycle_get_typesupport (lua_State* L, int tbl, const char* nm)
+static void* rcl_lua_lifecycle_get_typesupport (lua_State* L, int tbl, const char* nm)
 {
   void * ts = NULL;
   if (lua_getfield(L, tbl, nm) == LUA_TTABLE) {
@@ -56,6 +58,31 @@ void* rcl_lua_lifecycle_get_typesupport (lua_State* L, int tbl, const char* nm)
   return ts;
 }
 
+static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
+{
+  lua_createtable(L, 3, 0);    // push table
+  if (lua_getfield(L, tbl, "Transition") == LUA_TNIL) {
+    luaL_error("not found table 'Transition'");
+  }
+  const char* names[3] = {
+    "TRANSITION_CALLBACK_SUCCESS",
+    "TRANSITION_CALLBACK_FAILURE",
+    "TRANSITION_CALLBACK_ERROR"
+  };
+  const char* labels[3] = {
+    rcl_lifecycle_transition_success_label,
+    rcl_lifecycle_transition_failure_label,
+    rcl_lifecycle_transition_error_label
+  };
+  for (int i = 0; i < 3; i++) {
+    if (lua_getfield(L, -1, names[i]) == LUA_TNIL) {  // push number
+      luaL_error("not found '%'", names[i]);
+    }
+    lua_pushstring(L, labels[i]);  // push string
+    lua_rawset(L, -3);             // pop number and string
+  }
+}
+
 static int rcl_lua_lifecycle_init (lua_State* L)
 {
   /* arg1 - node */
@@ -64,9 +91,10 @@ static int rcl_lua_lifecycle_init (lua_State* L)
   bool enable_com_interface = lua_toboolean(L, 2);
 
   /* arg3 - interface tables */
-  luaL_argcheck(L, lua_istable(L, 3), 3, "table with interfaces is expected");
+  luaL_argcheck(L, lua_istable(L, 3), 3, "table with services is expected");
+  luaL_argcheck(L, lua_istable(L, 4), 4, "table with messages is expected");
   rosidl_message_type_support_t* ts_pub_notify = 
-    rcl_lua_lifecycle_get_typesupport(L, 3, "TransitionEvent");
+    rcl_lua_lifecycle_get_typesupport(L, 4, "TransitionEvent");
   rosidl_service_type_support_t* ts_srv_change_state =
     rcl_lua_lifecycle_get_typesupport(L, 3, "ChangeState");
   rosidl_service_type_support_t* ts_srv_get_state = 
@@ -104,6 +132,9 @@ static int rcl_lua_lifecycle_init (lua_State* L)
   lua_createtable(L, FSM_REG_NUMBER-1, 0);
   lua_pushvalue(L, 1);
   lua_rawseti(L, -2, FSM_REG_NODE);
+
+  rcl_lua_lifecycle_push_labels(L, 4);
+  lua_rawseti(L, -2, FSM_REG_LABEL);
 
   lua_rawsetp(L, LUA_REGISTRYINDEX, fsm);
 
@@ -316,6 +347,23 @@ static int rcl_lua_lifecycle_get_service (lua_State* L)
   return 1;
 }
 
+static int rcl_lua_lifecycle_to_label (lua_State* L)
+{
+  /* arg1 - state machine */
+  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
+  /* arg2 - return code */
+  luaL_argcheck(L, lua_isinteger(L, 2), 2, "return code is expected");
+
+  /* get table */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, fsm);  // push table
+  lua_rawgeti(L, -1, FSM_REG_LABEL);       // push labels
+
+  lua_pushvalue(L, 2);                     // push, copy code
+  lua_rawget(L, -2);                       // pop code, push value
+
+  return 1;
+}
+
 
 /** List of service methods */
 static const struct luaL_Reg lifecycle_methods[] = {
@@ -330,6 +378,7 @@ static const struct luaL_Reg lifecycle_methods[] = {
   {"transition_graph", rcl_lua_lifecycle_get_transition_graph},
   {"print", rcl_lua_lifecycle_print},
   {"get_service", rcl_lua_lifecycle_get_service},
+  {"to_label", rcl_lua_lifecycle_to_label},
   {NULL, NULL}
 };
 

@@ -62,7 +62,7 @@ static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
 {
   lua_createtable(L, 3, 0);    // push table
   if (lua_getfield(L, tbl, "Transition") == LUA_TNIL) {
-    luaL_error("not found table 'Transition'");
+    luaL_error(L, "not found table 'Transition'");
   }
   const char* names[3] = {
     "TRANSITION_CALLBACK_SUCCESS",
@@ -76,7 +76,7 @@ static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
   };
   for (int i = 0; i < 3; i++) {
     if (lua_getfield(L, -1, names[i]) == LUA_TNIL) {  // push number
-      luaL_error("not found '%'", names[i]);
+      luaL_error(L, "not found '%'", names[i]);
     }
     lua_pushstring(L, labels[i]);  // push string
     lua_rawset(L, -3);             // pop number and string

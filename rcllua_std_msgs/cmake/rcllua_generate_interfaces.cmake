@@ -59,16 +59,7 @@ macro(rcllua_generate_interfaces interface_name)
     get_filename_component(_parent_dir ${_parent_dir} NAME)
 
     if("${_parent_dir}" STREQUAL "action")
-      # Actions depend on the packages service_msgs and action_msgs
-      find_package(service_msgs QUIET)
-      if(NOT ${service_msgs_FOUND})
-        message(FATAL_ERROR
-          "Unable to generate action interface for '${_tuple_file}'. "
-          "In order to generate action interfaces you must add a depend tag "
-          "for 'service_msgs' in your package.xml.")
-      endif()
-      ament_export_dependencies(service_msgs)
-      list_append_unique(_ARG_DEPENDENCIES "service_msgs")
+      # Actions depend on the package action_msgs
       find_package(action_msgs QUIET)
       if(NOT ${action_msgs_FOUND})
         message(FATAL_ERROR
@@ -79,20 +70,7 @@ macro(rcllua_generate_interfaces interface_name)
       ament_export_dependencies(action_msgs)
       list_append_unique(_ARG_DEPENDENCIES "action_msgs")
 
-      # It is safe to break out of the loop since services only depend on service_msgs
-      # Which has already been found above
       break()
-    elseif("${_parent_dir}" STREQUAL "srv")
-      # Services depend on service_msgs
-      find_package(service_msgs QUIET)
-      if(NOT ${service_msgs_FOUND})
-        message(FATAL_ERROR
-          "Unable to generate service interface for '${_tuple_file}'. "
-          "In order to generate service interfaces you must add a depend tag "
-          "for 'service_msgs' in your package.xml.")
-      endif()
-      ament_export_dependencies(service_msgs)
-      list_append_unique(_ARG_DEPENDENCIES "service_msgs")
     endif()
   endforeach()
 
@@ -104,7 +82,8 @@ macro(rcllua_generate_interfaces interface_name)
         "'${_dep}' has not been found before using find_package()")
     endif()
     foreach(_idl_file ${${_dep}_IDL_FILES})
-      rosidl_find_package_idl(_abs_idl_file "${_dep}" "${_idl_file}")
+      set(_abs_idl_file "${${_dep}_DIR}/../${_idl_file}")
+      normalize_path(_abs_idl_file "${_abs_idl_file}")
       list(APPEND _dep_files "${_abs_idl_file}")
     endforeach()
   endforeach()

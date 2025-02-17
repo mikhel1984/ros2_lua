@@ -159,7 +159,7 @@ static int rcl_lua_lifecycle_free (lua_State* L)
   /* free dependencies */
   lua_pushnil(L);
   lua_rawsetp(L, LUA_REGISTRYINDEX, fsm);
-
+  
   return 0;
 }
 

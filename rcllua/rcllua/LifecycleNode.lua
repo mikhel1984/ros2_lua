@@ -245,34 +245,40 @@ function LifecycleNode.create_lifecycle_publisher (self, ...)
   return pub
 end
 
+LifecycleNode.TransitionCallbackReturn = {
+  SUCCESS = ts.TRANSITION_CALLBACK_SUCCESS,
+  ERROR = ts.TRANSITION_CALLBACK_ERROR,
+}
+
 function LifecycleNode.__call (self, ...)
-  local node = self(...)
+  local src = self.node
+  local node = Node.__call(src, ...)
   -- add lifecycle elements
   -- fsm
-  local set_com = (self.enable_communication_interface ~= nil)
+  local set_com = (src.enable_communication_interface ~= nil)
   node._state__machine = rclbind.new_lifecycle(node._node__object, set_com, services, messages)
   node._managed__entities = {}
   node._lifecycle__callback = {
-    [states.TRANSITION_STATE_CONFIGURING] = self.on_configure or LifecycleNode.on_configure,
-    [states.TRANSITION_STATE_CLEANINGUP] = self.on_cleanup or LifecycleNode.on_cleanup,
-    [states.TRANSITION_STATE_SHUTTINGDOWN] = self.on_shutdown or LifecycleNode.on_shutdown,
-    [states.TRANSITION_STATE_ACTIVATING] = self.on_activate or LifecycleNode.on_activate,
-    [states.TRANSITION_STATE_DEACTIVATING] = self.on_deactivate or LifecycleNode.on_deactivate,
-    [states.TRANSITION_STATE_ERRORPROCESSING] = self.on_error or LifecycleNode.on_error,
+    [states.TRANSITION_STATE_CONFIGURING] = src.on_configure or LifecycleNode.on_configure,
+    [states.TRANSITION_STATE_CLEANINGUP] = src.on_cleanup or LifecycleNode.on_cleanup,
+    [states.TRANSITION_STATE_SHUTTINGDOWN] = src.on_shutdown or LifecycleNode.on_shutdown,
+    [states.TRANSITION_STATE_ACTIVATING] = src.on_activate or LifecycleNode.on_activate,
+    [states.TRANSITION_STATE_DEACTIVATING] = src.on_deactivate or LifecycleNode.on_deactivate,
+    [states.TRANSITION_STATE_ERRORPROCESSING] = src.on_error or LifecycleNode.on_error,
   }
-  if set_com then
-    -- add services
-    for nm, msg in pairs(services) do
-      local srv = rclbind.new_service(
-        node._node__object,
-        msg,      -- service type
-        "",       -- service name, get from lifecycle object
-        function (req) return state_srv[nm](node, req) end,  -- callback
-        nil,      -- QoS, get from lifecycle object
-        node._state__machine:get_service(nm))   -- service, get from lifecycle object
-      table.insert(node._service__list, srv)
-    end
-  end
+--  if set_com then
+--    -- add services
+--    for nm, msg in pairs(services) do
+--      local srv = rclbind.new_service(
+--        node._node__object,
+--        msg,      -- service type
+--        "",       -- service name, get from lifecycle object
+--        function (req) return state_srv[nm](node, req) end,  -- callback
+--        nil,      -- QoS, get from lifecycle object
+--        node._state__machine:get_service(nm))   -- service, get from lifecycle object
+--      table.insert(node._service__list, srv)
+--    end
+--  end
   return setmetatable(node, LifecycleNode)
 end
 

@@ -30,7 +30,7 @@ local LifecyclePublisher = LifecycleNode {
   
   on_configure = function (self, state)
     self:get_logger():info('on_configure is called')
-    self.publisher = self:create_lifecycle_publisher(std_msgs.String, 'topic', 10)
+    self.publisher = self:create_lifecycle_publisher(std_msgs.String, 'lifecycle_chatter', 10)
     self.timer = self:create_timer(0.5, self:bind "publish")
     return tcb_return.SUCCESS
   end,

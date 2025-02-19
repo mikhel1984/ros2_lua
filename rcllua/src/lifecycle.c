@@ -30,6 +30,7 @@
 
 #define MAYBE_NULL(X) (X) ? (X) : ""
 
+/** Save bindings in register. */
 enum FsmReg {
   /** node reference */
   FSM_REG_NODE = 1,
@@ -39,41 +40,61 @@ enum FsmReg {
   FSM_REG_NUMBER
 };
 
-
+/** Lifecycle object metatable name. */
 const char* MT_LIFECYCLE = "ROS2.Lifecycle";
 
+/**
+ * Get information about typesupport from the interface table.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] tbl Interface table position number.
+ * \param[in] nm Interface name.
+ * \return typesupport reference.
+ */
 static void* rcl_lua_lifecycle_get_typesupport (lua_State* L, int tbl, const char* nm)
 {
   void * ts = NULL;
-  if (lua_getfield(L, tbl, nm) == LUA_TTABLE) {
-    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, -1) == LUA_TLIGHTUSERDATA) {
+  /* get table */
+  if (lua_getfield(L, tbl, nm) == LUA_TTABLE) {   // push table
+    if (ROSIDL_LUA_PUSH_TYPESUPPORT(L, -1) == LUA_TLIGHTUSERDATA) {  // push typesupport
       ts = lua_touserdata(L, -1);
     }
+    lua_pop(L, 1);  // pop typesupport
   }
   if (NULL == ts) {
     luaL_error(L, "not found type support for %s", nm);
   }
-  lua_pop(L, 2);
+  lua_pop(L, 1);  // pop table
 
   return ts;
 }
 
+/**
+ * Fill map from name to index for transition results.
+ * Save result table on the stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] tbl Interface position on the table.
+ */
 static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
 {
   lua_createtable(L, 3, 0);    // push table
-  if (lua_getfield(L, tbl, "Transition") == LUA_TNIL) {  // push value
+  if (lua_getfield(L, tbl, "Transition") == LUA_TNIL) {  // push interface
     luaL_error(L, "not found table 'Transition'");
   }
+  /* keys */
   const char* names[3] = {
     "TRANSITION_CALLBACK_SUCCESS",
     "TRANSITION_CALLBACK_FAILURE",
     "TRANSITION_CALLBACK_ERROR"
   };
+  /* values */
   const char* labels[3] = {
     rcl_lifecycle_transition_success_label,
     rcl_lifecycle_transition_failure_label,
     rcl_lifecycle_transition_error_label
   };
+  /* fill map */
   for (int i = 0; i < 3; i++) {
     if (lua_getfield(L, -1, names[i]) == LUA_TNIL) {  // push number
       luaL_error(L, "not found '%'", names[i]);
@@ -81,20 +102,36 @@ static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
     lua_pushstring(L, labels[i]);  // push string
     lua_rawset(L, -4);             // pop number and string
   }
-  lua_pop(L, 1);
+  lua_pop(L, 1);  // pop interface
 }
 
+/**
+ * Create state machine object.
+ *
+ * Arguments:
+ * - node object
+ * - com interface state flag (=true)
+ * - table with required services
+ * - table with required messages
+ *
+ * Return:
+ * - state machine object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_init (lua_State* L)
 {
   /* arg1 - node */
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
   /* arg2 - interface flag */
   luaL_argcheck(L, lua_isboolean(L, 2), 2, "com interface state expected");
-
   /* arg3 - service tables */
   luaL_argcheck(L, lua_istable(L, 3), 3, "table with services is expected");
   /* arg4 - message tables */
   luaL_argcheck(L, lua_istable(L, 4), 4, "table with messages is expected");
+
+  /* get typesupport */
   rosidl_message_type_support_t* ts_pub_notify = 
     rcl_lua_lifecycle_get_typesupport(L, 4, "TransitionEvent");
   rosidl_service_type_support_t* ts_srv_change_state =
@@ -107,6 +144,7 @@ static int rcl_lua_lifecycle_init (lua_State* L)
     rcl_lua_lifecycle_get_typesupport(L, 3, "GetAvailableTransitions");
   rosidl_service_type_support_t* ts_srv_get_transition_graph = ts_srv_get_available_transitions;
 
+  /* init object */
   rcl_lifecycle_state_machine_t *fsm = lua_newuserdata(L, sizeof(rcl_lifecycle_state_machine_t));
   *fsm = rcl_lifecycle_get_zero_initialized_state_machine();
 
@@ -144,6 +182,15 @@ static int rcl_lua_lifecycle_init (lua_State* L)
   return 1;
 }
 
+/**
+ * State machine destructor.
+ *
+ * Arguments:
+ * - state machine object
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_free (lua_State* L)
 {
   /* arg1 - state machine */
@@ -166,6 +213,18 @@ static int rcl_lua_lifecycle_free (lua_State* L)
   return 0;
 }
 
+/**
+ * Check if the state machine is initialized.
+ *
+ * Arguments:
+ * - state machine object
+ *
+ * Return
+ * - true when initialized
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_is_initialized (lua_State* L)
 {
   /* arg1 - state machine */
@@ -177,6 +236,17 @@ static int rcl_lua_lifecycle_is_initialized (lua_State* L)
   return 1;
 }
 
+/**
+ * Trigger transition by ID.
+ *
+ * Arguments:
+ * - state machine
+ * - transition id
+ * - publish flag
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_trigger_by_id (lua_State* L)
 {
   /* arg1 - state machine */
@@ -195,6 +265,17 @@ static int rcl_lua_lifecycle_trigger_by_id (lua_State* L)
   return 0;
 }
 
+/**
+ * Trigger transition by label.
+ *
+ * Arguments:
+ * - state machine
+ * - transition label
+ * - publish flag
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_trigger_by_label (lua_State* L)
 {
   /* arg1 - state machine */
@@ -212,6 +293,20 @@ static int rcl_lua_lifecycle_trigger_by_label (lua_State* L)
   return 0;
 }
 
+/**
+ * Get state transition by label.
+ *
+ * Arguments:
+ * - state machine
+ * - transition label
+ *
+ * Return:
+ * - success of operation
+ * - transition ID or error message
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_get_by_label (lua_State* L)
 {
   /* arg1 - state machine */

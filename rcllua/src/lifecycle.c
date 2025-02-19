@@ -61,7 +61,7 @@ static void* rcl_lua_lifecycle_get_typesupport (lua_State* L, int tbl, const cha
 static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
 {
   lua_createtable(L, 3, 0);    // push table
-  if (lua_getfield(L, tbl, "Transition") == LUA_TNIL) {
+  if (lua_getfield(L, tbl, "Transition") == LUA_TNIL) {  // push value
     luaL_error(L, "not found table 'Transition'");
   }
   const char* names[3] = {
@@ -79,8 +79,9 @@ static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
       luaL_error(L, "not found '%'", names[i]);
     }
     lua_pushstring(L, labels[i]);  // push string
-    lua_rawset(L, -3);             // pop number and string
+    lua_rawset(L, -4);             // pop number and string
   }
+  lua_pop(L, 1);
 }
 
 static int rcl_lua_lifecycle_init (lua_State* L)
@@ -88,10 +89,11 @@ static int rcl_lua_lifecycle_init (lua_State* L)
   /* arg1 - node */
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
   /* arg2 - interface flag */
-  bool enable_com_interface = lua_toboolean(L, 2);
+  luaL_argcheck(L, lua_isboolean(L, 2), 2, "com interface state expected");
 
-  /* arg3 - interface tables */
+  /* arg3 - service tables */
   luaL_argcheck(L, lua_istable(L, 3), 3, "table with services is expected");
+  /* arg4 - message tables */
   luaL_argcheck(L, lua_istable(L, 4), 4, "table with messages is expected");
   rosidl_message_type_support_t* ts_pub_notify = 
     rcl_lua_lifecycle_get_typesupport(L, 4, "TransitionEvent");
@@ -109,7 +111,7 @@ static int rcl_lua_lifecycle_init (lua_State* L)
   *fsm = rcl_lifecycle_get_zero_initialized_state_machine();
 
   rcl_lifecycle_state_machine_options_t ops = rcl_lifecycle_get_default_state_machine_options();
-  ops.enable_com_interface = enable_com_interface;
+  ops.enable_com_interface = lua_toboolean(L, 2);
 
   rcl_ret_t ret = rcl_lifecycle_state_machine_init(
     fsm, node,
@@ -129,14 +131,15 @@ static int rcl_lua_lifecycle_init (lua_State* L)
   lua_setmetatable(L, -2);             // pop metatable
 
   /* save references */
-  lua_createtable(L, FSM_REG_NUMBER-1, 0);
-  lua_pushvalue(L, 1);
-  lua_rawseti(L, -2, FSM_REG_NODE);
+  lua_createtable(L, FSM_REG_NUMBER-1, 0);  // push table a
+  lua_pushvalue(L, 1);                // push node
+  lua_rawseti(L, -2, FSM_REG_NODE);   // pop node
 
-  rcl_lua_lifecycle_push_labels(L, 4);
-  lua_rawseti(L, -2, FSM_REG_LABEL);
+  /* transition results - enum */
+  rcl_lua_lifecycle_push_labels(L, 4);   // push table b (enum)
+  lua_rawseti(L, -2, FSM_REG_LABEL);     // pop table b
 
-  lua_rawsetp(L, LUA_REGISTRYINDEX, fsm);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, fsm);  // pop table a
 
   return 1;
 }

@@ -1,5 +1,5 @@
 -- rcllua example
--- Make simple publisher
+-- Make lifecycle publisher
 
 -- Load libraries
 require "rcllua.rcllua"
@@ -15,7 +15,7 @@ local LifecyclePublisher = LifecycleNode {
 
   -- node constructor
   init = function (self)
-    self.publisher = nil
+    self.managed_pub = nil
     self.timer = nil
     self.i = 0    
   end,
@@ -23,15 +23,21 @@ local LifecyclePublisher = LifecycleNode {
   publish = function (self)
     local msg = std_msgs.String()
     msg.data = ('Hello World: %d'):format(self.i)
-    self.publisher:publish(msg)
-    --self:get_logger():info('Publishing: %s', msg.data)
+    if not self.managed_pub or not self.managed_pub:is_activated() then
+      self:get_logger():info('Publisher is inactive')
+      return
+    else
+      -- call managed entity directly
+      self.managed_pub.entity:publish(msg)      
+    end
+    self:get_logger():info('Publishing: %s', msg.data)    
     self.i = self.i + 1
   end,
   
   on_configure = function (self, state)
     self:get_logger():info('on_configure is called')
-    self.publisher = self:create_lifecycle_publisher(std_msgs.String, 'lifecycle_chatter', 10)
-    self.timer = self:create_timer(0.5, self:bind "publish")
+    self.managed_pub = self:create_lifecycle_publisher(std_msgs.String, 'lifecycle_chatter', 10)
+    self.timer = self:create_timer(1.0, self:bind "publish")
     return tcb_return.SUCCESS
   end,
   
@@ -62,7 +68,6 @@ local LifecyclePublisher = LifecycleNode {
 -- Execute
 rcllua:init()
 
-local n = LifecyclePublisher()
-rcllua:spin(n)
+rcllua:spin(LifecyclePublisher())
 
 rcllua:shutdown()

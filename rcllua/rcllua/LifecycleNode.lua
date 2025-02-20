@@ -59,7 +59,7 @@ local ManagedEntity = {
 --  @param k Field name.
 --  @return found value.
 ManagedEntity.__index = function (t, k)
-  return t.entity and t.entity[k] or ManagedEntity[k]
+  return t.entity[k] or ManagedEntity[k]
 end
 
 --- ManagedEntity constructor.
@@ -330,8 +330,9 @@ end
 --  @return publisher object.
 function LifecycleNode.create_lifecycle_publisher (self, ...)
   local pub = self:create_publisher(...)
-  self:add_managed_entity(new_managed_entity(pub))
-  return pub
+  local entity = new_managed_entity(pub)
+  self:add_managed_entity(entity)
+  return entity
 end
 
 --- Simplify call of transition codes.

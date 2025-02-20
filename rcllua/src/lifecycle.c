@@ -327,6 +327,18 @@ static int rcl_lua_lifecycle_get_by_label (lua_State* L)
   return 2;
 }
 
+/**
+ * Get current state.
+ * 
+ * Arguments:
+ * - state machine
+ *
+ * Return:
+ * - table {id, label}
+ * 
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_get_state (lua_State* L)
 {
   /* arg1 - state machine */
@@ -341,6 +353,20 @@ static int rcl_lua_lifecycle_get_state (lua_State* L)
   return 1;
 }
 
+/**
+ * Get available system states.
+ * 
+ * Arguments:
+ * - state machine
+ *
+ * Return:
+ * - table of pairs
+ * -- id
+ * -- label
+ * 
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_get_available_states (lua_State* L)
 {
   /* arg1 - state machine */
@@ -359,6 +385,24 @@ static int rcl_lua_lifecycle_get_available_states (lua_State* L)
   return 1;
 }
 
+/**
+ * Get available transitions.
+ * 
+ * Arguments:
+ * - state machine
+ *
+ * Return:
+ * - table of groups
+ * -- transition id
+ * -- transigion label
+ * -- start id
+ * -- start label
+ * -- goal id
+ * -- goal label
+ * 
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_get_available_transitions (lua_State* L)
 {
   /* arg1 - state machine */
@@ -385,6 +429,24 @@ static int rcl_lua_lifecycle_get_available_transitions (lua_State* L)
   return 1;
 }
 
+/**
+ * Get transition graph.
+ * 
+ * Arguments:
+ * - state machine
+ *
+ * Return:
+ * - table of groups
+ * -- transition id
+ * -- transigion label
+ * -- start id
+ * -- start label
+ * -- goal id
+ * -- goal label
+ * 
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_get_transition_graph (lua_State* L)
 {
   /* arg1 - state machine */
@@ -411,6 +473,15 @@ static int rcl_lua_lifecycle_get_transition_graph (lua_State* L)
   return 1;
 }
 
+/** 
+ * Print state machine to console.
+ *
+ * Arguments:
+ * - state machine
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_print (lua_State* L)
 {
   /* arg1 - state machine */
@@ -421,6 +492,19 @@ static int rcl_lua_lifecycle_print (lua_State* L)
   return 0;
 }
 
+/**
+ * Get service pointer of the given type.
+ *
+ * Arguments:
+ * - state machine
+ * - service name
+ *
+ * Return:
+ * - service as lightuserdata
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_get_service (lua_State* L)
 {
   /* arg1 - state machine */
@@ -445,6 +529,19 @@ static int rcl_lua_lifecycle_get_service (lua_State* L)
   return 1;
 }
 
+/**
+ * Get label for the given return code.
+ *
+ * Arguments:
+ * - state machine object
+ * - code value
+ *
+ * Return:
+ * - code label or nil
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_lifecycle_to_label (lua_State* L)
 {
   /* arg1 - state machine */
@@ -462,7 +559,6 @@ static int rcl_lua_lifecycle_to_label (lua_State* L)
   return 1;
 }
 
-
 /** List of service methods */
 static const struct luaL_Reg lifecycle_methods[] = {
   {"__gc", rcl_lua_lifecycle_free},
@@ -479,7 +575,6 @@ static const struct luaL_Reg lifecycle_methods[] = {
   {"to_label", rcl_lua_lifecycle_to_label},
   {NULL, NULL}
 };
-
 
 /* Add service to library */
 void rcl_lua_add_lifecycle_methods (lua_State* L)

@@ -17,9 +17,9 @@ local ros_node = require("rcllua.Node")
 
 local lifecycle_msg = require("lifecycle_msgs.msg")
 local lifecycle_srv = require("lifecycle_msgs.srv")
-
-local states = lifecycle_msg.State
 local ts = lifecycle_msg.Transition
+
+-- List of required services
 local services = {
   ChangeState = lifecycle_srv.ChangeState,
   GetState = lifecycle_srv.GetState,
@@ -27,16 +27,22 @@ local services = {
   GetAvailableTransitions = lifecycle_srv.GetAvailableTransitions,
   GetTransitionGraph = lifecycle_srv.GetAvailableTransitions,
 }
+
+-- List of required messages
 local messages = {
   TransitionEvent = lifecycle_msg.TransitionEvent,
   Transition = lifecycle_msg.Transition,
 }
 
+
+-- ManagedEntity class
 local ManagedEntity = {
+  -- default callback definition
   on_configure = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
   on_cleanup = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
   on_shutdown = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
   on_error = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
+  -- change internal state
   on_activate = function (self) 
     self.enabled = true
     return ts.TRANSITION_CALLBACK_SUCCESS 
@@ -47,10 +53,18 @@ local ManagedEntity = {
   end,
   is_activated = function (self) return self.enabled end,
 }
+
+--- Get object field.
+--  @param t Source object.
+--  @param k Field name.
+--  @return found value.
 ManagedEntity.__index = function (t, k)
-  return ManagedEntity[k] or t.entity[k]
+  return t.entity and t.entity[k] or ManagedEntity[k]
 end
 
+--- ManagedEntity constructor.
+--  @param obj Object to store.
+--  @return ManagedEntity object.
 local function new_managed_entity (obj)
   local o = {
     entity = obj,
@@ -59,12 +73,22 @@ local function new_managed_entity (obj)
   return setmetatable(o, ManagedEntity)
 end
 
+
+-- LifecycleNode "private" methods.
+
+--- Check if state machine is initialized, rise error if need.
+--  @param node LifecycleNode object.
 local function check_initialized (node)
   if not node._state__machine:is_initialized() then
     error "Got service request while lifecycle state machine is not initialized"
   end
 end
 
+--- Calback processing.
+--  @param node LifecycleNode object.
+--  @param current_id ID of current state.
+--  @param prev_state Previous state.
+--  @return transition status.
 local function execute_callback (node, current_id, prev_state)
   local cb = node._lifecycle__callback[current_id] 
   if cb then
@@ -75,6 +99,10 @@ local function execute_callback (node, current_id, prev_state)
   return ts.TRANSITION_CALLBACK_SUCCESS
 end
 
+--- Apply the given transition.
+--  @param node LifecycleNode object.
+--  @param transition_id ID of transition.
+--  @return transition result code.
 local function change_state (node, transition_id)
   check_initialized(node)
   local fsm = node._state__machine
@@ -92,6 +120,11 @@ local function change_state (node, transition_id)
   return ret
 end
 
+--- Apply transition to the stored ManagedEntity objects.
+--  @param node LifecycleNode object.
+--  @param cb_name Callback method name.
+--  @param state Current state.
+--  @return transition result code.
 local function transition_callback_impl (node, cb_name, state)
   for _, entity in ipairs(node._managed__entities) do
     local ret = entity[cb_name](entity, state)
@@ -102,9 +135,13 @@ local function transition_callback_impl (node, cb_name, state)
   return ts.TRANSITION_CALLBACK_SUCCESS
 end
 
+-- List of lifecycle node services.
 local state_srv = {}
 
--- on_change_state
+--- Do change state.
+--  @param node LifecycleNode object.
+--  @param req Request with new state (ID or label).
+--  @return response with result of operation.
 state_srv.ChangeState = function (node, req)
   check_initialized(node)
   local req_transition = req.transition
@@ -121,7 +158,10 @@ state_srv.ChangeState = function (node, req)
   return resp
 end
 
--- on_get_state
+--- Get current state.
+--  @param node LifecycleNode object.
+--  @param req Request.
+--  @return response with state information.
 state_srv.GetState = function (node, req)
   check_initialized(node)
   local current = node._state__machine:current_state()
@@ -133,7 +173,10 @@ state_srv.GetState = function (node, req)
   return resp
 end
 
--- on_get_available_states
+--- Get list of available states.
+--  @param node LifecycleNode object.
+--  @param req Request.
+--  @return response with list of states.
 state_srv.GetAvailableStates = function (node, req)
   check_initialized(node)
   local acc = {}
@@ -145,7 +188,10 @@ state_srv.GetAvailableStates = function (node, req)
   return resp
 end
 
--- on_get_available_transitions
+--- Get transitions from the current state.
+--  @param node LifecycleNode object.
+--  @param req Request.
+--  @return response with transitions from the current state.
 state_srv.GetAvailableTransitions = function (node, req)
   check_initialized(node)
   local acc = {}
@@ -161,7 +207,10 @@ state_srv.GetAvailableTransitions = function (node, req)
   return resp
 end
 
--- on_get_transition_graph
+--- Get graph of transitions.
+--  @param node LifecycleNode object.
+--  @param req Request.
+--  @return response with list of transitions.
 state_srv.GetTransitionGraph = function (node, req)
   check_initialized(node)
   local acc = {}
@@ -178,19 +227,31 @@ state_srv.GetTransitionGraph = function (node, req)
 end
 
 
+--- LifecycleNode class. 
 LifecycleNode = {}
-LifecycleNode.__index = function (t, k)
+
+--- Get class methods. 
+--  Check LifecycleNode tatable, then Node table.
+--  @param k Field name.
+--  @return found value.
+LifecycleNode.__index = function (_, k)
   return LifecycleNode[k] or ros_node[k]
 end
 
+--- Call configure transition.
+--  @return transition result code.
 function LifecycleNode.trigger_configure (self)
   return change_state(self, ts.TRANSITION_CONFIGURE)
 end
 
+--- Call cleanup transition.
+--  @return transition result code.
 function LifecycleNode.trigger_cleanup (self)
   return change_state(self, ts.TRANSITION_CLEANUP)
 end
 
+--- Call shutdown transition.
+--  @return transition result code.
 function LifecycleNode.trigger_shutdown (self)
   local current = self._state__machine:current_state()
   if current[2] == "unconfigured" then
@@ -203,62 +264,97 @@ function LifecycleNode.trigger_shutdown (self)
   error "Shutdown transition not possible"
 end
 
+--- Call activate transition.
+--  @return transition result code.
 function LifecycleNode.trigger_activate (self)
   return change_state(self, ts.TRANSITION_ACTIVATE)
 end
 
+--- Call deactivate transition.
+--  @return transition result code.
 function LifecycleNode.trigger_deactivate (self)
   return change_state(self, ts.TRANSITION_DEACTIVATE)
 end
 
+--- Add ManagedEntity object.
+--  @param entity Object to add.
 function LifecycleNode.add_managed_entity (self, entity)
   assert(getmetatable(entity) == ManagedEntity, "expected ManagedEntity instance")
   table.insert(self._managed__entities, entity)
 end
 
+--- Default configure callback.
+--  @param state Current state.
+--  @return transition result code.
 function LifecycleNode.on_configure (self, state)
   return transition_callback_impl(self, 'on_configure', state)
 end
 
+--- Default cleanup callback.
+--  @param state Current state.
+--  @return transition result code.
 function LifecycleNode.on_cleanup (self, state)
   return transition_callback_impl(self, 'on_cleanup', state)
 end
 
+--- Default shutdown callback.
+--  @param state Current state.
+--  @return transition result code.
 function LifecycleNode.on_shutdown (self, state)
   return transition_callback_impl(self, 'on_shutdown', state)
 end
 
+--- Default activate callback.
+--  @param state Current state.
+--  @return transition result code.
 function LifecycleNode.on_activate (self, state)
   return transition_callback_impl(self, 'on_activate', state)
 end
 
+--- Default deactivate callback.
+--  @param state Current state.
+--  @return transition result code.
 function LifecycleNode.on_deactivate (self, state)
   return transition_callback_impl(self, 'on_deactivate', state)
 end
 
+--- Default error callback.
+--  @param state Current state.
+--  @return transition result code.
 function LifecycleNode.on_error (self, state)
   return transition_callback_impl(self, 'on_error', state)
 end
 
+--- Create publisher and add to managed entity list.
+--  @param ... Publisher parameters.
+--  @return publisher object.
 function LifecycleNode.create_lifecycle_publisher (self, ...)
   local pub = self:create_publisher(...)
   self:add_managed_entity(new_managed_entity(pub))
   return pub
 end
 
+--- Simplify call of transition codes.
 LifecycleNode.TransitionCallbackReturn = {
   SUCCESS = ts.TRANSITION_CALLBACK_SUCCESS,
   ERROR = ts.TRANSITION_CALLBACK_ERROR,
 }
 
+--- LifecycleNode constructor.
+--  @param ... Constructor parameters.
+--  @return initialized object.
 function LifecycleNode.__call (self, ...)
   local src = self.node
+  -- regular node object
   local node = Node.__call(src, ...)
   -- add lifecycle elements
-  -- fsm
   local set_com = (src.enable_communication_interface ~= false)
+  -- fsm
   node._state__machine = rclbind.new_lifecycle(node._node__object, set_com, services, messages)
+  -- lifecycle entities
   node._managed__entities = {}
+  -- transition callbacks
+  local states = lifecycle_msg.State
   node._lifecycle__callback = {
     [states.TRANSITION_STATE_CONFIGURING] = src.on_configure or LifecycleNode.on_configure,
     [states.TRANSITION_STATE_CLEANINGUP] = src.on_cleanup or LifecycleNode.on_cleanup,
@@ -267,8 +363,8 @@ function LifecycleNode.__call (self, ...)
     [states.TRANSITION_STATE_DEACTIVATING] = src.on_deactivate or LifecycleNode.on_deactivate,
     [states.TRANSITION_STATE_ERRORPROCESSING] = src.on_error or LifecycleNode.on_error,
   }
+  -- add services
   if set_com then
-    -- add services
     for nm, msg in pairs(services) do
       local srv = rclbind.new_service(
         node._node__object,
@@ -283,8 +379,12 @@ function LifecycleNode.__call (self, ...)
   return setmetatable(node, LifecycleNode)
 end
 
+-- Allow to call LifecycleNode table.
 setmetatable(LifecycleNode, 
 {
+--- LifecycleNode class constructor.
+--  @param param Table with initialization parameters.
+--  @return generator of LifecycleNode object.
 __call = function (self, param)
   assert(param and param.name, "'name' must be defined")
   local t = {node=setmetatable(param, ros_node)}
@@ -292,6 +392,7 @@ __call = function (self, param)
 end
 })
 
+-- Access to library.
 return {
   lifecycle = LifecycleNode,
   new_managed_entity = new_managed_entity,

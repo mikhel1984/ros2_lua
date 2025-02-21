@@ -34,14 +34,18 @@ local messages = {
   Transition = lifecycle_msg.Transition,
 }
 
+--- Default response.
+--  @return success
+local fn_success = function () return ts.TRANSITION_CALLBACK_SUCCESS end
+
 
 -- ManagedEntity class
 local ManagedEntity = {
   -- default callback definition
-  on_configure = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
-  on_cleanup = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
-  on_shutdown = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
-  on_error = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
+  on_configure = fn_success,
+  on_cleanup   = fn_success,
+  on_shutdown  = fn_success,
+  on_error     = fn_success,
   -- change internal state
   on_activate = function (self)
     self.enabled = true
@@ -76,14 +80,6 @@ end
 
 -- LifecycleNode "private" methods.
 
---- Check if state machine is initialized, rise error if need.
---  @param node LifecycleNode object.
-local function check_initialized (node)
-  if not node._state__machine:is_initialized() then
-    error "Got service request while lifecycle state machine is not initialized"
-  end
-end
-
 --- Calback processing.
 --  @param node LifecycleNode object.
 --  @param current_id ID of current state.
@@ -91,12 +87,8 @@ end
 --  @return transition status.
 local function execute_callback (node, current_id, prev_state)
   local cb = node._lifecycle__callback[current_id]
-  if cb then
-    local ok, res = pcall(cb, node, previous_state)
-    -- print(ok, res)
-    return ok and res or ts.TRANSITION_CALLBACK_ERROR
-  end
-  return ts.TRANSITION_CALLBACK_SUCCESS
+  local ok, res = pcall(cb or fn_success, node, prev_state)
+  return ok and res or ts.TRANSITION_CALLBACK_ERROR
 end
 
 --- Apply the given transition.
@@ -104,8 +96,8 @@ end
 --  @param transition_id ID of transition.
 --  @return transition result code.
 local function change_state (node, transition_id)
-  check_initialized(node)
   local fsm = node._state__machine
+  assert(fsm:is_initialized())
   local init_state = fsm:current_state()
   fsm:trigger_transition_by_id(transition_id, true)
   local curr_state = fsm:current_state()
@@ -143,18 +135,14 @@ local state_srv = {}
 --  @param req Request with new state (ID or label).
 --  @return response with result of operation.
 state_srv.ChangeState = function (node, req)
-  check_initialized(node)
+  assert(node._state__machine:is_initialized())
   local req_transition = req.transition
   local transition_id, ok = req_transition.id, true
   if #req_transition.label > 0 then
     ok, transition_id = node._state__machine:get_transition_by_label(req_transition.label)
   end
   local resp = lifecycle_srv.ChangeState.Response()
-  if ok then
-    resp.success = (change_state(node, transition_id) == ts.TRANSITION_CALLBACK_SUCCESS)
-  else
-    resp.success = false
-  end
+  resp.success = ok and (change_state(node, transition_id) == ts.TRANSITION_CALLBACK_SUCCESS)
   return resp
 end
 
@@ -163,13 +151,10 @@ end
 --  @param req Request.
 --  @return response with state information.
 state_srv.GetState = function (node, req)
-  check_initialized(node)
-  local current = node._state__machine:current_state()
+  assert(node._state__machine:is_initialized())
+  local c = node._state__machine:current_state()
   local resp = lifecycle_srv.GetState.Response()
-  resp.current_state {
-    id = current[1],
-    label = current[2]
-  }
+  resp.current_state {id=c[1], label=c[2]}
   return resp
 end
 
@@ -178,7 +163,7 @@ end
 --  @param req Request.
 --  @return response with list of states.
 state_srv.GetAvailableStates = function (node, req)
-  check_initialized(node)
+  assert(node._state__machine:is_initialized())
   local acc = {}
   for i, v in ipairs(node._state__machine:available_states()) do
     acc[i] = lifecycle_msg.State {id=v[1], label=v[2]}
@@ -193,13 +178,13 @@ end
 --  @param req Request.
 --  @return response with transitions from the current state.
 state_srv.GetAvailableTransitions = function (node, req)
-  check_initialized(node)
+  assert(node._state__machine:is_initialized())
   local acc = {}
   for i, v in ipairs(node._state__machine:available_transitions()) do
     local msg = lifecycle_msg.TransitionDescription()
-    msg.transition {id=v[1], label=v[2]}
+    msg.transition  {id=v[1], label=v[2]}
     msg.start_state {id=v[3], label=v[4]}
-    msg.goal_state {id=v[5], label=v[6]}
+    msg.goal_state  {id=v[5], label=v[6]}
     acc[i] = msg
   end
   local resp = lifecycle_srv.GetAvailableTransitions.Response()
@@ -212,13 +197,13 @@ end
 --  @param req Request.
 --  @return response with list of transitions.
 state_srv.GetTransitionGraph = function (node, req)
-  check_initialized(node)
+  assert(node._state__machine:is_initialized())
   local acc = {}
   for i, v in ipairs(node._state__machine:transition_graph()) do
     local msg = lifecycle_msg.TransitionDescription()
-    msg.transition {id=v[1], label=v[2]}
+    msg.transition  {id=v[1], label=v[2]}
     msg.start_state {id=v[3], label=v[4]}
-    msg.goal_state {id=v[5], label=v[6]}
+    msg.goal_state  {id=v[5], label=v[6]}
     acc[i] = msg
   end
   local resp = lifecycle_srv.GetAvailableTransitions.Response()
@@ -357,12 +342,12 @@ function LifecycleNode.__call (self, ...)
   -- transition callbacks
   local states = lifecycle_msg.State
   node._lifecycle__callback = {
-    [states.TRANSITION_STATE_CONFIGURING] = src.on_configure or LifecycleNode.on_configure,
-    [states.TRANSITION_STATE_CLEANINGUP] = src.on_cleanup or LifecycleNode.on_cleanup,
-    [states.TRANSITION_STATE_SHUTTINGDOWN] = src.on_shutdown or LifecycleNode.on_shutdown,
-    [states.TRANSITION_STATE_ACTIVATING] = src.on_activate or LifecycleNode.on_activate,
+    [states.TRANSITION_STATE_CONFIGURING]  = src.on_configure  or LifecycleNode.on_configure,
+    [states.TRANSITION_STATE_CLEANINGUP]   = src.on_cleanup    or LifecycleNode.on_cleanup,
+    [states.TRANSITION_STATE_SHUTTINGDOWN] = src.on_shutdown   or LifecycleNode.on_shutdown,
+    [states.TRANSITION_STATE_ACTIVATING]   = src.on_activate   or LifecycleNode.on_activate,
     [states.TRANSITION_STATE_DEACTIVATING] = src.on_deactivate or LifecycleNode.on_deactivate,
-    [states.TRANSITION_STATE_ERRORPROCESSING] = src.on_error or LifecycleNode.on_error,
+    [states.TRANSITION_STATE_ERRORPROCESSING] = src.on_error   or LifecycleNode.on_error,
   }
   -- add services
   if set_com then

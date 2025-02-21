@@ -221,6 +221,7 @@ static int rcl_lua_lifecycle_free (lua_State* L)
  *
  * Return
  * - true when initialized
+ * - optional error message for false
  *
  * \param[inout] L Lua stack.
  * \return number of outputs.
@@ -230,10 +231,15 @@ static int rcl_lua_lifecycle_is_initialized (lua_State* L)
   /* arg1 - state machine */
   rcl_lifecycle_state_machine_t* fsm = lua_touserdata(L, 1);
 
-  rcl_ret_t ret = rcl_lifecycle_state_machine_is_initialized(fsm);
+  rcl_ret_t ret = rcl_lifecycle_state_machine_is_initialized(fsm);  
+  if (RCL_RET_OK == ret) {
+    lua_pushboolean(L, true);
+    return 1;
+  }
 
-  lua_pushboolean(L, RCL_RET_OK == ret);
-  return 1;
+  lua_pushboolean(L, false);
+  lua_pushliteral(L, "Got service request while lifecycle state machine is not initialized");
+  return 2;
 }
 
 /**

@@ -43,13 +43,13 @@ local ManagedEntity = {
   on_shutdown = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
   on_error = function () return ts.TRANSITION_CALLBACK_SUCCESS end,
   -- change internal state
-  on_activate = function (self) 
+  on_activate = function (self)
     self.enabled = true
-    return ts.TRANSITION_CALLBACK_SUCCESS 
+    return ts.TRANSITION_CALLBACK_SUCCESS
   end,
-  on_deactivate = function (self) 
+  on_deactivate = function (self)
     self.enabled = false
-    return ts.TRANSITION_CALLBACK_SUCCESS 
+    return ts.TRANSITION_CALLBACK_SUCCESS
   end,
   is_activated = function (self) return self.enabled end,
 }
@@ -90,7 +90,7 @@ end
 --  @param prev_state Previous state.
 --  @return transition status.
 local function execute_callback (node, current_id, prev_state)
-  local cb = node._lifecycle__callback[current_id] 
+  local cb = node._lifecycle__callback[current_id]
   if cb then
     local ok, res = pcall(cb, node, previous_state)
     -- print(ok, res)
@@ -146,7 +146,7 @@ state_srv.ChangeState = function (node, req)
   check_initialized(node)
   local req_transition = req.transition
   local transition_id, ok = req_transition.id, true
-  if req_transition.label then
+  if #req_transition.label > 0 then
     ok, transition_id = node._state__machine:get_transition_by_label(req_transition.label)
   end
   local resp = lifecycle_srv.ChangeState.Response()
@@ -196,7 +196,7 @@ state_srv.GetAvailableTransitions = function (node, req)
   check_initialized(node)
   local acc = {}
   for i, v in ipairs(node._state__machine:available_transitions()) do
-    local msg = lifecycle_msg.TransitionDescription() 
+    local msg = lifecycle_msg.TransitionDescription()
     msg.transition {id=v[1], label=v[2]}
     msg.start_state {id=v[3], label=v[4]}
     msg.goal_state {id=v[5], label=v[6]}
@@ -215,7 +215,7 @@ state_srv.GetTransitionGraph = function (node, req)
   check_initialized(node)
   local acc = {}
   for i, v in ipairs(node._state__machine:transition_graph()) do
-    local msg = lifecycle_msg.TransitionDescription() 
+    local msg = lifecycle_msg.TransitionDescription()
     msg.transition {id=v[1], label=v[2]}
     msg.start_state {id=v[3], label=v[4]}
     msg.goal_state {id=v[5], label=v[6]}
@@ -227,10 +227,10 @@ state_srv.GetTransitionGraph = function (node, req)
 end
 
 
---- LifecycleNode class. 
+--- LifecycleNode class.
 LifecycleNode = {}
 
---- Get class methods. 
+--- Get class methods.
 --  Check LifecycleNode tatable, then Node table.
 --  @param k Field name.
 --  @return found value.
@@ -381,7 +381,7 @@ function LifecycleNode.__call (self, ...)
 end
 
 -- Allow to call LifecycleNode table.
-setmetatable(LifecycleNode, 
+setmetatable(LifecycleNode,
 {
 --- LifecycleNode class constructor.
 --  @param param Table with initialization parameters.
@@ -397,4 +397,4 @@ end
 return {
   lifecycle = LifecycleNode,
   new_managed_entity = new_managed_entity,
-} 
+}

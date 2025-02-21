@@ -132,15 +132,15 @@ static int rcl_lua_lifecycle_init (lua_State* L)
   luaL_argcheck(L, lua_istable(L, 4), 4, "table with messages is expected");
 
   /* get typesupport */
-  rosidl_message_type_support_t* ts_pub_notify = 
+  rosidl_message_type_support_t* ts_pub_notify =
     rcl_lua_lifecycle_get_typesupport(L, 4, "TransitionEvent");
   rosidl_service_type_support_t* ts_srv_change_state =
     rcl_lua_lifecycle_get_typesupport(L, 3, "ChangeState");
-  rosidl_service_type_support_t* ts_srv_get_state = 
+  rosidl_service_type_support_t* ts_srv_get_state =
     rcl_lua_lifecycle_get_typesupport(L, 3, "GetState");
-  rosidl_service_type_support_t* ts_srv_get_available_states = 
+  rosidl_service_type_support_t* ts_srv_get_available_states =
     rcl_lua_lifecycle_get_typesupport(L, 3, "GetAvailableStates");
-  rosidl_service_type_support_t* ts_srv_get_available_transitions = 
+  rosidl_service_type_support_t* ts_srv_get_available_transitions =
     rcl_lua_lifecycle_get_typesupport(L, 3, "GetAvailableTransitions");
   rosidl_service_type_support_t* ts_srv_get_transition_graph = ts_srv_get_available_transitions;
 
@@ -209,7 +209,7 @@ static int rcl_lua_lifecycle_free (lua_State* L)
   /* free dependencies */
   lua_pushnil(L);
   lua_rawsetp(L, LUA_REGISTRYINDEX, fsm);
-  
+
   return 0;
 }
 
@@ -289,7 +289,7 @@ static int rcl_lua_lifecycle_trigger_by_label (lua_State* L)
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to trigger lifecycle state machine transition");
   }
-  
+
   return 0;
 }
 
@@ -314,7 +314,7 @@ static int rcl_lua_lifecycle_get_by_label (lua_State* L)
   /* arg2 - label */
   const char* label = luaL_checkstring(L, 2);
 
-  const rcl_lifecycle_transition_t* transition = 
+  const rcl_lifecycle_transition_t* transition =
     rcl_lifecycle_get_transition_by_label(fsm->current_state, label);
   if (NULL == transition) {
     lua_pushboolean(L, false);
@@ -329,13 +329,13 @@ static int rcl_lua_lifecycle_get_by_label (lua_State* L)
 
 /**
  * Get current state.
- * 
+ *
  * Arguments:
  * - state machine
  *
  * Return:
  * - table {id, label}
- * 
+ *
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
@@ -355,7 +355,7 @@ static int rcl_lua_lifecycle_get_state (lua_State* L)
 
 /**
  * Get available system states.
- * 
+ *
  * Arguments:
  * - state machine
  *
@@ -363,7 +363,7 @@ static int rcl_lua_lifecycle_get_state (lua_State* L)
  * - table of pairs
  * -- id
  * -- label
- * 
+ *
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
@@ -387,7 +387,7 @@ static int rcl_lua_lifecycle_get_available_states (lua_State* L)
 
 /**
  * Get available transitions.
- * 
+ *
  * Arguments:
  * - state machine
  *
@@ -399,7 +399,7 @@ static int rcl_lua_lifecycle_get_available_states (lua_State* L)
  * -- start label
  * -- goal id
  * -- goal label
- * 
+ *
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
@@ -431,7 +431,7 @@ static int rcl_lua_lifecycle_get_available_transitions (lua_State* L)
 
 /**
  * Get transition graph.
- * 
+ *
  * Arguments:
  * - state machine
  *
@@ -443,7 +443,7 @@ static int rcl_lua_lifecycle_get_available_transitions (lua_State* L)
  * -- start label
  * -- goal id
  * -- goal label
- * 
+ *
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
@@ -467,13 +467,13 @@ static int rcl_lua_lifecycle_get_transition_graph (lua_State* L)
     lua_rawseti(L, -2, 5);      // pop int
     lua_pushstring(L, fsm->transition_map.transitions[i].goal->label);  // push string
     lua_rawseti(L, -2, 6);      // pop string
-    lua_rawseti(L, -2, i+1); 
+    lua_rawseti(L, -2, i+1);
   }
 
   return 1;
 }
 
-/** 
+/**
  * Print state machine to console.
  *
  * Arguments:

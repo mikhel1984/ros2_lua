@@ -15,7 +15,7 @@ find_package(rosidl_runtime_c REQUIRED)
 find_package(Lua REQUIRED)  # >= 5.3
 find_package(rcllua_cmake REQUIRED)
 
-include_directories(include)
+include_directories(include ${LUA_INCLUDE_DIR})
 
 # MESSAGES (shared library)
 

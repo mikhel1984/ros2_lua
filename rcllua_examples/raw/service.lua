@@ -45,15 +45,14 @@ while rclbind.context_ok() do
   if not pcall(wait_set.wait, wait_set, -1) then
     break
   end
-
   -- collect services
   local lst = wait_set:ready_services()
   for i = 1, #lst do
-    -- get list {request, respone, callback, ...}
+    -- get list {request, callback, ...}
     local t = lst[i]
-    local req, resp, fn = table.unpack(t)
-    fn (req, resp)  -- call function
-    rclbind.service_send_response (t)
+    local req, fn = table.unpack(t)
+    local resp = fn (req)  -- call function
+    rclbind.service_send_response (t, resp)
   end
 
   -- collect timers

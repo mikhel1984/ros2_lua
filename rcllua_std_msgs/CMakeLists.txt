@@ -21,6 +21,9 @@ find_package(rcllua_cmake REQUIRED)
 find_package(rosidl_luacommon REQUIRED)
 find_package(rosidl_generator_lua REQUIRED)
 
+find_package(Lua REQUIRED)
+include_directories(${LUA_INCLUDE_DIR})
+
 include(cmake/rcllua_generate_interfaces.cmake)
 
 # Generate lua libraries (name dep1 dep2 ...)

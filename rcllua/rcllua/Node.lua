@@ -364,6 +364,7 @@ setmetatable(Node,
 {
 --- Node class constructor.
 --  @param param Table with initialization parameters.
+--  @return generator of Node object.
 __call = function (self, param)
   assert(param and param.name, "'name' must be defined")
   -- save as init parameters
@@ -407,4 +408,5 @@ function Logger.debug (self, ...)
   rclbind.simp_log(LogLevel.DEBUG, self.name, string.format(...))
 end
 
+-- Access to library.
 return Node

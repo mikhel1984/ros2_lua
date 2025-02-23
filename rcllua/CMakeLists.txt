@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rcl REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(rcl_action REQUIRED)
+find_package(rcl_lifecycle REQUIRED)
 find_package(Lua REQUIRED)  # >= 5.3
 
 find_package(rcllua_cmake REQUIRED)
@@ -40,6 +41,7 @@ add_library(${LIB_NAME} SHARED
   src/qos.c
   src/action_client.c
   src/action_server.c
+  src/lifecycle.c
 )
 
 ament_target_dependencies(${LIB_NAME}
@@ -47,6 +49,7 @@ ament_target_dependencies(${LIB_NAME}
   rcutils
   rosidl_luacommon
   rcl_action
+  rcl_lifecycle
 )
 
 set_target_properties(${LIB_NAME} PROPERTIES 

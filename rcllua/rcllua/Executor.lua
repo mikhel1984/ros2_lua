@@ -141,7 +141,7 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
     local req, fn = table.unpack(t)
     coroutine.yield(
       function()
-        local resp = fn(req, resp)
+        local resp = fn(req)
         rclbind.service_send_response(t, resp)
       end)
   end

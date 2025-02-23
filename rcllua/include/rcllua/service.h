@@ -19,8 +19,19 @@
 #include <lua.h>
 
 struct rcl_service_s;
+struct rcl_node_s;
+
+/** Keep pointer to service object. */
+typedef struct rcllua_service_wrap_s {
+  /** rcl service */
+  struct rcl_service_s* service;
+  /** rcl node */
+  struct rcl_node_s* node;
+} rcllua_service_wrap;
+
 
 extern const char* MT_SERVICE;
+
 
 /**
  * Create service metatable, add constructor to library.

@@ -216,11 +216,11 @@ static int rcl_lua_wait_set_add_service (lua_State* L)
   /* arg1 - wait set */
   rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
   /* arg2 - service */
-  rcl_service_t* srv = luaL_checkudata(L, 2, MT_SERVICE);
+  rcllua_service_wrap* wrap = luaL_checkudata(L, 2, MT_SERVICE);
 
   /* add */
   size_t index = 0;
-  rcl_ret_t ret = rcl_wait_set_add_service(ws, srv, &index);
+  rcl_ret_t ret = rcl_wait_set_add_service(ws, wrap->service, &index);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to add service");
   }

@@ -23,6 +23,7 @@ set(Python3_FIND_UNVERSIONED_NAMES FIRST)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 find_package(rosidl_luacommon REQUIRED)
+include_directories(${LUA_INCLUDE_DIR})
 
 # Get a list of typesupport implementations from valid rmw implementations.
 rosidl_generator_lua_get_typesupports(_typesupport_impls)

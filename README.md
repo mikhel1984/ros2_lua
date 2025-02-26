@@ -6,6 +6,8 @@ Collection of packages that allows writing ROS2 nodes in Lua.
 
 - support for publishers and subscriptions
 - support for clients and services
+- support for action clients and coroutine-based services
+- support for lifecycle nodes
 - parameter server
 - message generation
 
@@ -23,7 +25,7 @@ colcon build --symlink-install
 ## ROS interfaces
 
 Lua messages for default ROS interfaces can be generated using **rcllua_std_msgs** node. The 
-list of messages is defined it its CMakeLists file and could be edited acording the repository
+list of messages is defined inside the CMakeLists file and could be edited acording the repository
 requirements.
 
 ## Making ROS2 package in Lua

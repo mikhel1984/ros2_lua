@@ -129,7 +129,7 @@ static int rcl_lua_timer_free (lua_State* L)
 static int rcl_lua_timer_is_ready (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   return rcl_lua_timer_push_ready(L, timer);
 }
@@ -166,7 +166,7 @@ static int rcl_lua_timer_is_ready_ptr (lua_State* L)
 static int rcl_lua_timer_call (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   return rcl_lua_timer_do_call(L, timer);
 }
@@ -203,7 +203,7 @@ static int rcl_lua_timer_call_ptr (lua_State* L)
 static int rcl_lua_timer_time_until_next_call (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   /* get rest */
   int64_t nsec = 0;
@@ -231,7 +231,7 @@ static int rcl_lua_timer_time_until_next_call (lua_State* L)
 static int rcl_lua_timer_time_since_last_call (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   /* get time */
   int64_t nsec = 0;
@@ -259,7 +259,7 @@ static int rcl_lua_timer_time_since_last_call (lua_State* L)
 static int rcl_lua_timer_get_period (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   /* get period */
   int64_t nsec = 0;
@@ -314,7 +314,7 @@ static int rcl_lua_timer_change_period (lua_State* L)
 static int rcl_lua_timer_reset (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   /* reset state */
   rcl_ret_t ret = rcl_timer_reset(timer);
@@ -337,7 +337,7 @@ static int rcl_lua_timer_reset (lua_State* L)
 static int rcl_lua_timer_cancel (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   /* cancel */
   rcl_ret_t ret = rcl_timer_cancel(timer);
@@ -363,7 +363,7 @@ static int rcl_lua_timer_cancel (lua_State* L)
 static int rcl_lua_timer_is_canceled (lua_State* L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t* timer = lua_touserdata(L, 1);
 
   /* check status */
   bool is_canceled = false;

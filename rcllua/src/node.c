@@ -339,7 +339,7 @@ static int rcl_lua_node_action_names_and_types (lua_State* L)
 static const struct luaL_Reg node_methods[] = {
   {"get_name", rcl_lua_node_get_name},
   {"get_namespace", rcl_lua_node_get_namespace},
-  {"get_full_qualified_name", rcl_lua_node_full_qualified_name},
+  {"get_fully_qualified_name", rcl_lua_node_full_qualified_name},
   {"get_logger_name", rcl_lua_node_logger_name},
   {"get_count_publishers", rcl_lua_node_count_publishers},
   {"get_count_subscribers", rcl_lua_node_count_subscribers},

@@ -32,6 +32,18 @@ local protected = {
 --- Logger class.
 local Logger = {name='rcllua'}
 
+--- Remove object from the table if found.
+--  @param tbl Source table.
+--  @param obj Object for search.
+--  @return removed object or nil.
+local function remove_object (tbl, obj)
+  for i, o in ipairs(tbl) do
+    if o == obj then
+      return table.remove(tbl, i)
+    end
+  end
+  return nil
+end
 --    NODE
 
 -- Node class.
@@ -53,7 +65,9 @@ function Node.create_publisher (self, msg, topic, qos)
     q.depth = qos
     qos = q
   end
-  return rclbind.new_publisher(self._node__object, msg, topic, qos)
+  local pub = rclbind.new_publisher(self._node__object, msg, topic, qos)
+  table.insert(self._publisher__list, pub)
+  return pub
 end
 
 --- Create subscription object.
@@ -108,6 +122,66 @@ function Node.create_timer (self, period, callback)
   return timer
 end
 
+--- Make iterator for the node publishers.
+--  @return iterator.
+function Node.publishers (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._publisher__list[i]
+  end
+end
+
+--- Make iterator for the node subscriptions.
+--  @return iterator.
+function Node.subscriptions (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._subscription__list[i]
+  end
+end
+
+--- Make iterator for the node clients.
+--  @return iterator.
+function Node.clients (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._client__list[i]
+  end
+end
+
+--- Make iterator for the node services.
+--  @return iterator.
+function Node.services (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._service__list[i]
+  end
+end
+
+--- Make iterator for the node timers.
+--  @return iterator.
+function Node.timers (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._timer__list[i]
+  end
+end
+
+--- Make iterator for the node action clients and services.
+--  @return iterator.
+function Node.waitables (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._action__list[i]
+  end
+end
+
 --- Create object for logging.
 --  @return logger.
 function Node.get_logger (self)
@@ -133,6 +207,12 @@ function Node.get_clock (self)
   return self._clock__object
 end
 
+--- Get node fully qualified name.
+--  @return node name string.
+function Node.get_fully_qualified_name (self)
+  return self._node__object:get_fully_qualified_name()
+end
+
 --- Update reference to Executor object.
 --  @param executor New reference or nil.
 function Node.set_executor (self, executor)
@@ -142,6 +222,8 @@ function Node.set_executor (self, executor)
   self._executor__weak.ref = executor
 end
 
+--- Add action client or server to the node.
+--  @param action Action client or server object.
 function Node.add_waitable (self, action)
   table.insert(self._action__list, action)
 end
@@ -150,6 +232,61 @@ end
 --  @return reference to executor.
 function Node.executor (self)
   return self._executor__weak.ref
+end
+
+--- Remove timer from the node.
+--  @param timer Timer object.
+--  @return status of removing.
+function Node.remove_timer (self, timer)
+  local t = remove_object(self._timer__list, timer)
+  if t then t:cancel() end
+  return t ~= nil
+end
+
+--- Remove service from the node.
+--  @param service Service object.
+--  @return status of removing.
+function Node.remove_service (self, service)
+  return remove_object(self._service__list, service) ~= nil
+end
+
+--- Remove client from the node.
+--  @param client Client object.
+--  @return status of removing.
+function Node.remove_client (self, client)
+  return remove_object(self._client__list, client) ~= nil
+end
+
+--- Remove subscription from the node.
+--  @param sub Subscription object.
+--  @return status of removing.
+function Node.remove_subscription (self, sub)
+  return remove_object(self._subscription__list, sub) ~= nil
+end
+
+--- Remove publisher from the node.
+--  @param pub Publisher object.
+--  @return status of removing.
+function Node.remove_publisher (self, pub)
+  return remove_object(self._publisher__list, pub) ~= nil
+end
+
+--- Free resources.
+function Node.destroy_node (self)
+  local empty = {}
+  self._resume__time = empty
+  self._resume__list = empty
+  self._timer__list = empty
+  self._publisher__list = empty
+  self._subscription__list = empty
+  self._client__list = empty
+  self._service__list = empty
+  self._action__list = empty
+  self._parameter__list = empty
+  self._descriptor__list = empty
+  self._node__object = nil
+  self._clock__object = nil
+  self._executor__weak = nil
 end
 
 --- Wrapper for function binding.
@@ -330,12 +467,13 @@ function Node.__call (self, ...)
   o._resume__time = {}
   -- references
   o._timer__list = {}
+  o._publisher__list = {}
   o._subscription__list = {}
   o._client__list = {}
   o._service__list = {}
-  o._guard__list = {}
-  o._event__list = {}
   o._action__list = {}
+  -- o._guard__list = {}
+  -- o._event__list = {}
   -- for parameters
   o._parameter__list = {}
   o._descriptor__list = {}

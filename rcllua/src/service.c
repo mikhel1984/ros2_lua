@@ -16,8 +16,8 @@
 
 #include <rcl/service.h>
 #include <rcl/node.h>
-#include <rcl/error_handling.h>
 #include <rosidl_runtime_c/service_type_support_struct.h>
+#include <rcl/error_handling.h>
 
 #include <rosidl_luacommon/definition.h>
 

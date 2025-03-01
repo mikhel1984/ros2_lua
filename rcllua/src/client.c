@@ -183,7 +183,8 @@ static int rcl_lua_client_free (lua_State* L)
 static int rcl_lua_client_service_is_available (lua_State* L)
 {
    /* arg1 - client object */
-  rcl_client_t* cli = luaL_checkudata(L, 1, MT_CLIENT);
+  rcl_client_t* cli = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != cli, 1, "client is expected");
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table

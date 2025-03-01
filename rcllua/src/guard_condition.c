@@ -20,11 +20,15 @@
 #include "rcllua/context.h"
 #include "rcllua/utils.h"
 
+/** Guard condition metatable name. */
 const char* MT_GUARD_CONDITION = "ROS2.GuardCondition";
 
 /**
  * Create guard condition object.
  * 
+ * Arguments:
+ * - callback (=nil)
+ *
  * Return:
  * - new guard condition.
  *
@@ -47,6 +51,11 @@ static int rcl_lua_guard_condition_init (lua_State* L)
   /* set metatable */
   luaL_getmetatable(L, MT_GUARD_CONDITION);
   lua_setmetatable(L, -2);
+
+  if (lua_isfunction(L, 1)) {
+    lua_pushvalue(L, 1);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, guard);
+  }
 
   return 1;
 }
@@ -112,4 +121,9 @@ void rcl_lua_add_guard_condition_methods (lua_State* L)
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_GUARD_CONDITION, guard_methods);
+}
+
+bool rcl_lua_guard_condition_push_callback (lua_State* L, const rcl_guard_condition_t* guard)
+{
+  return lua_rawgetp(L, LUA_REGISTRYINDEX, guard) != LUA_TNIL;
 }

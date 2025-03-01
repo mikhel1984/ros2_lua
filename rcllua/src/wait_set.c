@@ -23,6 +23,7 @@
 #include "rcllua/subscriber.h"
 #include "rcllua/service.h"
 #include "rcllua/client.h"
+#include "rcllua/guard_condition.h"
 #include "rcllua/utils.h"
 
 /** WaitSet object metatable name. */
@@ -151,7 +152,7 @@ static int rcl_lua_wait_set_clear (lua_State* L)
 static int rcl_lua_wait_set_add_timer (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
   /* arg2 - timer */
   rcl_timer_t* timer = luaL_checkudata(L, 2, MT_TIMER);
 
@@ -182,7 +183,7 @@ static int rcl_lua_wait_set_add_timer (lua_State* L)
 static int rcl_lua_wait_set_add_subscription (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
   /* arg2 - subsctiption */
   rcl_subscription_t* sub = luaL_checkudata(L, 2, MT_SUBSCRIPTION);
 
@@ -213,7 +214,7 @@ static int rcl_lua_wait_set_add_subscription (lua_State* L)
 static int rcl_lua_wait_set_add_service (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
   /* arg2 - service */
   rcllua_service_wrap* wrap = luaL_checkudata(L, 2, MT_SERVICE);
 
@@ -244,7 +245,7 @@ static int rcl_lua_wait_set_add_service (lua_State* L)
 static int rcl_lua_wait_set_add_client (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
   /* arg2 - client */
   rcl_client_t* cli = luaL_checkudata(L, 2, MT_CLIENT);
 
@@ -253,6 +254,37 @@ static int rcl_lua_wait_set_add_client (lua_State* L)
   rcl_ret_t ret = rcl_wait_set_add_client(ws, cli, &index);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to add client");
+  }
+
+  lua_pushinteger(L, (lua_Integer) index);
+  return 1;
+}
+
+/**
+ * Add guard condition.
+ *
+ * Arguments:
+ * - WaitSet object
+ * - guard condition object
+ *
+ * Return:
+ * - index of added client
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_wait_set_add_guard_cond (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
+  /* arg2 - guard condition */
+  rcl_guard_condition_t* guard = luaL_checkudata(L, 2, MT_GUARD_CONDITION);
+
+  /* add */
+  size_t index = 0;
+  rcl_ret_t ret = rcl_wait_set_add_guard_condition(ws, guard, &index);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to add guard condition");
   }
 
   lua_pushinteger(L, (lua_Integer) index);
@@ -430,16 +462,52 @@ static int rcl_lua_wait_set_ready_services (lua_State* L)
   return 1;
 }
 
+/**
+ * Collect ready guard conditions.
+ *
+ * Arguments:
+ * - WaitSet object
+ *
+ * Return:
+ * - table of callbacks.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_wait_set_ready_guard_cond (lua_State* L)
+{
+  /* arg1 - wait set */
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != ws, 1, "wait set is expected");
+
+  /* collect guard conditions */
+  /* in most cases 0 or 1 elements are ready */
+  lua_newtable(L);
+  size_t ind = 1;
+  for (size_t i = 0; i < ws->size_of_guard_conditions; i++) {
+    /* add methods */
+    if (ws->guard_conditions[i] && 
+        rcl_lua_guard_condition_push_callback(L, ws->guard_conditions[i]))
+    {
+      lua_rawseti(L, -2, ind++);
+    }
+  }
+
+  return 1;
+}
+
 /** List of WaitSet methods */
 static const struct luaL_Reg wait_set_methods[] = {
   {"add_timer", rcl_lua_wait_set_add_timer},
   {"add_subscription", rcl_lua_wait_set_add_subscription},
   {"add_service", rcl_lua_wait_set_add_service},
   {"add_client", rcl_lua_wait_set_add_client},
+  {"add_guard_condition", rcl_lua_wait_set_add_guard_cond},
   {"ready_timers", rcl_lua_wait_set_ready_timers},
   {"ready_subscriptions", rcl_lua_wait_set_ready_subscription},
   {"ready_services", rcl_lua_wait_set_ready_services},
   {"ready_clients", rcl_lua_wait_set_ready_clients},
+  {"ready_guard_conditions", rcl_lua_wait_set_ready_guard_cond},
   {"clear", rcl_lua_wait_set_clear},
   {"wait", rcl_lua_wait_set_wait},
   {"__gc", rcl_lua_wait_set_free},

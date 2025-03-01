@@ -139,7 +139,7 @@ static int rcl_lua_time_init_dur_float (lua_State* L)
 static int rcl_lua_time_index (lua_State* L)
 {
   /* arg1 - time object */
-  rcl_time_point_t* time = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t* time = lua_touserdata(L, 1);
   /* arg2 - field name */
   const char* field = luaL_checkstring(L, 2);
 
@@ -173,7 +173,7 @@ static int rcl_lua_time_index (lua_State* L)
 static int rcl_lua_time_index_dur (lua_State* L)
 {
   /* arg1 - time object */
-  rcl_duration_t* dur = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t* dur = lua_touserdata(L, 1);
   /* arg2 - field name */
   const char* field = luaL_checkstring(L, 2);
 

@@ -31,12 +31,11 @@ static bool context_init_ = false;
  * Initialize context state.
  *
  * Arguments:
- * - command line arguments (table)
+ * - table of command line arguments
  *
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-
 static int rcl_lua_context_init (lua_State* L)
 {
   /* arg1 - command line arguments */
@@ -78,7 +77,6 @@ static int rcl_lua_context_init (lua_State* L)
     luaL_error(L, "failed to initialize logging system");
   }
 
-  lua_pop(L, 1);                   // pop argv
   context_init_ = true;
 
   return 0;

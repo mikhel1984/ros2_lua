@@ -15,7 +15,6 @@
 #include <lauxlib.h>
 
 #include <rcl/client.h>
-#include <rcl/error_handling.h>
 #include <rcl/node.h>
 #include <rcl/graph.h>
 #include <rosidl_runtime_c/service_type_support_struct.h>
@@ -159,7 +158,7 @@ static int rcl_lua_client_free (lua_State* L)
   /* finalize */
   rcl_ret_t ret = rcl_client_fini(cli, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini client: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to fini client");
   }
 
   /* free dependencies */
@@ -331,7 +330,7 @@ bool rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
     return true;
   }
   lua_rawseti(L, -5, CLI_OUT_CALLBACK);    // pop function, a[.] = callback
-  
+
   /* remove this request */
   lua_pushinteger(L, header.request_id.sequence_number);  // push response sequence
   lua_pushnil(L);                          // push nil

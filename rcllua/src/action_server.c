@@ -193,6 +193,10 @@ static int rcl_lua_action_server_init (lua_State* L)
   luaL_getmetatable(L, MT_ACTION_SERVER);  // push metatable
   lua_setmetatable(L, -2);                 // pop metatable
 
+  if (!lua_checkstack(L, 5)) {
+    luaL_error(L, "not enough space for action client initialization");
+  }
+
   /* save reference objects */
   lua_createtable(L, 0, ACT_SRV_REG_NUMBER-1);  // push table a
 
@@ -269,7 +273,7 @@ static int rcl_lua_action_server_free (lua_State* L)
   /* finalize */
   rcl_ret_t ret = rcl_action_server_fini(srv, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini server: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to fini server");
   }
 
   /* free dependencies */
@@ -314,7 +318,7 @@ static int rcl_lua_action_server_get_interface (lua_State* L)
  */
 #define TAKE_SERVICE_REQUEST(Type, TBL_NAME, CB_REQ_ID) \
   /* arg1 - action server */ \
-  rcl_action_server_t* srv = lua_touserdata(L, 1); \
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER); \
   lua_createtable(L, ACT_SRV_OUT_NUMBER-1, 0); \
   /* prepare request message */ \
   lua_rawgetp(L, LUA_REGISTRYINDEX, srv); \
@@ -405,11 +409,13 @@ static int rcl_lua_action_server_cancel_request (lua_State* L)
  */
 #define SEND_SERVICE_RESPONSE(Type) \
   /* arg1 - action server */ \
-  rcl_action_server_t* srv = lua_touserdata(L, 1); \
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER); \
   /* arg2 - response */ \
   idl_lua_msg_t* resp = lua_touserdata(L, 2); \
+  if (NULL == resp) { luaL_argerror(L, 2, "response is expected"); } \
   /* arg3 - header */ \
   rmw_request_id_t* header = lua_touserdata(L, 3); \
+  if (NULL == header) { luaL_argerror(L, 3, "header is expected"); } \
   /* send response */ \
   rcl_ret_t ret = rcl_action_send_ ## Type ## _response(srv, header, ROSIDL_LUA_GET_MSG(resp)); \
   switch (ret) { \
@@ -497,11 +503,11 @@ static int rcl_lua_action_server_cancel_response (lua_State* L)
 static int rcl_lua_action_server_get_exec (lua_State* L)
 {
   /* arg1 - action server */
-  rcl_action_server_t* srv = lua_touserdata(L, 1);
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, srv);  // push table
-  lua_rawgeti(L, -1, ACT_SRV_REG_EXEC_CB);  // push method for execution
 
+  lua_rawgeti(L, -1, ACT_SRV_REG_EXEC_CB);  // push method for execution
   return 1;
 }
 
@@ -521,7 +527,7 @@ static int rcl_lua_action_server_get_exec (lua_State* L)
 static int rcl_lua_action_server_get_handle_check (lua_State* L)
 {
   /* arg1 - action server */
-  rcl_action_server_t* srv = lua_touserdata(L, 1);
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, srv);     // push table
   lua_rawgeti(L, -1, ACT_SRV_REG_HANDLE_CB);  // push method for goal handle run
@@ -571,7 +577,7 @@ static int rcl_lua_action_server_publish_feedback (lua_State* L)
 static int rcl_lua_action_server_publish_status (lua_State* L)
 {
   /* arg1 - action server */
-  rcl_action_server_t* srv = lua_touserdata(L, 1);
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
 
   rcl_action_goal_status_array_t status_message =
     rcl_action_get_zero_initialized_goal_status_array();
@@ -587,7 +593,7 @@ static int rcl_lua_action_server_publish_status (lua_State* L)
 
   ret = rcl_action_goal_status_array_fini(&status_message);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to finalize goal status array: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to finalize goal status array");
   }
 
   return 0;
@@ -605,7 +611,7 @@ static int rcl_lua_action_server_publish_status (lua_State* L)
 static int rcl_lua_action_server_notify_goal_done (lua_State* L)
 {
   /* arg1 - action server */
-  rcl_action_server_t* srv = lua_touserdata(L, 1);
+  rcl_action_server_t* srv = luaL_checkudata(L, 1, MT_ACTION_SERVER);
 
   rcl_ret_t ret = rcl_action_notify_goal_done(srv);
   if (RCL_RET_OK != ret) {
@@ -751,7 +757,7 @@ static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
   /* free */
   ret = rcl_action_cancel_response_fini(&rcl_resp);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to finalize cancel response: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to finalize cancel response");
   }
 
   return 1;
@@ -786,7 +792,7 @@ static int rcl_lua_action_server_expire_goals (lua_State* L)
     luaL_error(L, "failed to expire goals");
   }
 
-  /* UUID as strings strings */
+  /* UUID as strings */
   lua_createtable(L, num_expired, 0);    // push table
   for (size_t i = 0; i < num_expired; i++) {
     const char *str = (char*) expired_goals[i].goal_id.uuid;
@@ -874,7 +880,7 @@ static int rcl_lua_action_goal_handle_free (lua_State* L)
 static int rcl_lua_action_goal_handle_get_status (lua_State* L)
 {
   /* arg1 - action goal handle */
-  rcl_action_goal_handle_t* handle = lua_touserdata(L, 1);
+  rcl_action_goal_handle_t* handle = luaL_checkudata(L, 1, MT_ACTION_GOAL_HANDLE);
 
   rcl_action_goal_state_t status;
   rcl_ret_t ret = rcl_action_goal_handle_get_status(handle, &status);
@@ -927,7 +933,7 @@ static int rcl_lua_action_goal_handle_set_status (lua_State* L)
 static int rcl_lua_action_goal_handle_is_active (lua_State* L)
 {
   /* arg1 - action goal handle */
-  rcl_action_goal_handle_t* handle = lua_touserdata(L, 1);
+  rcl_action_goal_handle_t* handle = luaL_checkudata(L, 1, MT_ACTION_GOAL_HANDLE);
 
   lua_pushboolean(L, rcl_action_goal_handle_is_active(handle));
   return 1;

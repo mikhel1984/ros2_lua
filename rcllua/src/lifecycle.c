@@ -16,7 +16,6 @@
 
 #include <rcl_lifecycle/rcl_lifecycle.h>
 #include <rcl/service.h>
-#include <rcl/error_handling.h>
 
 #include <rosidl_runtime_c/message_type_support_struct.h>
 #include <rosidl_runtime_c/service_type_support_struct.h>
@@ -194,7 +193,7 @@ static int rcl_lua_lifecycle_init (lua_State* L)
 static int rcl_lua_lifecycle_free (lua_State* L)
 {
   /* arg1 - state machine */
-  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
+  rcl_lifecycle_state_machine_t* fsm = lua_touserdata(L, 1);
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, fsm);  // push table
@@ -203,7 +202,7 @@ static int rcl_lua_lifecycle_free (lua_State* L)
 
   rcl_ret_t ret = rcl_lifecycle_state_machine_fini(fsm, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini lifecycle state machine: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to fini lifecycle state machine");
   }
 
   /* free dependencies */
@@ -348,7 +347,7 @@ static int rcl_lua_lifecycle_get_by_label (lua_State* L)
 static int rcl_lua_lifecycle_get_state (lua_State* L)
 {
   /* arg1 - state machine */
-  rcl_lifecycle_state_machine_t* fsm = lua_touserdata(L, 1);
+  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
 
   lua_createtable(L, 2, 0);      // push table
   lua_pushinteger(L, fsm->current_state->id);  // push int
@@ -376,7 +375,7 @@ static int rcl_lua_lifecycle_get_state (lua_State* L)
 static int rcl_lua_lifecycle_get_available_states (lua_State* L)
 {
   /* arg1 - state machine */
-  rcl_lifecycle_state_machine_t* fsm = lua_touserdata(L, 1);
+  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
 
   lua_createtable(L, fsm->transition_map.states_size, 0);  // push table a
   for (size_t i = 0; i < fsm->transition_map.states_size; i++) {
@@ -412,7 +411,7 @@ static int rcl_lua_lifecycle_get_available_states (lua_State* L)
 static int rcl_lua_lifecycle_get_available_transitions (lua_State* L)
 {
   /* arg1 - state machine */
-  rcl_lifecycle_state_machine_t* fsm = lua_touserdata(L, 1);
+  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
 
   lua_createtable(L, fsm->current_state->valid_transition_size, 0);   // push table a
   for (size_t i = 0; i < fsm->current_state->valid_transition_size; ++i) {
@@ -456,7 +455,7 @@ static int rcl_lua_lifecycle_get_available_transitions (lua_State* L)
 static int rcl_lua_lifecycle_get_transition_graph (lua_State* L)
 {
   /* arg1 - state machine */
-  rcl_lifecycle_state_machine_t* fsm = lua_touserdata(L, 1);
+  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
 
   lua_createtable(L, fsm->transition_map.transitions_size, 0);  // push table a
   for (size_t i = 0; i < fsm->transition_map.transitions_size; ++i) {
@@ -491,7 +490,7 @@ static int rcl_lua_lifecycle_get_transition_graph (lua_State* L)
 static int rcl_lua_lifecycle_print (lua_State* L)
 {
   /* arg1 - state machine */
-  rcl_lifecycle_state_machine_t* fsm = lua_touserdata(L, 1);
+  rcl_lifecycle_state_machine_t* fsm = luaL_checkudata(L, 1, MT_LIFECYCLE);
 
   rcl_print_state_machine(fsm);
 

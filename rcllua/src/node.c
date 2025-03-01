@@ -106,8 +106,8 @@ static int rcl_lua_node_free (lua_State* L)
 static int rcl_lua_node_get_name (lua_State* L)
 {
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
-  lua_pushstring(L, rcl_node_get_name(node));
 
+  lua_pushstring(L, rcl_node_get_name(node));
   return 1;
 }
 
@@ -123,8 +123,8 @@ static int rcl_lua_node_get_name (lua_State* L)
 static int rcl_lua_node_get_namespace (lua_State* L)
 {
   rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
-  lua_pushstring(L, rcl_node_get_namespace(node));
 
+  lua_pushstring(L, rcl_node_get_namespace(node));
   return 1;
 }
 

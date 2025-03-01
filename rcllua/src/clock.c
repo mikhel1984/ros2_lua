@@ -98,7 +98,7 @@ static int rcl_lua_clock_free (lua_State* L)
 static int rcl_lua_clock_get_now (lua_State* L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = lua_touserdata(L, 1);
+  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   /* get time */
   rcl_time_point_value_t time_ns;
@@ -126,7 +126,7 @@ static int rcl_lua_clock_get_now (lua_State* L)
 static int rcl_lua_clock_ros_timer_override_enabled (lua_State* L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = lua_touserdata(L, 1);
+  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   bool is_enabled = false;
   rcl_ret_t ret = rcl_is_enabled_ros_time_override(clock, &is_enabled);
@@ -154,7 +154,7 @@ static int rcl_lua_clock_set_ros_timer_override_enabled (lua_State* L)
   rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
   /* arg2 - boolean flag */
   luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean is expected");
-  
+
   rcl_ret_t ret;
   if (lua_toboolean(L, 2)) {
     ret = rcl_enable_ros_time_override(clock);
@@ -208,7 +208,7 @@ static int rcl_lua_clock_set_ros_time_override (lua_State* L)
 static int rcl_lua_clock_get_type (lua_State* L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = lua_touserdata(L, 1);
+  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   lua_pushinteger(L, clock->type);
   return 1;

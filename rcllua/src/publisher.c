@@ -134,7 +134,7 @@ static int rcl_lua_publisher_free (lua_State* L)
   /* finalize */
   rcl_ret_t ret = rcl_publisher_fini(publisher, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini publisher: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to fini publisher");
     rcl_reset_error();
   }
 

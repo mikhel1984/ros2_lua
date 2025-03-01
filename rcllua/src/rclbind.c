@@ -23,6 +23,7 @@
 #include "rcllua/timer.h"
 #include "rcllua/clock.h"
 #include "rcllua/qos.h"
+#include "rcllua/guard_condition.h"
 #include "rcllua/wait_set.h"
 #include "rcllua/action_client.h"
 #include "rcllua/action_server.h"
@@ -54,6 +55,7 @@ int luaopen_rcllua_rclbind (lua_State* L)
   rcl_lua_add_subscription_methods(L);
   rcl_lua_add_service_methods(L);
   rcl_lua_add_client_methods(L);
+  rcl_lua_add_guard_condition_methods(L);
   rcl_lua_add_wait_set_methods(L);
 
   rcl_lua_add_action_client_methods(L);

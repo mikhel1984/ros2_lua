@@ -273,17 +273,17 @@ end
 
 --- Free resources.
 function Node.destroy_node (self)
-  local empty = {}
-  self._resume__time = empty
-  self._resume__list = empty
-  self._timer__list = empty
-  self._publisher__list = empty
-  self._subscription__list = empty
-  self._client__list = empty
-  self._service__list = empty
-  self._action__list = empty
-  self._parameter__list = empty
-  self._descriptor__list = empty
+  self._resume__time = nil
+  self._resume__list = nil
+  self._timer__list = nil
+  self._publisher__list = nil
+  self._subscription__list = nil
+  self._client__list = nil
+  self._service__list = nil
+  self._action__list = nil
+  self._parameter__list = nil
+  self._descriptor__list = nil
+  self._guard__list = nil
   self._node__object = nil
   self._clock__object = nil
   self._executor__weak = nil
@@ -472,7 +472,7 @@ function Node.__call (self, ...)
   o._client__list = {}
   o._service__list = {}
   o._action__list = {}
-  -- o._guard__list = {}
+  o._guard__list = {}
   -- o._event__list = {}
   -- for parameters
   o._parameter__list = {}

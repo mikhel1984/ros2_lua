@@ -123,6 +123,7 @@ void rcl_lua_add_guard_condition_methods (lua_State* L)
   rcl_lua_utils_add_mt(L, MT_GUARD_CONDITION, guard_methods);
 }
 
+/* Get guard condition callback */
 bool rcl_lua_guard_condition_push_callback (lua_State* L, const rcl_guard_condition_t* guard)
 {
   return lua_rawgetp(L, LUA_REGISTRYINDEX, guard) != LUA_TNIL;

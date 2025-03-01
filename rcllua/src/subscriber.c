@@ -16,7 +16,6 @@
 
 #include <rcl/subscription.h>
 #include <rcl/node.h>
-#include <rcl/error_handling.h>
 #include <rmw/types.h>
 #include <rosidl_runtime_c/message_type_support_struct.h>
 
@@ -155,8 +154,7 @@ static int rcl_lua_subscription_free (lua_State* L)
   /* finalize */
   rcl_ret_t ret = rcl_subscription_fini(subscription, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini subscription: %s", rcl_get_error_string().str);
-    rcl_reset_error();
+    luaL_error(L, "failed to fini subscription");
   }
 
   /* free dependencies */
@@ -166,9 +164,70 @@ static int rcl_lua_subscription_free (lua_State* L)
   return 0;
 }
 
+/**
+ * Get node logger name.
+ *
+ * Arguments:
+ * - subscription object
+ *
+ * Return:
+ * - logger name
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_subscription_logger_name (lua_State* L)
+{
+  /* arg1 - subscription object */
+  rcl_subscription_t* sub = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != sub, 1, "subscription is expected");
+
+  /* get node */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, sub);     // push table
+  lua_rawgeti(L, -1, SUB_REG_NODE);           // push node
+  rcl_node_t* node = lua_touserdata(L, -1);
+
+  const char* logger_name = rcl_node_get_logger_name(node);
+  if (NULL == logger_name) {
+    luaL_error(L, "node logger name not set");
+  }
+
+  lua_pushstring(L, logger_name);
+  return 1;
+}
+
+/**
+ * Get topic name.
+ *
+ * Arguments:
+ * - subscription object
+ *
+ * Return:
+ * - topic name
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_subscription_topic_name (lua_State* L)
+{
+  /* arg1 - subscription object */
+  rcl_subscription_t* sub = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != sub, 1, "subscription is expected");
+
+  const char* name = rcl_subscription_get_topic_name(sub);
+  if (NULL == name) {
+    luaL_error(L, "failed to get subscription topic name");
+  }
+
+  lua_pushstring(L, name);
+  return 1;
+}
+
 /** List of subscription methods */
 static const struct luaL_Reg sub_methods[] = {
   {"__gc", rcl_lua_subscription_free},
+  {"get_logger_name", rcl_lua_subscription_logger_name},
+  {"get_topic_name", rcl_lua_subscription_topic_name},
   {NULL, NULL}
 };
 

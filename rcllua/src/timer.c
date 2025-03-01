@@ -15,7 +15,6 @@
 #include <lauxlib.h>
 
 #include <rcl/timer.h>
-#include <rcl/error_handling.h>
 
 #include "rcllua/timer.h"
 #include "rcllua/clock.h"
@@ -107,8 +106,7 @@ static int rcl_lua_timer_free (lua_State* L)
 
   rcl_ret_t ret = rcl_timer_fini(timer);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini timer: %s", rcl_get_error_string().str);
-    rcl_reset_error();
+    luaL_error(L, "failed to fini timer");
   }
 
   return 0;
@@ -130,6 +128,7 @@ static int rcl_lua_timer_is_ready (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_push_ready(L, timer);
 }
@@ -150,6 +149,7 @@ static int rcl_lua_timer_is_ready_ptr (lua_State* L)
 {
   /* arg1 - light userdata */
   const rcl_timer_t* timer = lua_topointer(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_push_ready(L, timer);
 }
@@ -167,6 +167,7 @@ static int rcl_lua_timer_call (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_do_call(L, timer);
 }
@@ -184,6 +185,7 @@ static int rcl_lua_timer_call_ptr (lua_State* L)
 {
   /* arg1 - light userdata */
   rcl_timer_t* timer = (rcl_timer_t*) lua_topointer(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_do_call(L, timer);
 }
@@ -204,6 +206,7 @@ static int rcl_lua_timer_time_until_next_call (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* get rest */
   int64_t nsec = 0;
@@ -232,6 +235,7 @@ static int rcl_lua_timer_time_since_last_call (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* get time */
   int64_t nsec = 0;
@@ -260,6 +264,7 @@ static int rcl_lua_timer_get_period (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* get period */
   int64_t nsec = 0;
@@ -315,6 +320,7 @@ static int rcl_lua_timer_reset (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* reset state */
   rcl_ret_t ret = rcl_timer_reset(timer);
@@ -338,6 +344,7 @@ static int rcl_lua_timer_cancel (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* cancel */
   rcl_ret_t ret = rcl_timer_cancel(timer);
@@ -364,6 +371,7 @@ static int rcl_lua_timer_is_canceled (lua_State* L)
 {
   /* arg1 - timer object */
   rcl_timer_t* timer = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* check status */
   bool is_canceled = false;

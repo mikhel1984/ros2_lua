@@ -16,7 +16,6 @@
 
 #include <rcl/wait.h>
 #include <rcl/allocator.h>
-#include <rcl/error_handling.h>
 
 #include "rcllua/wait_set.h"
 #include "rcllua/context.h"
@@ -107,8 +106,7 @@ static int rcl_lua_wait_set_free (lua_State* L)
 
   rcl_ret_t ret = rcl_wait_set_fini(ws);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini wait set: %s", rcl_get_error_string().str);
-    rcl_reset_error();
+    luaL_error(L, "failed to fini wait set");
   }
 
   return 0;
@@ -126,7 +124,8 @@ static int rcl_lua_wait_set_free (lua_State* L)
 static int rcl_lua_wait_set_clear (lua_State* L)
 {
   /* arg1 - waitset object */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != ws, 1, "wait set is expected");
 
   rcl_ret_t ret = rcl_wait_set_clear(ws);
   if (RCL_RET_OK != ret) {
@@ -310,17 +309,19 @@ static int rcl_lua_wait_set_wait (lua_State* L)
 static int rcl_lua_wait_set_ready_timers (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != ws, 1, "wait set is expected");
 
-  /* collect functions */
-  lua_newtable(L);                       // push table
+  /* collect feedback */
+  /* in most cases 0 or 1 elements are ready */
+  lua_newtable(L);          // push table
   size_t ind = 1;
   for (size_t i = 0; i < ws->size_of_timers; i++) {
     /* table {callback, ref} */
-    if (ws->timers[i]) {
-      if (rcl_lua_timer_push_callback(L, ws->timers[i])) {   // push table 
-        lua_rawseti(L, -2, ind++);        // pop function
-      }
+    if (ws->timers[i] && 
+        rcl_lua_timer_push_callback(L, ws->timers[i]))   // push function
+    {   
+      lua_rawseti(L, -2, ind++);                         // pop function
     }
   }
 
@@ -342,17 +343,19 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
 static int rcl_lua_wait_set_ready_subscription (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != ws, 1, "wait set is expected");
 
-  /* collect functions */
+  /* collect feedback */
+  /* in most cases 0 or 1 elements are ready */
   lua_newtable(L);                        // push table a
   size_t ind = 1;
   for (size_t i = 0; i < ws->size_of_subscriptions; i++) {
     /* table {message, function} */
-    if (ws->subscriptions[i]) {
-      if (rcl_lua_subscription_push_callback(L, ws->subscriptions[i])) { // push table b
-        lua_rawseti(L, -2, ind++);         // pop table b
-      }
+    if (ws->subscriptions[i] &&
+        rcl_lua_subscription_push_callback(L, ws->subscriptions[i]))  // push table b
+    {
+      lua_rawseti(L, -2, ind++);         // pop table b
     }
   }
 
@@ -374,17 +377,19 @@ static int rcl_lua_wait_set_ready_subscription (lua_State* L)
 static int rcl_lua_wait_set_ready_clients (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != ws, 1, "wait set is expected");
 
-  /* collect services */
+  /* collect clients */
+  /* in most cases 0 or 1 elements are ready */
   lua_newtable(L);                    // push table a
   size_t ind = 1;
   for (size_t i = 0; i < ws->size_of_clients; i++) {
     /* add table */
-    if (ws->clients[i]) {
-      if (rcl_lua_client_push_response(L, ws->clients[i])) { // push table b
-        lua_rawseti(L, -2, ind++);      // pop table b
-      }
+    if (ws->clients[i] &&
+        rcl_lua_client_push_response(L, ws->clients[i]))  // push table b
+    {
+      lua_rawseti(L, -2, ind++);      // pop table b
     }
   }
 
@@ -406,17 +411,19 @@ static int rcl_lua_wait_set_ready_clients (lua_State* L)
 static int rcl_lua_wait_set_ready_services (lua_State* L)
 {
   /* arg1 - wait set */
-  rcl_wait_set_t* ws = luaL_checkudata(L, 1, MT_WAIT_SET);
+  rcl_wait_set_t* ws = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != ws, 1, "wait set is expected");
 
   /* collect services */
+  /* in most cases 0 or 1 elements are ready */
   lua_newtable(L);                   // push table a
   size_t ind = 1;
   for (size_t i = 0; i < ws->size_of_services; i++) {
     /* add table */
-    if (ws->services[i]) {
-      if (rcl_lua_service_push_callback(L, ws->services[i])) {  // push table b
-        lua_rawseti(L, -2, ind++);     // pop table b
-      }
+    if (ws->services[i] &&
+        rcl_lua_service_push_callback(L, ws->services[i]))   // push table b
+    {
+      lua_rawseti(L, -2, ind++);     // pop table b
     }
   }
 

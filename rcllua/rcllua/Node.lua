@@ -122,6 +122,15 @@ function Node.create_timer (self, period, callback)
   return timer
 end
 
+--- Create guard condition object.
+--  @param callback Callback method (optional).
+--  @return guard condition (userdata).
+function Node.create_guard_condition (self, callback)
+  local guard = rclbind.new_guard_condition (callback)
+  table.insert(self._guard__list, guard)
+  return guard
+end
+
 --- Make iterator for the node publishers.
 --  @return iterator.
 function Node.publishers (self)
@@ -232,6 +241,13 @@ end
 --  @return reference to executor.
 function Node.executor (self)
   return self._executor__weak.ref
+end
+
+--- Remove guard condition from the node.
+--  @param guard Guard condition object.
+--  @return status of removing.
+function Node.remove_guard_condition (self, guard)
+  return remove_object(self._guard__list, guard) ~= nil
 end
 
 --- Remove timer from the node.

@@ -28,6 +28,9 @@ const char* MT_NODE = "ROS2.Node";
 /**
  * Create node object.
  *
+ * Table: rclbind
+ * Method: new_node
+ *
  * Arguments:
  * - node name
  * - namespace (string, optional)
@@ -112,6 +115,9 @@ static int rcl_lua_node_free (lua_State* L)
 /**
  * Get fully qualified node name.
  *
+ * Table: Node
+ * Method: get_fully_qualified_name
+ *
  * Arguments:
  * - node object
  *
@@ -128,6 +134,9 @@ static int rcl_lua_node_full_qualified_name (lua_State* L)
 
 /**
  * Get logger name.
+ *
+ * Table: Node
+ * Method: get_logger_name
  *
  * Arguments:
  * - node object
@@ -146,6 +155,9 @@ static int rcl_lua_node_logger_name (lua_State* L)
 /**
  * Get node name.
  *
+ * Table: Node
+ * Method: get_name
+ *
  * Arguments:
  * - node object
  *
@@ -163,6 +175,9 @@ static int rcl_lua_node_get_name (lua_State* L)
 /**
  * Get current namespace.
  *
+ * Table: Node
+ * Method: get_namespace
+ *
  * Arguments:
  * - node object
  *
@@ -179,6 +194,9 @@ static int rcl_lua_node_get_namespace (lua_State* L)
 
 /**
  * Get number of publishers.
+ *
+ * Table: Node
+ * Method: get_count_publishers
  *
  * Arguments:
  * - node object
@@ -210,6 +228,9 @@ static int rcl_lua_node_count_publishers (lua_State* L)
 /**
  * Get number of subscribers.
  *
+ * Table: Node
+ * Method: get_count_subscribers
+ *
  * Arguments:
  * - node object
  * - topic name
@@ -239,6 +260,9 @@ static int rcl_lua_node_count_subscribers (lua_State* L)
 
 /**
  * Get action client names and types by node.
+ *
+ * Table: Node
+ * Method: get_action_client_names_and_types_by_node
  *
  * Arguments:
  * - node object
@@ -275,6 +299,9 @@ static int rcl_lua_node_action_client_names_types (lua_State* L)
 /**
  * Get action server names and types by node.
  *
+ * Table: Node
+ * Method: get_action_server_names_and_types_by_node
+ *
  * Arguments:
  * - node object
  * - remote node name
@@ -309,6 +336,9 @@ static int rcl_lua_node_action_server_names_types (lua_State* L)
 
 /**
  * Get action names and types by node.
+ *
+ * Table: Node
+ * Method: get_action_names_and_types
  *
  * Arguments:
  * - node object

@@ -29,6 +29,9 @@ const char* MT_DURATION = "ROS2.Duration";
 /**
  * Create time object.
  *
+ * Table: rclbind
+ * Method: new_time
+ *
  * Arguments:
  * - seconds (int, optional)
  * - nanoseconds (int, optional)
@@ -69,6 +72,9 @@ static int rcl_lua_time_init (lua_State* L)
 /**
  * Create duration object.
  *
+ * Table: rclbind
+ * Method: new_duration
+ *
  * Arguments:
  * - seconds (int, optional)
  * - nanoseconds (int, optional)
@@ -101,6 +107,9 @@ static int rcl_lua_time_init_dur (lua_State* L)
 
 /**
  * Create duration object from seconds as floating point value.
+ *
+ * Table: rclbind
+ * Method: new_duration_sec
  *
  * Arguments:
  * - seconds (float)
@@ -192,6 +201,9 @@ static int rcl_lua_time_index_dur (lua_State* L)
 /**
  * Get time in seconds.
  *
+ * Table: Time
+ * Method: seconds
+ *
  * Arguments:
  * - time object
  *
@@ -212,6 +224,9 @@ static int rcl_lua_time_seconds (lua_State* L)
 
 /**
  * Get duration in seconds.
+ *
+ * Table: Duration
+ * Method: seconds
  *
  * Arguments:
  * - duration object

@@ -56,6 +56,9 @@ const char* MT_SUBSCRIPTION = "ROS2.Subscription";
 /**
  * Create subscription object. Save bindings to register.
  *
+ * Table: rclbind
+ * Method: new_subscription
+ *
  * Arguments:
  * - node object
  * - message type (table)
@@ -167,6 +170,9 @@ static int rcl_lua_subscription_free (lua_State* L)
 /**
  * Get node logger name.
  *
+ * Table: Subscription
+ * Method: get_logger_name
+ *
  * Arguments:
  * - subscription object
  *
@@ -198,6 +204,9 @@ static int rcl_lua_subscription_logger_name (lua_State* L)
 
 /**
  * Get topic name.
+ *
+ * Table: Subscription
+ * Method: get_topic_name
  *
  * Arguments:
  * - subscription object

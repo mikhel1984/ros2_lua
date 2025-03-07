@@ -68,6 +68,9 @@ const char* MT_ACTION_CLIENT = "ROS2.ActionClient";
 /**
  * Create action client object. Save bindings to register.
  *
+ * Table: rclbind
+ * Method: new_action_client
+ *
  * Arguments:
  * - node object
  * - action type (table)
@@ -278,6 +281,9 @@ static int rcl_lua_action_client_free (lua_State* L)
 /**
  * Send request to result service.
  *
+ * Table: ActionClient
+ * Method: send_result_request
+ *
  * Arguments:
  * - action client object
  * - request message
@@ -297,6 +303,9 @@ static int rcl_lua_action_client_send_result_request (lua_State* L)
 /**
  * Send request to cancel service.
  *
+ * Table: ActionClient
+ * Method: send_cancel_request
+ *
  * Arguments:
  * - action client object
  * - request message
@@ -315,6 +324,9 @@ static int rcl_lua_action_client_send_cancel_request (lua_State* L)
 
 /**
  * Send request to goal service.
+ *
+ * Table: ActionClient
+ * Method: send_goal_request
  *
  * Arguments:
  * - action client object
@@ -382,6 +394,9 @@ static int rcl_lua_action_client_send_goal_request (lua_State* L)
 /**
  * Get response from result service.
  *
+ * Table: ActionClient
+ * Method: take_result_response
+ *
  * Arguments:
  * - action client
  *
@@ -398,6 +413,9 @@ static int rcl_lua_action_client_get_result_response (lua_State* L)
 
 /**
  * Get response from cancel service.
+ *
+ * Table: ActionClient
+ * Method: take_cancel_response
  *
  * Arguments:
  * - action client
@@ -416,6 +434,9 @@ static int rcl_lua_action_client_get_cancel_response (lua_State* L)
 /**
  * Get response from goal service.
  *
+ * Table: ActionClient
+ * Method: take_goal_response
+ *
  * Arguments:
  * - action client
  *
@@ -433,6 +454,9 @@ static int rcl_lua_action_client_get_goal_response (lua_State* L)
 /**
  * Get feedback message. If callback is registered then
  * return {message, callback} else nil.
+ *
+ * Table: ActionClient
+ * Method: take_feedback
  *
  * Arguments:
  * - action client
@@ -489,6 +513,9 @@ static int rcl_lua_action_client_take_feedback (lua_State* L)
 /**
  * Get status message.
  *
+ * Table: ActionClient
+ * Method: take_status
+ *
  * Arguments:
  * - action client
  *
@@ -526,6 +553,9 @@ static int rcl_lua_action_client_take_status (lua_State* L)
 /**
  * Get number of enities to update wait set.
  *
+ * Table: ActionClient
+ * Method: get_num_entities
+ *
  * Arguments:
  * - action client
  *
@@ -562,6 +592,9 @@ static int rcl_lua_action_client_num_entities (lua_State* L)
 /**
  * Check if the action server is available.
  *
+ * Table: ActionClient
+ * Method: is_action_server_available
+ *
  * Arguments:
  * - action client
  *
@@ -594,6 +627,9 @@ static int rcl_lua_action_client_server_is_available (lua_State* L)
 /**
  * Add action client to wait set.
  *
+ * Table: ActionClient
+ * Method: add_to_waitset
+ *
  * Arguments:
  * - action client
  * - wait set object
@@ -618,6 +654,9 @@ static int rcl_lua_action_client_add_wait_set (lua_State* L)
 
 /**
  * Check ready entries.
+ *
+ * Table: ActionClient
+ * Method: is_ready
  *
  * Arguments:
  * - action client
@@ -658,6 +697,9 @@ static int rcl_lua_action_client_is_ready (lua_State* L)
 /**
  * Get message constructor for the specific action structure.
  *
+ * Table: ActionClient
+ * Method: get_interface
+ *
  * Arguments:
  * - action client
  * - interface name
@@ -684,6 +726,9 @@ static int rcl_lua_action_client_get_interface (lua_State* L)
 
 /**
  * Set function to call for action server feedback.
+ *
+ * Table: ActionClient
+ * Method: set_feedback_method
  *
  * Arguments:
  * - action client

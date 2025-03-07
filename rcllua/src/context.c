@@ -30,6 +30,9 @@ static bool context_init_ = false;
 /**
  * Initialize context state.
  *
+ * Table: rclbind
+ * Method: context_init
+ *
  * Arguments:
  * - table of command line arguments
  *
@@ -85,6 +88,9 @@ static int rcl_lua_context_init (lua_State* L)
 /**
  * Check context status.
  *
+ * Table: rclbind
+ * Method: context_ok
+ *
  * Return:
  * - true if the context is valid.
  *
@@ -100,6 +106,9 @@ static int rcl_lua_context_ok (lua_State* L)
 
 /**
  * Finalize execution, free common objects.
+ *
+ * Table: rclbind
+ * Method: context_shutdown
  *
  * \param[inout] L Lua stack.
  * \return number of outputs.

@@ -43,6 +43,9 @@ const char* MT_PUBLISHER = "ROS2.Publisher";
 /**
  * Create publisher object.
  *
+ * Table: rclbind
+ * Method: new_publisher
+ *
  * Arguments:
  * - node object
  * - message type (table)
@@ -147,6 +150,9 @@ static int rcl_lua_publisher_free (lua_State* L)
 /**
  * Send message.
  *
+ * Table: Publisher
+ * Method: publish
+ *
  * Arguments:
  * - publisher object
  * - message object
@@ -176,6 +182,9 @@ static int rcl_lua_publisher_publish (lua_State* L)
 
 /**
  * Get node logger name.
+ *
+ * Table: Publisher
+ * Method: get_logger_name
  *
  * Arguments:
  * - publisher object
@@ -209,6 +218,9 @@ static int rcl_lua_publisher_logger_name (lua_State* L)
 /**
  * Get number of subscriptions.
  *
+ * Table: Publisher
+ * Method: get_subscription_count
+ *
  * Arguments:
  * - publisher object
  *
@@ -237,6 +249,9 @@ static int rcl_lua_publisher_subscription_count (lua_State* L)
 /**
  * Get topic name.
  *
+ * Table: Publisher
+ * Method: get_topic_name
+ *
  * Arguments:
  * - publisher object
  *
@@ -263,6 +278,9 @@ static int rcl_lua_publisher_topic_name (lua_State* L)
 
 /**
  * Wait untill all published message data is acknowledged.
+ *
+ * Table: Publisher
+ * Method: wait_for_all_acked
  *
  * Arguments:
  * - publisher object

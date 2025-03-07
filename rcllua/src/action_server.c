@@ -85,6 +85,9 @@ static int rcl_lua_action_server_push_true (lua_State* L)
 /**
  * Create action server object. Save bindings to register.
  *
+ * Table: rclbind
+ * Method: new_action_server
+ *
  * Arguments:
  * - node object
  * - clock object
@@ -286,6 +289,9 @@ static int rcl_lua_action_server_free (lua_State* L)
 /**
  * Get message constructor for the specific action structure.
  *
+ * Table: ActionServer
+ * Method: get_interface
+ *
  * Arguments:
  * - action server
  * - interface name
@@ -355,6 +361,9 @@ static int rcl_lua_action_server_get_interface (lua_State* L)
 /**
  * Take goal request.
  *
+ * Table: ActionServer
+ * Method: take_goal_request
+ *
  * Arguments:
  * - action server object
  *
@@ -372,6 +381,9 @@ static int rcl_lua_action_server_goal_request (lua_State* L)
 /**
  * Take result request.
  *
+ * Table: ActionServer
+ * Method: take_result_request
+ *
  * Arguments:
  * - action server object
  *
@@ -388,6 +400,9 @@ static int rcl_lua_action_server_result_request (lua_State* L)
 
 /**
  * Take cancel request.
+ *
+ * Table: ActionServer
+ * Method: take_cancel_request
  *
  * Arguments:
  * - action server object
@@ -434,6 +449,9 @@ static int rcl_lua_action_server_cancel_request (lua_State* L)
 /**
  * Send goal response.
  *
+ * Table: ActionServer
+ * Method: send_goal_response
+ *
  * Arguments:
  * - action server object
  * - response message
@@ -452,6 +470,9 @@ static int rcl_lua_action_server_goal_response (lua_State* L)
 
 /**
  * Send result response.
+ *
+ * Table: ActionServer
+ * Method: send_result_response
  *
  * Arguments:
  * - action server object
@@ -472,6 +493,9 @@ static int rcl_lua_action_server_result_response (lua_State* L)
 /**
  * Send cancel response.
  *
+ * Table: ActionServer
+ * Method: send_cancel_response
+ *
  * Arguments:
  * - action server object
  * - response message
@@ -490,6 +514,9 @@ static int rcl_lua_action_server_cancel_response (lua_State* L)
 
 /**
  * Get registered action process.
+ *
+ * Table: ActionServer
+ * Method: get_executable
  *
  * Arguments:
  * - action server object
@@ -515,6 +542,9 @@ static int rcl_lua_action_server_get_exec (lua_State* L)
  * Get method that may do additional configuration and run the main process.
  * The method takes goal handle and run execution.
  *
+ * Table: ActionServer
+ * Method: get_handle_preprocessing
+ *
  * Arguments:
  * - action server object
  *
@@ -537,6 +567,9 @@ static int rcl_lua_action_server_get_handle_check (lua_State* L)
 
 /**
  * Send feedback message.
+ *
+ * Table: ActionServer
+ * Method: publish_feedback
  *
  * Arguments:
  * - action server
@@ -567,6 +600,9 @@ static int rcl_lua_action_server_publish_feedback (lua_State* L)
 
 /**
  * Send action server status.
+ *
+ * Table: ActionServer
+ * Method: publish_status
  *
  * Arguments:
  * - action server
@@ -602,6 +638,9 @@ static int rcl_lua_action_server_publish_status (lua_State* L)
 /**
  * Notify server about finished task.
  *
+ * Table: ActionServer
+ * Method: notify_goal_done
+ *
  * Arguments:
  * - action server
  *
@@ -623,6 +662,9 @@ static int rcl_lua_action_server_notify_goal_done (lua_State* L)
 
 /**
  * Get number of entries to add to wait set.
+ *
+ * Table: ActionServer
+ * Method: get_num_entities
  *
  * Arguments:
  * - actoin server
@@ -658,6 +700,9 @@ static int rcl_lua_action_server_num_entities (lua_State* L)
 
 /**
  * Check ready entries.
+ *
+ * Table: ActionServer
+ * Method: is_ready
  *
  * Arguments:
  * - action server
@@ -696,6 +741,9 @@ static int rcl_lua_action_server_is_ready (lua_State* L)
 /**
  * Add action server to wait set.
  *
+ * Table: ActionServer
+ * Method: add_to_waitset
+ *
  * Arguments:
  * - action server
  * - wait set object
@@ -720,6 +768,9 @@ static int rcl_lua_action_server_add_waitset (lua_State* L)
 
 /**
  * Process cancel request, make response.
+ *
+ * Table: ActionServer
+ * Method: process_cancel_request
  *
  * Arguments:
  * - action server
@@ -766,6 +817,9 @@ static int rcl_lua_action_server_proc_cancel_request (lua_State* L)
 /**
  * Get list of expire goals.
  *
+ * Table: ActionServer
+ * Method: expired_goals
+ *
  * Arguments:
  * - action server
  * - total number of goals
@@ -805,6 +859,9 @@ static int rcl_lua_action_server_expire_goals (lua_State* L)
 
 /**
  * Create action goal handle object.
+ *
+ * Table: rclbind
+ * Method: new_action_goal_handle
  *
  * Arguments:
  * - action server
@@ -868,6 +925,9 @@ static int rcl_lua_action_goal_handle_free (lua_State* L)
 /**
  * Get goal status.
  *
+ * Table: ActionGoalHandle
+ * Method: get_status
+ *
  * Arguments:
  * - goal handle
  *
@@ -895,6 +955,9 @@ static int rcl_lua_action_goal_handle_get_status (lua_State* L)
 /**
  * Set new goal status.
  *
+ * Table: ActionGoalHandle
+ * Method: update_goal_state
+ *
  * Arguments:
  * - goal handle
  * - event (integer)
@@ -920,6 +983,9 @@ static int rcl_lua_action_goal_handle_set_status (lua_State* L)
 
 /**
  * Check if the goal is active.
+ *
+ * Table: ActionGoalHandle
+ * Method: is_active
  *
  * Arguments:
  * - goal handle

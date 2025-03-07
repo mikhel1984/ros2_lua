@@ -62,6 +62,9 @@ const char* MT_SERVICE = "ROS2.Service";
  * Create service object or wrap the existed one C structure. 
  * Save bindings to register.
  *
+ * Table: rclbind
+ * Method: new_service
+ *
  * Arguments:
  * - node object
  * - service type (table)
@@ -196,6 +199,9 @@ static int rcl_lua_service_free (lua_State* L)
 /**
  * Get service name.
  *
+ * Table: Service
+ * Method: get_name
+ *
  * Arguments:
  * - service object
  *
@@ -218,6 +224,9 @@ static int rcl_lua_service_get_name (lua_State* L)
 /**
  * Get QoS profile.
  *
+ * Table: Service
+ * Method: get_qos
+ *
  * Arguments:
  * - service object
  *
@@ -239,6 +248,9 @@ static int rcl_lua_service_get_qos (lua_State* L)
 
 /**
  * Send service response.
+ *
+ * Table: rclbind
+ * Method: service_send_response
  *
  * Arguments:
  * - table from service request receiving

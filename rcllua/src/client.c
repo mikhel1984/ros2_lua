@@ -57,6 +57,9 @@ const char* MT_CLIENT = "ROS2.Client";
 /**
  * Create client object. Save bindings to register.
  *
+ * Table: rclbind
+ * Method: new_client
+ *
  * Arguments:
  * - node object
  * - service type (table)
@@ -171,6 +174,9 @@ static int rcl_lua_client_free (lua_State* L)
 /**
  * Check if the service is available.
  *
+ * Table: Client
+ * Method: service_is_available
+ *
  * Arguments:
  * - client object
  *
@@ -203,6 +209,9 @@ static int rcl_lua_client_service_is_available (lua_State* L)
 
 /**
  * Send request.
+ *
+ * Table: Client
+ * Method: send_request
  *
  * Arguments:
  * - client object
@@ -249,6 +258,9 @@ static int rcl_lua_client_send_request (lua_State* L)
 
 /**
  * Remove pending request.
+ *
+ * Table: Client
+ * Method: remove_pending_request
  *
  * Arguments:
  * - client object

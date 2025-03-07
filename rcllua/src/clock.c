@@ -28,6 +28,9 @@ const char* MT_CLOCK = "ROS2.Clock";
 /**
  * Create clock object.
  *
+ * Table: rclbind
+ * Method: new_clock
+ *
  * Arguments:
  * - clock tipe (int, optional)
  *
@@ -86,6 +89,9 @@ static int rcl_lua_clock_free (lua_State* L)
 /**
  * Get current time.
  *
+ * Table: Clock
+ * Method: now
+ *
  * Arguments:
  * - clock object.
  *
@@ -141,6 +147,9 @@ static int rcl_lua_clock_ros_timer_override_enabled (lua_State* L)
 /**
  * Set override status for the ROS time.
  *
+ * Table: Clock
+ * Method: set_ros_time_override_is_enabled
+ *
  * Arguments:
  * - clock object.
  * - override flag
@@ -171,6 +180,9 @@ static int rcl_lua_clock_set_ros_timer_override_enabled (lua_State* L)
 /**
  * Override ROS time.
  *
+ * Table: Clock
+ * Method: set_ros_time_override
+ *
  * Arguments:
  * - clock object.
  * - time object.
@@ -195,6 +207,9 @@ static int rcl_lua_clock_set_ros_time_override (lua_State* L)
 
 /**
  * Get clock type.
+ *
+ * Table: Clock
+ * Method: clock_type
  *
  * Arguments:
  * - clock object

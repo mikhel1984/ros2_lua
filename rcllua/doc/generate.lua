@@ -19,7 +19,21 @@
 -- In Lua only @param and @return can be recognized.
 
 local C_FILES = {
+  "../src/context.c",
   "../src/node.c",
+  "../src/publisher.c",
+  "../src/subscriber.c",
+  "../src/client.c",
+  "../src/service.c",
+  "../src/clock.c",
+  "../src/time.c",
+  "../src/timer.c",
+  "../src/logger.c",
+  "../src/qos.c",
+  "../src/action_client.c",
+  "../src/action_server.c",
+  "../src/lifecycle.c",
+  "../src/guard_condition.c",
 }
 
 local LUA_FILES = {

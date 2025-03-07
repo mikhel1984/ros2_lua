@@ -26,6 +26,9 @@ const char* MT_GUARD_CONDITION = "ROS2.GuardCondition";
 /**
  * Create guard condition object.
  * 
+ * Table: rclbind
+ * Method: new_guard_condition
+ *
  * Arguments:
  * - callback (=nil)
  *

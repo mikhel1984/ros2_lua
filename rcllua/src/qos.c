@@ -55,6 +55,9 @@ static void duration_to_rmw_time (const rcl_duration_t* dur, rmw_time_t* tm)
 /**
  * Create QoS object.
  *
+ * Table: rclbind
+ * Method: new_qos
+ *
  * Arguments:
  * - QoS tipe (string, optional)
  *
@@ -277,6 +280,9 @@ static int rcl_lua_qos_newindex (lua_State* L)
 /**
  * Check QoS compatibility.
  * In case of warning return true and warning message.
+ *
+ * Table: rclbind
+ * Method: qos_check_compatible
  *
  * Arguments:
  * - publisher QoS

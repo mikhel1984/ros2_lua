@@ -43,6 +43,9 @@ const char* MT_TIMER = "ROS2.Timer";
 /**
  * Create new timer.
  *
+ * Table: rclbind
+ * Method: new_timer
+ *
  * Arguments:
  * - clock object.
  * - period, sec (float)
@@ -115,6 +118,9 @@ static int rcl_lua_timer_free (lua_State* L)
 /**
  * Check if the timer is ready.
  *
+ * Table: Timer
+ * Method: is_ready
+ *
  * Arguments:
  * - timer object.
  *
@@ -135,6 +141,9 @@ static int rcl_lua_timer_is_ready (lua_State* L)
 
 /**
  * Check if the timer is ready using pointer.
+ *
+ * Table: rclbind
+ * Method: is_timer_ready
  *
  * Arguments:
  * - timer pointer (light userdata)
@@ -157,6 +166,9 @@ static int rcl_lua_timer_is_ready_ptr (lua_State* L)
 /**
  * Call timer.
  *
+ * Table: Timer
+ * Method: call
+ *
  * Arguments:
  * - timer object
  *
@@ -175,6 +187,9 @@ static int rcl_lua_timer_call (lua_State* L)
 /**
  * Call timer, use lightuserdata as timer pointer.
  *
+ * Table: rclbind
+ * Method: timer_call
+ *
  * Arguments:
  * - timer pointer
  *
@@ -192,6 +207,9 @@ static int rcl_lua_timer_call_ptr (lua_State* L)
 
 /**
  * Get time until the next call, in seconds.
+ *
+ * Table: Timer
+ * Method: time_until_next_call
  *
  * Arguments:
  * - timer object
@@ -222,6 +240,9 @@ static int rcl_lua_timer_time_until_next_call (lua_State* L)
 /**
  * Get time since last call, in seconds.
  *
+ * Table: Timer
+ * Method: time_since_last_call
+ *
  * Arguments:
  * - timer object
  *
@@ -251,6 +272,9 @@ static int rcl_lua_timer_time_since_last_call (lua_State* L)
 /**
  * Get timer period, in seconds.
  *
+ * Table: Timer
+ * Method: period
+ *
  * Arguments:
  * - timer object
  *
@@ -279,6 +303,9 @@ static int rcl_lua_timer_get_period (lua_State* L)
 
 /**
  * Change timer period.
+ *
+ * Table: Timer
+ * Method: set_period
  *
  * Arguments:
  * - timer object
@@ -310,6 +337,9 @@ static int rcl_lua_timer_change_period (lua_State* L)
 /**
  * Reset timer state.
  *
+ * Table: Timer
+ * Method: reset
+ *
  * Arguments:
  * - timer object
  *
@@ -334,6 +364,9 @@ static int rcl_lua_timer_reset (lua_State* L)
 /**
  * Cancel timer.
  *
+ * Table: Timer
+ * Method: cancel
+ *
  * Arguments:
  * - timer object
  *
@@ -357,6 +390,9 @@ static int rcl_lua_timer_cancel (lua_State* L)
 
 /**
  * Check timer status.
+ *
+ * Table: Timer
+ * Method: is_canceled
  *
  * Arguments:
  * - timer object

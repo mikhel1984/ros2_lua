@@ -107,6 +107,9 @@ static void rcl_lua_lifecycle_push_labels (lua_State* L, int tbl)
 /**
  * Create state machine object.
  *
+ * Table: rclbind
+ * Method: new_lifecycle
+ *
  * Arguments:
  * - node object
  * - com interface state flag (=true)
@@ -215,6 +218,9 @@ static int rcl_lua_lifecycle_free (lua_State* L)
 /**
  * Check if the state machine is initialized.
  *
+ * Table: LifecycleNode
+ * Method: is_initialized
+ *
  * Arguments:
  * - state machine object
  *
@@ -243,6 +249,9 @@ static int rcl_lua_lifecycle_is_initialized (lua_State* L)
 
 /**
  * Trigger transition by ID.
+ *
+ * Table: LifecycleNode
+ * Method: trigger_transition_by_id
  *
  * Arguments:
  * - state machine
@@ -273,6 +282,9 @@ static int rcl_lua_lifecycle_trigger_by_id (lua_State* L)
 /**
  * Trigger transition by label.
  *
+ * Table: LifecycleNode
+ * Method: trigger_transition_by_label
+ *
  * Arguments:
  * - state machine
  * - transition label
@@ -300,6 +312,9 @@ static int rcl_lua_lifecycle_trigger_by_label (lua_State* L)
 
 /**
  * Get state transition by label.
+ *
+ * Table: LifecycleNode
+ * Method: get_transition_by_label
  *
  * Arguments:
  * - state machine
@@ -335,6 +350,9 @@ static int rcl_lua_lifecycle_get_by_label (lua_State* L)
 /**
  * Get current state.
  *
+ * Table: LifecycleNode
+ * Method: current_state
+ *
  * Arguments:
  * - state machine
  *
@@ -360,6 +378,9 @@ static int rcl_lua_lifecycle_get_state (lua_State* L)
 
 /**
  * Get available system states.
+ *
+ * Table: LifecycleNode
+ * Method: available_states
  *
  * Arguments:
  * - state machine
@@ -392,6 +413,9 @@ static int rcl_lua_lifecycle_get_available_states (lua_State* L)
 
 /**
  * Get available transitions.
+ *
+ * Table: LifecycleNode
+ * Method: available_transitions
  *
  * Arguments:
  * - state machine
@@ -437,6 +461,9 @@ static int rcl_lua_lifecycle_get_available_transitions (lua_State* L)
 /**
  * Get transition graph.
  *
+ * Table: LifecycleNode
+ * Method: transition_graph
+ *
  * Arguments:
  * - state machine
  *
@@ -481,6 +508,9 @@ static int rcl_lua_lifecycle_get_transition_graph (lua_State* L)
 /**
  * Print state machine to console.
  *
+ * Table: LifecycleNode
+ * Method: print
+ *
  * Arguments:
  * - state machine
  *
@@ -499,6 +529,9 @@ static int rcl_lua_lifecycle_print (lua_State* L)
 
 /**
  * Get service pointer of the given type.
+ *
+ * Table: LifecycleNode
+ * Method: get_service
  *
  * Arguments:
  * - state machine
@@ -536,6 +569,9 @@ static int rcl_lua_lifecycle_get_service (lua_State* L)
 
 /**
  * Get label for the given return code.
+ *
+ * Table: LifecycleNode
+ * Method: to_label
  *
  * Arguments:
  * - state machine object

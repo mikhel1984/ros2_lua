@@ -32,6 +32,9 @@ const char* MT_WAIT_SET = "ROS2.WaitSet";
 /**
  * Init WaitSet object.
  *
+ * Table: rclbind
+ * Method: new_wait_set
+ *
  * Arguments:
  * - subscriptions number
  * - guard conditiona number
@@ -116,6 +119,9 @@ static int rcl_lua_wait_set_free (lua_State* L)
 /**
  * Clear WaitSet object.
  *
+ * Table: WaitSet
+ * Method: clear
+ *
  * Arguments:
  * - WaitSet object
  *
@@ -138,6 +144,9 @@ static int rcl_lua_wait_set_clear (lua_State* L)
 
 /**
  * Add timer for waiting.
+ *
+ * Table: WaitSet
+ * Method: add_timer
  *
  * Arguments:
  * - WaitSet object
@@ -170,6 +179,9 @@ static int rcl_lua_wait_set_add_timer (lua_State* L)
 /**
  * Add subscription for waiting.
  *
+ * Table: WaitSet
+ * Method: add_subscription
+ *
  * Arguments:
  * - WaitSet object
  * - subscription object
@@ -200,6 +212,9 @@ static int rcl_lua_wait_set_add_subscription (lua_State* L)
 
 /**
  * Add service for waiting.
+ *
+ * Table: WaitSet
+ * Method: add_service
  *
  * Arguments:
  * - WaitSet object
@@ -232,6 +247,9 @@ static int rcl_lua_wait_set_add_service (lua_State* L)
 /**
  * Add client for waiting.
  *
+ * Table: WaitSet
+ * Method: add_client
+ *
  * Arguments:
  * - WaitSet object
  * - client object
@@ -263,6 +281,9 @@ static int rcl_lua_wait_set_add_client (lua_State* L)
 /**
  * Add guard condition.
  *
+ * Table: WaitSet
+ * Method: add_guard_condition
+ *
  * Arguments:
  * - WaitSet object
  * - guard condition object
@@ -293,6 +314,9 @@ static int rcl_lua_wait_set_add_guard_cond (lua_State* L)
 
 /**
  * Waiting for the next ready object.
+ *
+ * Table: WaitSet
+ * Method: wait
  *
  * Arguments:
  * - WaitSet object
@@ -329,6 +353,9 @@ static int rcl_lua_wait_set_wait (lua_State* L)
 /**
  * Collect ready timers.
  *
+ * Table: WaitSet
+ * Method: ready_timers
+ *
  * Arguments:
  * - WaitSet object
  *
@@ -362,6 +389,9 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
 
 /**
  * Collect ready subscriptions.
+ *
+ * Table: WaitSet
+ * Method: ready_subscriptions
  *
  * Arguments:
  * - WaitSet object
@@ -397,6 +427,9 @@ static int rcl_lua_wait_set_ready_subscription (lua_State* L)
 /**
  * Collect ready client response.
  *
+ * Table: WaitSet
+ * Method: ready_clients
+ *
  * Arguments:
  * - WaitSet object
  *
@@ -431,6 +464,9 @@ static int rcl_lua_wait_set_ready_clients (lua_State* L)
 /**
  * Collect ready service requests.
  *
+ * Table: WaitSet
+ * Method: ready_services
+ *
  * Arguments:
  * - WaitSet object
  *
@@ -464,6 +500,9 @@ static int rcl_lua_wait_set_ready_services (lua_State* L)
 
 /**
  * Collect ready guard conditions.
+ *
+ * Table: WaitSet
+ * Method: ready_guard_conditions
  *
  * Arguments:
  * - WaitSet object

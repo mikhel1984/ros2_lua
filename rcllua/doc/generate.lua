@@ -30,6 +30,8 @@ local C_FILES = {
   "../src/timer.c",
   "../src/logger.c",
   "../src/qos.c",
+  "../src/utils.c",
+  "../src/wait_set.c",
   "../src/action_client.c",
   "../src/action_server.c",
   "../src/lifecycle.c",
@@ -140,6 +142,10 @@ local function parse_lua (block, acc)
           tbl = strip(name:sub(1, a-1))
           txt.method = strip(name:sub(a+1))
         end
+        -- don't show metamethods
+        if txt.method and txt.method:find('^__') then
+          return
+        end
       end
     elseif s:find('^@param') then
       table.insert(txt[ARGS], '- '..s:sub(8))
@@ -224,6 +230,7 @@ local function generate_for (c_arr, lua_arr)
   local name = "funcitons.md"
   local f = io.open(name, 'w')
   f:write('# RCLLUA methods\n\n')
+  f:write('This page is generated based on files in *src* and *rcllua* directories.\n\n')
   write_to_file(f, "C part", acc_c)
   write_to_file(f, "Lua part", acc_lua)
   f:close()

@@ -69,6 +69,9 @@ void rcl_lua_utils_push_names_types (lua_State* L, const rcl_names_and_types_t* 
 /**
  * Stop execution for some time.
  *
+ * Table: rclbind
+ * Method: sleep_thread
+ *
  * Arguments:
  * - sleep duration, seconds
  *
@@ -95,6 +98,9 @@ static int rcl_lua_utils_sleep_thread (lua_State* L)
 
 /**
  * Generate UUID value.
+ *
+ * Table: rclbind
+ * Method: uuid.new
  *
  * Return:
  * - table form uint8[16]
@@ -155,6 +161,9 @@ void rcl_lua_utils_push_uuid_str (lua_State* L, int pos)
 /**
  * String representation for UUID.
  *
+ * Table: rclbind
+ * Method: uuid.str
+ *
  * Arguments:
  * - message field or table with 16 uint.
  *
@@ -175,6 +184,9 @@ static int rcl_lua_utils_uuid_to_str (lua_State* L)
 
 /**
  * Check message type.
+ *
+ * Table: rclbind
+ * Method: is_instance
  *
  * Arguments:
  * - message to check

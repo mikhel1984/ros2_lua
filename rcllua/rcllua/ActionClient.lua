@@ -18,6 +18,62 @@ local action_srv = require("action_msgs.srv")
 local rclbind = require("rcllua.rclbind")
 local new_future = require("rcllua.client").new_future
 
+--- Send cancel request.
+--  @param client ActionClient.
+--  @param handle ClientGoalHandle object.
+--  @return future object.
+local function _cancel_goal_async (client, handle)
+  local request = action_srv.CancelGoal.Request()
+  request.goal_info.goal_id = handle:goal_id()
+  local future = new_future(nil, getmetatable(request))
+  future._req_id = client._client:send_cancel_request(request,
+    function (resp)
+      future:_set_result(resp)
+      return future
+    end)
+  return future
+end
+
+--- Send cancel request and wait for result.
+--  @param client ActionClient object.
+--  @param handle ClientGoalHandle object.
+--  @param timeout_sec (=nil) Time to wait.
+--  @return server response or nil.
+local function _cancel_goal (client, handle, timeout_sec)
+  return wait_response(
+    client,
+    _cancel_goal_async(client, handle),
+    timeout_sec)
+end
+
+--- Send result request.
+--  @param client ActionClient object.
+--  @param handle ClientGoalHandle object.
+--  @return future object.
+local function _get_result_async (client, handle)
+  local request = client._client:get_interface('GetResult').Request()
+  request.goal_id = handle:goal_id()
+  local future = new_future(nil, getmetatable(request))
+  future._req_id = client._client:send_result_request(request,
+    function (resp)
+      future:_set_result(resp)
+      return future
+    end)
+  return future
+end
+
+--- Send result request and wait for response.
+--  @param client ActionClient object.
+--  @param handle ClientGoalHandle object.
+--  @param timeout_sec (=nil) Time to wait.
+--  @return response or nil.
+local function _get_result (client, handle, timeout_sec)
+  return client:_wait_response(
+    _get_result_async(client, handle),
+    timeout_sec)
+end
+
+
 -- ClientGoalHandle class.
 local ClientGoalHandle = {}
 ClientGoalHandle.__index = ClientGoalHandle
@@ -43,27 +99,27 @@ end
 --- Send cancel request.
 --  @return Future object.
 function ClientGoalHandle.cancel_goal_async (self)
-  return self._action_client:_cancel_goal_async(self)
+  return _cancel_goal_async(self._action_client, self)
 end
 
 --- Send cancel request and wait for response.
 --  @param timeout_sec (=nil) Time to wait.
 --  @return server response or nil.
 function ClientGoalHandle.cancel_goal (self, timeout_sec)
-  return self._action_client:_cancel_goal(self, timeout_sec)
+  return _cancel_goal(self._action_client, self, timeout_sec)
 end
 
 --- Send result request.
 --  @return Future object.
 function ClientGoalHandle.get_result_async (self)
-  return self._action_client:_get_result_async(self)
+  return _get_result_async(self._action_client, self)
 end
 
 --- Send result request and wait for response.
 --  @param timeout_sec (=nil) Time to wait.
 --  @return server response or nil.
 function ClientGoalHandle.get_result (self, timeout_sec)
-  return self._action_client:_get_result(self, timeout_sec)
+  return _get_result(self._action_client, self, timeout_sec)
 end
 
 --- Check UUID equality.
@@ -126,10 +182,11 @@ function ActionClient.send_goal_async (self, goal, cb_feedback, uuid)
 end
 
 --- Add condition to weak up and wait for result.
+--  @param client ActionClient object.
 --  @param future Future object from request.
 --  @param timeout_sec (=nil) Time to wait.
-function ActionClient._wait_response (self, future, timeout_sec)
-  self._weak.node:wait(
+local function wait_response (client, future, timeout_sec)
+  client._weak.node:wait(
     function () return future._is_done end,
     timeout_sec)
   return future:result()
@@ -142,7 +199,8 @@ end
 --  @param timeout_sec (=nil) Time to wait (optional).
 --  @return server request or nil.
 function ActionClient.send_goal (self, goal, cb_feedback, uuid, timeout_sec)
-  return self:_wait_response(
+  return wait_response(
+    self,
     ActionClient.send_goal_async(self, goal, cb_feedback, uuid),
     timeout_sec)
 end
@@ -220,56 +278,6 @@ function ActionClient.execute (self, data)
       end
     end
   end
-end
-
---- Send cancel request.
---  @param handle ClientGoalHandle object.
---  @return future object.
-function ActionClient._cancel_goal_async (self, handle)
-  local request = action_srv.CancelGoal.Request()
-  request.goal_info.goal_id = handle:goal_id()
-  local future = new_future(nil, getmetatable(request))
-  future._req_id = self._client:send_cancel_request(request,
-    function (resp)
-      future:_set_result(resp)
-      return future
-    end)
-  return future
-end
-
---- Send cancel request and wait for result.
---  @param handle ClientGoalHandle object.
---  @param timeout_sec (=nil) Time to wait.
---  @return server response or nil.
-function ActionClient._cancel_goal (self, handle, timeout_sec)
-  return self:_wait_response(
-    ActionClient._cancel_goal_async(self, handle),
-    timeout_sec)
-end
-
---- Send result request.
---  @param handle ClientGoalHandle object.
---  @return future object.
-function ActionClient._get_result_async (self, handle)
-  local request = self._client:get_interface('GetResult').Request()
-  request.goal_id = handle:goal_id()
-  local future = new_future(nil, getmetatable(request))
-  future._req_id = self._client:send_result_request(request,
-    function (resp)
-      future:_set_result(resp)
-      return future
-    end)
-  return future
-end
-
---- Send result request and wait for response.
---  @param handle ClientGoalHandle object.
---  @param timeout_sec (=nil) Time to wait.
---  @return response or nil.
-function ActionClient._get_result (self, handle, timeout_sec)
-  return self:_wait_response(
-    ActionClient._get_result_async(self, handle),
-    timeout_sec)
 end
 
 --- Check if the action server is available.

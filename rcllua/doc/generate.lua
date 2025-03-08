@@ -39,7 +39,14 @@ local C_FILES = {
 }
 
 local LUA_FILES = {
+  "../rcllua/rcllua.lua",
   "../rcllua/Node.lua",
+  "../rcllua/Executor.lua",
+  "../rcllua/client.lua",
+  "../rcllua/Parameter.lua",
+  "../rcllua/LifecycleNode.lua",
+  "../rcllua/ActionClient.lua",
+  "../rcllua/ActionServer.lua",
 }
 
 --- Get autodoc lines.

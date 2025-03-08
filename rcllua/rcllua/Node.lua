@@ -44,6 +44,34 @@ local function remove_object (tbl, obj)
   end
   return nil
 end
+
+--- Add and sort timeout.
+--  @param node Node object.
+--  @param time Event time.
+local function _set_wait_time (node, time)
+  local lst = node._resume__time
+  table.insert(lst, time)
+  if #lst > 1 then
+    table.sort(lst, long_to_short)
+  end
+end
+
+--- Load table with parameters methods.
+--  @param node Node object.
+local function _load_parameter_methods (node)
+  if not node_params then
+    -- add parameter methods
+    node_params = require('rcllua.node_parameters')
+    node_params._add_event_publisher(node)
+    if node._start_parameter_services ~= false then
+      -- add parameter service
+      local lib_param = require('rcllua.Parameter')
+      lib_param.new_parameter_service(node)
+    end
+  end
+end
+
+
 --    NODE
 
 -- Node class.
@@ -324,14 +352,6 @@ function Node.wrap (self, name)
   return coroutine.wrap(Node.bind(self, name))
 end
 
-function Node._set_wait_time (self, time)
-  local lst = self._resume__time
-  table.insert(lst, time)
-  if #lst > 1 then
-    table.sort(lst, long_to_short)
-  end
-end
-
 --- "Sleep" until the condition is fulfilled.
 --  @param condition Function funciton() -> bool or timeout in seconds.
 --  @param timeout Timeout in seconds or nil.
@@ -349,7 +369,7 @@ function Node.wait (self, condition, timeout)
       time_fn = function ()
         return clock:now() > finish
       end
-      Node._set_wait_time(self, finish)
+      _set_wait_time(self, finish)
     elseif timeout == 0 then
       condition, timeout = get_true, nil
     else
@@ -377,9 +397,8 @@ end
 --  @return table with coroutines.
 function Node.get_waited_list (self)
   -- make copy
-  local t = {}
-  for k, v in pairs(self._resume__list) do t[k] = v end
-  return t
+  local lst = self._resume__time
+  return table.move(lst, 1, #lst, 1, {})
 end
 
 --- Check if there is wait time in queue.
@@ -414,20 +433,6 @@ function Node.get_time_msg (self, t)
   return msg
 end
 
---- Load table with parameters methods.
-function Node.load_parameter_methods (self)
-  if not node_params then
-    -- add parameter methods
-    node_params = require('rcllua.node_parameters')
-    node_params._add_event_publisher(self)
-    if self._start_parameter_services ~= false then
-      -- add parameter service
-      local lib_param = require('rcllua.Parameter')
-      lib_param.new_parameter_service(self)
-    end
-  end
-end
-
 --- Declare and initialize parameter.
 --  @param name Fully-qualified name of the parameter.
 --  @param value (=nil) Value of the parameter to declare.
@@ -435,7 +440,7 @@ end
 --  @param ignore_override (=false) True if overrides should ot be taken into account.
 --  @return parameter with assigned value.
 function Node.declare_parameter (self, name, value, descriptor, ignore_override)
-  Node.load_parameter_methods(self)
+  _load_parameter_methods(self)
   return node_params._declare_parameter(self, name, value, descriptor, ignore_override)
 end
 
@@ -445,7 +450,7 @@ end
 --  @param ignore_override (=false) True if overrides should not be taken into account.
 --  @return parameter list.
 function Node.declare_parameters (self, namespace, params, ignore_override)
-  Node.load_parameter_methods(self)
+  _load_parameter_methods(self)
   return node_params._declare_parameters(self, namespace, params, ignore_override)
 end
 
@@ -453,7 +458,7 @@ end
 --  @param params The list of parameters to set.
 --  @return list of results for every set action.
 function Node.set_parameters (self, params)
-  Node.load_parameter_methods(self)
+  _load_parameter_methods(self)
   return node_params._set_parameters(self, params)
 end
 
@@ -508,7 +513,7 @@ function Node.__call (self, ...)
   end
   -- add parameter service
   if self.start_parameter_services then
-    Node.load_parameter_methods(o)
+    _load_parameter_methods(o)
   end
   return o
 end
@@ -525,6 +530,7 @@ __call = function (self, param)
   return setmetatable(param, self)
 end
 })
+
 
 --    LOGGER
 

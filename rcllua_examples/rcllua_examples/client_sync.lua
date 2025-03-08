@@ -25,6 +25,8 @@ local MinimalClient = Node {
     -- wait for result here
     local resp = self.cli:call(req, 2.0)
     self:get_logger():info('Status: %s', resp.message)
+    -- exit
+    rcllua:shutdown()
   end,
 }
 
@@ -37,4 +39,3 @@ node:wrap 'send_request' ()
 
 rcllua:spin(node)
 
-rcllua:shutdown()

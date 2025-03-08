@@ -174,7 +174,7 @@ local function _resume_time (executor, spin_timeout)
   local tmin = spin_timeout and spin_timeout >=0 and spin_timeout or math.huge
   for i = 1, #executor._nodes do
     -- find minimal time
-    local ti = self._nodes[i]:get_shortest_time()
+    local ti = executor._nodes[i]:get_shortest_time()
     if ti < tmin then
       tmin = ti
     end

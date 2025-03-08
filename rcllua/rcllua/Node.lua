@@ -397,8 +397,9 @@ end
 --  @return table with coroutines.
 function Node.get_waited_list (self)
   -- make copy
-  local lst = self._resume__time
-  return table.move(lst, 1, #lst, 1, {})
+  local t = {}
+  for k, v in pairs(self._resume__list) do t[k] = v end
+  return t
 end
 
 --- Check if there is wait time in queue.

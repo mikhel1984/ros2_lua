@@ -7,24 +7,25 @@ find_package(rcllua REQUIRED)
 find_package(rcllua_cmake REQUIRED)
 
 # rcllua examples
-rcllua_cmake_executable(${PROJECT_NAME}/publisher.lua
-  simple_publisher)
-rcllua_cmake_executable(${PROJECT_NAME}/subscription.lua
-  simple_subscription)
-rcllua_cmake_executable(${PROJECT_NAME}/service.lua
-  simple_service)
-rcllua_cmake_executable(${PROJECT_NAME}/client.lua
-  simple_client)
-rcllua_cmake_executable(${PROJECT_NAME}/action_client.lua
-  action_client)
+rcllua_cmake_executable(${PROJECT_NAME}/publisher.lua    simple_publisher)
+rcllua_cmake_executable(${PROJECT_NAME}/subscription.lua simple_subscription)
+rcllua_cmake_executable(${PROJECT_NAME}/service.lua      simple_service)
+rcllua_cmake_executable(${PROJECT_NAME}/client.lua       simple_client)
+rcllua_cmake_executable(${PROJECT_NAME}/client_sync.lua  sync_client)
+rcllua_cmake_executable(${PROJECT_NAME}/parameters.lua   simple_parameters)
+rcllua_cmake_executable(${PROJECT_NAME}/action_client.lua  action_client)
+rcllua_cmake_executable(${PROJECT_NAME}/action_server.lua  action_server)
+rcllua_cmake_executable(${PROJECT_NAME}/lifecycle_talker.lua lifecycle_talker)
+
 
 # rclbind examples
-rcllua_cmake_executable(raw/timer.lua raw_timer)
-rcllua_cmake_executable(raw/publisher.lua raw_publisher)
+rcllua_cmake_executable(raw/timer.lua        raw_timer)
+rcllua_cmake_executable(raw/publisher.lua    raw_publisher)
 rcllua_cmake_executable(raw/subscription.lua raw_subscription)
-rcllua_cmake_executable(raw/service.lua raw_service)
-rcllua_cmake_executable(raw/client.lua raw_client)
-rcllua_cmake_executable(raw/action_client.lua raw_action_client)
+rcllua_cmake_executable(raw/service.lua      raw_service)
+rcllua_cmake_executable(raw/client.lua       raw_client)
+rcllua_cmake_executable(raw/action_client.lua  raw_action_client)
+rcllua_cmake_executable(raw/action_service.lua raw_action_service)
 
 # if need
 # copy files to install/lib directory, add to Lua path

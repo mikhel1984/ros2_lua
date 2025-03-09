@@ -189,10 +189,11 @@ static int String_seq_call (lua_State* L)
       idl_lua_msg_t* msg = lua_touserdata(L, 1);
       size_t arr_len = 0, arr_cap = 0;
       rosidl_runtime_c__String* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      lua_createtable(L, arr_len, 0);        // push table
       for (size_t i = 0; i < arr_len; i++) {
         rosidl_runtime_c__String* s = lst + i;
-        lua_pushlstring(L, s->data, s->size);
-        lua_rawseti(L, -2, i+1);
+        lua_pushlstring(L, s->data, s->size);  // push string
+        lua_rawseti(L, -2, i+1);               // pop string
       }
       return 1;
     }

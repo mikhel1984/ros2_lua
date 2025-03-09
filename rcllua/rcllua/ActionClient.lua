@@ -171,7 +171,7 @@ function ActionClient.send_goal_async (self, goal, cb_feedback, uuid)
   end
   -- prepare 'future'
   local future = new_future(nil, getmetatable(request))
-  local goal_uuid = request.goal_id()
+  local goal_uuid = request.goal_id('copy')
   local future_cb = function (msg)
     future:_set_result(new_goal_handle(self, goal_uuid, msg))
     return future

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
+
 #include <rosidl_runtime_c/primitives_sequence.h>
 #include <rosidl_runtime_c/primitives_sequence_functions.h>
 
@@ -115,17 +117,30 @@ static int boolean_seq_call (lua_State* L)
   bool done = false;
   int tp = lua_type(L, 2);
 
-  if (LUA_TNONE == tp) {
-    lua_pushnil(L);  // no constructor
-    return 1;
+  if (LUA_TSTRING == tp) {
+    /* arg2 - command */
+    const char* cmd = lua_tostring(L, 2);
+
+    if (strcmp(cmd, "resize") == 0) {
+      /* arg3 - new size */
+      lua_remove(L, 2);
+      return boolean_seq_resize(L);
+
+    } else if (strcmp(cmd, "copy") == 0) {
+      idl_lua_msg_t* msg = lua_touserdata(L, 1);
+      size_t arr_len = 0, arr_cap = 0;
+      bool* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      lua_createtable(L, arr_len, 0);   // push table for data array
+      for (size_t i = 0; i < arr_len; i++) {
+        lua_pushboolean(L, lst[i]);   // push value
+        lua_rawseti(L, -2, i+1);      // pop value
+      }
+      return 1;
+    }
  
   } else if (LUA_TUSERDATA == tp) {
     /* arg2 - other message */
     return boolean_seq_copy(L);
-
-  } else if (LUA_TNUMBER == tp) {
-    /* arg2 - size */
-    return boolean_seq_resize(L);
 
   } else if (LUA_TTABLE == tp) {
     /* arg2 - table */

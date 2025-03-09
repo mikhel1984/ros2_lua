@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
+
 #include <rosidl_runtime_c/string.h>
 #include <rosidl_runtime_c/string_functions.h>
 #include <rosidl_runtime_c/primitives_sequence_functions.h>
@@ -174,17 +176,31 @@ static int String_seq_call (lua_State* L)
   bool done = false;
   int tp = lua_type(L, 2);
 
-  if (LUA_TNONE == tp) {
-    lua_pushnil(L);  // no constructor
-    return 1;
+  if (LUA_TSTRING == tp) {
+    /* arg2 - command */
+    const char* cmd = lua_tostring(L, 2);
+    
+    if (strcmp(cmd, "resize") == 0) {
+      /* arg3 - new size */
+      lua_remove(L, 2);
+      return String_seq_resize(L);
+
+    } else if (strcmp(cmd, "copy") == 0) {
+      idl_lua_msg_t* msg = lua_touserdata(L, 1);
+      size_t arr_len = 0, arr_cap = 0;
+      rosidl_runtime_c__String* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      lua_createtable(L, arr_len, 0);        // push table
+      for (size_t i = 0; i < arr_len; i++) {
+        rosidl_runtime_c__String* s = lst + i;
+        lua_pushlstring(L, s->data, s->size);  // push string
+        lua_rawseti(L, -2, i+1);               // pop string
+      }
+      return 1;
+    }
 
   } else if (LUA_TUSERDATA == tp) {
     /* arg2 - other message */
     return String_seq_copy(L);
-
-  } else if (LUA_TNUMBER == tp) {
-    /* arg2 - size */
-    return String_seq_resize(L);
 
   } else if (LUA_TTABLE == tp) {
     /* arg2 - table */

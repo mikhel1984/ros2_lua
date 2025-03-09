@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <string.h>
 
 #include <rosidl_runtime_c/primitives_sequence.h>
 #include <rosidl_runtime_c/primitives_sequence_functions.h>
@@ -79,13 +80,24 @@ static int STRUCT_NAME ## _seq_call (lua_State* L) \
 { \
   bool done = false; \
   int tp = lua_type(L, 2); \
-  if (LUA_TNONE == tp) { \
-    lua_pushnil(L); \
-    return 1; \
+  if (LUA_TSTRING == tp) { \
+    const char* cmd = lua_tostring(L, 2);  \
+    if (strcmp(cmd, "resize") == 0) { \
+      lua_remove(L, 2); \
+      return STRUCT_NAME ## _seq_resize(L); \
+    } else if (strcmp(cmd, "copy") == 0) { \
+      idl_lua_msg_t* msg = lua_touserdata(L, 1); \
+      size_t arr_len = 0, arr_cap = 0; \
+      TYPE_NAME* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
+      lua_createtable(L, arr_len, 0); \
+      for (size_t i = 0; i < arr_len; i++) { \
+        lua_pushinteger(L, lst[i]); \
+        lua_rawseti(L, -2, i+1); \
+      } \
+      return 1; \
+    } \
   } else if (LUA_TUSERDATA == tp) { \
     return STRUCT_NAME ## _seq_copy(L); \
-  } else if (LUA_TNUMBER == tp) { \
-    return STRUCT_NAME ## _seq_resize(L); \
   } else if (LUA_TTABLE == tp) { \
     idl_lua_msg_t* msg = lua_touserdata(L, 1); \
     int len = luaL_len(L, 2); \

@@ -32,6 +32,46 @@ local protected = {
 --- Logger class.
 local Logger = {name='rcllua'}
 
+--- Remove object from the table if found.
+--  @param tbl Source table.
+--  @param obj Object for search.
+--  @return removed object or nil.
+local function remove_object (tbl, obj)
+  for i, o in ipairs(tbl) do
+    if o == obj then
+      return table.remove(tbl, i)
+    end
+  end
+  return nil
+end
+
+--- Add and sort timeout.
+--  @param node Node object.
+--  @param time Event time.
+local function _set_wait_time (node, time)
+  local lst = node._resume__time
+  table.insert(lst, time)
+  if #lst > 1 then
+    table.sort(lst, long_to_short)
+  end
+end
+
+--- Load table with parameters methods.
+--  @param node Node object.
+local function _load_parameter_methods (node)
+  if not node_params then
+    -- add parameter methods
+    node_params = require('rcllua.node_parameters')
+    node_params._add_event_publisher(node)
+    if node._start_parameter_services ~= false then
+      -- add parameter service
+      local lib_param = require('rcllua.Parameter')
+      lib_param.new_parameter_service(node)
+    end
+  end
+end
+
+
 --    NODE
 
 -- Node class.
@@ -53,7 +93,9 @@ function Node.create_publisher (self, msg, topic, qos)
     q.depth = qos
     qos = q
   end
-  return rclbind.new_publisher(self._node__object, msg, topic, qos)
+  local pub = rclbind.new_publisher(self._node__object, msg, topic, qos)
+  table.insert(self._publisher__list, pub)
+  return pub
 end
 
 --- Create subscription object.
@@ -108,6 +150,75 @@ function Node.create_timer (self, period, callback)
   return timer
 end
 
+--- Create guard condition object.
+--  @param callback Callback method (optional).
+--  @return guard condition (userdata).
+function Node.create_guard_condition (self, callback)
+  local guard = rclbind.new_guard_condition (callback)
+  table.insert(self._guard__list, guard)
+  return guard
+end
+
+--- Make iterator for the node publishers.
+--  @return iterator.
+function Node.publishers (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._publisher__list[i]
+  end
+end
+
+--- Make iterator for the node subscriptions.
+--  @return iterator.
+function Node.subscriptions (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._subscription__list[i]
+  end
+end
+
+--- Make iterator for the node clients.
+--  @return iterator.
+function Node.clients (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._client__list[i]
+  end
+end
+
+--- Make iterator for the node services.
+--  @return iterator.
+function Node.services (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._service__list[i]
+  end
+end
+
+--- Make iterator for the node timers.
+--  @return iterator.
+function Node.timers (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._timer__list[i]
+  end
+end
+
+--- Make iterator for the node action clients and services.
+--  @return iterator.
+function Node.waitables (self)
+  local i = 0
+  return function ()
+    i = i + 1
+    return self._action__list[i]
+  end
+end
+
 --- Create object for logging.
 --  @return logger.
 function Node.get_logger (self)
@@ -133,6 +244,12 @@ function Node.get_clock (self)
   return self._clock__object
 end
 
+--- Get node fully qualified name.
+--  @return node name string.
+function Node.get_fully_qualified_name (self)
+  return self._node__object:get_fully_qualified_name()
+end
+
 --- Update reference to Executor object.
 --  @param executor New reference or nil.
 function Node.set_executor (self, executor)
@@ -142,6 +259,8 @@ function Node.set_executor (self, executor)
   self._executor__weak.ref = executor
 end
 
+--- Add action client or server to the node.
+--  @param action Action client or server object.
 function Node.add_waitable (self, action)
   table.insert(self._action__list, action)
 end
@@ -150,6 +269,68 @@ end
 --  @return reference to executor.
 function Node.executor (self)
   return self._executor__weak.ref
+end
+
+--- Remove guard condition from the node.
+--  @param guard Guard condition object.
+--  @return status of removing.
+function Node.remove_guard_condition (self, guard)
+  return remove_object(self._guard__list, guard) ~= nil
+end
+
+--- Remove timer from the node.
+--  @param timer Timer object.
+--  @return status of removing.
+function Node.remove_timer (self, timer)
+  local t = remove_object(self._timer__list, timer)
+  if t then t:cancel() end
+  return t ~= nil
+end
+
+--- Remove service from the node.
+--  @param service Service object.
+--  @return status of removing.
+function Node.remove_service (self, service)
+  return remove_object(self._service__list, service) ~= nil
+end
+
+--- Remove client from the node.
+--  @param client Client object.
+--  @return status of removing.
+function Node.remove_client (self, client)
+  return remove_object(self._client__list, client) ~= nil
+end
+
+--- Remove subscription from the node.
+--  @param sub Subscription object.
+--  @return status of removing.
+function Node.remove_subscription (self, sub)
+  return remove_object(self._subscription__list, sub) ~= nil
+end
+
+--- Remove publisher from the node.
+--  @param pub Publisher object.
+--  @return status of removing.
+function Node.remove_publisher (self, pub)
+  return remove_object(self._publisher__list, pub) ~= nil
+end
+
+--- Free resources.
+function Node.destroy_node (self)
+  self._resume__time = nil
+  self._resume__list = nil
+  self._timer__list = nil
+  self._publisher__list = nil
+  self._subscription__list = nil
+  self._client__list = nil
+  self._service__list = nil
+  self._action__list = nil
+  self._parameter__list = nil
+  self._descriptor__list = nil
+  self._guard__list = nil
+  self._node__object = nil
+  self._clock__object = nil
+  self._executor__weak = nil
 end
 
 --- Wrapper for function binding.
@@ -171,14 +352,6 @@ function Node.wrap (self, name)
   return coroutine.wrap(Node.bind(self, name))
 end
 
-function Node._set_wait_time (self, time)
-  local lst = self._resume__time
-  table.insert(lst, time)
-  if #lst > 1 then
-    table.sort(lst, long_to_short)
-  end
-end
-
 --- "Sleep" until the condition is fulfilled.
 --  @param condition Function funciton() -> bool or timeout in seconds.
 --  @param timeout Timeout in seconds or nil.
@@ -196,7 +369,7 @@ function Node.wait (self, condition, timeout)
       time_fn = function ()
         return clock:now() > finish
       end
-      Node._set_wait_time(self, finish)
+      _set_wait_time(self, finish)
     elseif timeout == 0 then
       condition, timeout = get_true, nil
     else
@@ -261,20 +434,6 @@ function Node.get_time_msg (self, t)
   return msg
 end
 
---- Load table with parameters methods.
-function Node.load_parameter_methods (self)
-  if not node_params then
-    -- add parameter methods
-    node_params = require('rcllua.node_parameters')
-    node_params._add_event_publisher(self)
-    if self._start_parameter_services ~= false then
-      -- add parameter service
-      local lib_param = require('rcllua.Parameter')
-      lib_param.new_parameter_service(self)
-    end
-  end
-end
-
 --- Declare and initialize parameter.
 --  @param name Fully-qualified name of the parameter.
 --  @param value (=nil) Value of the parameter to declare.
@@ -282,7 +441,7 @@ end
 --  @param ignore_override (=false) True if overrides should ot be taken into account.
 --  @return parameter with assigned value.
 function Node.declare_parameter (self, name, value, descriptor, ignore_override)
-  Node.load_parameter_methods(self)
+  _load_parameter_methods(self)
   return node_params._declare_parameter(self, name, value, descriptor, ignore_override)
 end
 
@@ -292,7 +451,7 @@ end
 --  @param ignore_override (=false) True if overrides should not be taken into account.
 --  @return parameter list.
 function Node.declare_parameters (self, namespace, params, ignore_override)
-  Node.load_parameter_methods(self)
+  _load_parameter_methods(self)
   return node_params._declare_parameters(self, namespace, params, ignore_override)
 end
 
@@ -300,7 +459,7 @@ end
 --  @param params The list of parameters to set.
 --  @return list of results for every set action.
 function Node.set_parameters (self, params)
-  Node.load_parameter_methods(self)
+  _load_parameter_methods(self)
   return node_params._set_parameters(self, params)
 end
 
@@ -330,12 +489,13 @@ function Node.__call (self, ...)
   o._resume__time = {}
   -- references
   o._timer__list = {}
+  o._publisher__list = {}
   o._subscription__list = {}
   o._client__list = {}
   o._service__list = {}
-  o._guard__list = {}
-  o._event__list = {}
   o._action__list = {}
+  o._guard__list = {}
+  -- o._event__list = {}
   -- for parameters
   o._parameter__list = {}
   o._descriptor__list = {}
@@ -354,7 +514,7 @@ function Node.__call (self, ...)
   end
   -- add parameter service
   if self.start_parameter_services then
-    Node.load_parameter_methods(o)
+    _load_parameter_methods(o)
   end
   return o
 end
@@ -371,6 +531,7 @@ __call = function (self, param)
   return setmetatable(param, self)
 end
 })
+
 
 --    LOGGER
 

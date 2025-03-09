@@ -38,24 +38,26 @@ local function default_handle_accepted_callback (handle)
   handle:execute()
 end
 
+--- Update action server internal state.
+--  @param goal ServerGoalHandle.
+--  @param ev New event.
+function update_state (goal, ev)
+  goal._handle:update_goal_state(ev)
+  goal._weak.srv:publish_status()
+  if not goal._handle:is_active() then
+    goal._weak.srv:notify_goal_done()
+  end
+end
+
+
 -- ServerGoalHandle class
 local ServerGoalHandle = {}
 ServerGoalHandle.__index = ServerGoalHandle
 
 --- Start process execution.
 function ServerGoalHandle.execute (self)
-  ServerGoalHandle._update_state(self, rclbind.GoalEvent.EXECUTE)
+  update_state(self, rclbind.GoalEvent.EXECUTE)
   assert(coroutine.resume(self._co, self, self._exec))
-end
-
---- Update action server internal state.
---  @param ev New event.
-function ServerGoalHandle._update_state (self, ev)
-  self._handle:update_goal_state(ev)
-  self._weak.srv:publish_status()
-  if not self._handle:is_active() then
-    self._weak.srv:notify_goal_done()
-  end
 end
 
 --- Check equality of two goal handles.
@@ -95,17 +97,17 @@ end
 
 --- Set status 'succeed'.
 function ServerGoalHandle.succeed (self)
-  ServerGoalHandle._update_state(self, rclbind.GoalEvent.SUCCEED)
+  update_state(self, rclbind.GoalEvent.SUCCEED)
 end
 
 --- Set status 'abort'.
 function ServerGoalHandle.abort (self)
-  ServerGoalHandle._update_state(self, rclbind.GoalEvent.ABORT)
+  update_state(self, rclbind.GoalEvent.ABORT)
 end
 
 --- Set status 'canceled'.
 function ServerGoalHandle.canceled (self)
-  ServerGoalHandle._update_state(self, rclbind.GoalEvent.CANCELED)
+  update_state(self, rclbind.GoalEvent.CANCELED)
 end
 
 --- ServerGoalHandle constructor.
@@ -194,7 +196,7 @@ function ActionServer.execute (self, data)
       local handle = self._handles[ to_str(goal.goal_id.uuid) ]
       if handle and check(handle) then
         upd[#upd+1] = goal
-        handle:_update_state(rclbind.GoalEvent.CANCEL_GOAL)
+        update_state(handle, rclbind.GoalEvent.CANCEL_GOAL)
       end
     end
     resp.goals_canceling(upd)  -- updated list of goals

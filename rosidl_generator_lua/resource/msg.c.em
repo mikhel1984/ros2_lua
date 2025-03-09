@@ -20,6 +20,7 @@ header_files = [
     'float.h',
     'stdint.h',
     'stdbool.h',
+    'string.h',
     'rosidl_runtime_c/visibility_control.h',
     include_base + '__struct.h',
     include_base + '__functions.h',
@@ -639,25 +640,48 @@ static int @(msg_prefix)__lcall (lua_State* L) {
   bool done = false;
   int tp = lua_type(L, 2);
 
-  if (LUA_TNONE == tp) {
-    /* make new message */
-    @(msg_prefix)__lnew(L);   // push new message
-    lua_insert(L, 1);         // swap
-    @(msg_prefix)__lcopy(L);  // push fill result
-    if (lua_toboolean(L, -1)) {
-      lua_pushvalue(L, 1);
-    } else {
-      lua_pushnil(L);
-    }
-    return 1;
-
-  } else if (LUA_TUSERDATA == tp) {
-    /* copy values */
+  if (LUA_TUSERDATA == tp) {
+    /* copy source message values */
     return @(msg_prefix)__lcopy(L);
 
-  } else if (LUA_TNUMBER == tp) {
-    /* resize object */
-    return @(msg_prefix)__lresize(L);
+  } else if (LUA_TSTRING == tp) {
+    /* arg2 - command */
+    const char* cmd = lua_tostring(L, 2);
+
+    if (strcmp(cmd, "resize") == 0) {
+      /* resize object */
+      /* arg3 - new size */
+      lua_remove(L, 2);   // remove command
+      return @(msg_prefix)__lresize(L);
+
+    } else if (strcmp(cmd, "copy") == 0) {
+      /* make deep copy */
+      idl_lua_msg_t* src = lua_touserdata(L, 1);
+      if (src->value >= IDL_LUA_SEQ) {
+        size_t arr_len = 0, arr_cap = 0;
+        @(msg_typename)* lst = rosidl_luacommon_list_info(src, &arr_len, &arr_cap);
+        lua_createtable(L, arr_len, 0);   // push table for data array
+        for (size_t i = 0; i < arr_len; i++) {
+          @(msg_prefix)__lnew(L);   // push new message
+          idl_lua_msg_t* dst = lua_touserdata(L, -1);
+          done = @(msg_typename)__copy(lst+i, dst->obj);
+          if (!done) {
+            lua_pushnil(L);
+            return 1;
+          }
+          lua_rawseti(L, -2, i+1);  // pop message
+        }
+      } else {
+        /* single message */
+        @(msg_prefix)__lnew(L);   // push new message
+        idl_lua_msg_t* dst = lua_touserdata(L, -1);
+        done = @(msg_typename)__copy(src->obj, dst->obj);
+        if (!done) {
+          lua_pushnil(L);
+        }
+      }
+      return 1;
+    }
 
   } else if (LUA_TTABLE == tp) {
     int len = luaL_len(L, 2);

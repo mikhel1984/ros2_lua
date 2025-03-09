@@ -17,7 +17,7 @@ local rclbind = require("rcllua.rclbind")
 --- Collect ready for execution tasks.
 --  @param timeout_sec Wait time.
 --  @return coroutine yield with function for execution.
-local function wait_for_ready_callbacks (executor, timeout_sec)
+local function _wait_for_ready_callbacks (executor, timeout_sec)
   local subscriptions, sub_cnt = {}, 0
   local timers, timer_cnt = {}, 0
   local services, srv_cnt = {}, 0
@@ -154,6 +154,35 @@ local function wait_for_ready_callbacks (executor, timeout_sec)
   end
 end
 
+--- Resume coroutines if conditions are fulfilled.
+--  @param executor Executor object.
+local function _resume_waiters (executor)
+  for i = 1, #executor._nodes do
+    for co, condition in pairs(executor._nodes[i]:get_waited_list()) do
+      if rclbind.context_ok() and condition() then
+        assert(coroutine.resume(co))
+      end
+    end
+  end
+end
+
+--- Find timeout value.
+--  @param executor Executor object.
+--  @param spin_timeout Initial timeout.
+--  @return minimal timeout among requests or -1.
+local function _resume_time (executor, spin_timeout)
+  local tmin = spin_timeout and spin_timeout >=0 and spin_timeout or math.huge
+  for i = 1, #executor._nodes do
+    -- find minimal time
+    local ti = executor._nodes[i]:get_shortest_time()
+    if ti < tmin then
+      tmin = ti
+    end
+  end
+  return (tmin < math.huge) and tmin or -1
+end
+
+
 --- Executor class.
 Executor = {}
 Executor.__index = Executor
@@ -186,34 +215,9 @@ function Executor.remove_node (self, node)
   return false
 end
 
---- Resume coroutines if conditions are fulfilled.
-function Executor.resume_waiters (self)
-  for i = 1, #self._nodes do
-    for co, condition in pairs(self._nodes[i]:get_waited_list()) do
-      if rclbind.context_ok() and condition() then
-        assert(coroutine.resume(co))
-      end
-    end
-  end
-end
-
---- Find timeout value.
---  @param spin_timeout Initial timeout.
---  @return minimal timeout amont requests or -1.
-function Executor.resume_time (self, spin_timeout)
-  local tmin = spin_timeout and spin_timeout >=0 and spin_timeout or math.huge
-  for i = 1, #self._nodes do
-    local ti = self._nodes[i]:get_shortest_time()
-    if ti < tmin then
-      tmin = ti
-    end
-  end
-  return (tmin < math.huge) and tmin or -1
-end
-
 --- Run data spin.
 function Executor.spin (self)
-  while rclbind.context_ok() and not self._is_shutdown do
+  while rclbind.context_ok() do
     -- check context status after some time
     Executor.spin_once(self, 5.0)
   end
@@ -223,14 +227,17 @@ end
 --  @param future Future object.
 --  @param timeout_sec Wait time (optional).
 function Executor.spin_until_future_complete (self, future, timeout_sec)
-  if not future._is_future then error('Future expected') end
+  if not future._is_future then 
+    error 'Future expected' 
+  end
   if not timeout_sec or timeout_sec < 0 then
-    while rclbind.context_ok() and not self._is_shutdown and not future:done() do
+    while rclbind.context_ok() and not future:done() do
       Executor.spin_once(self, timeout_sec)
     end
   else
     local finish = self._clock:now() + rclbind.new_duration_sec(timeout_sec)
-    while rclbind.context_ok() and not self._is_shutdown and timeout_sec > 0
+    while rclbind.context_ok() 
+      and timeout_sec > 0
       and not future:done()
     do
       Executor.spin_once(timeout_sec)
@@ -242,13 +249,13 @@ end
 --- Spin until time is out or got new data.
 --  @param timeout_sec Wait time (optional).
 function Executor.spin_once (self, timeout_sec)
-  timeout_sec = Executor.resume_time(self, timeout_sec)
+  timeout_sec = _resume_time(self, timeout_sec)
   -- wait for message or timeout
   local ok, handle
   if self._cb_iter then
     ok, handle = coroutine.resume(self._cb_iter)
   else
-    self._cb_iter = coroutine.create(wait_for_ready_callbacks)
+    self._cb_iter = coroutine.create(_wait_for_ready_callbacks)
     ok, handle = coroutine.resume(self._cb_iter, self, timeout_sec)
   end
 
@@ -259,7 +266,7 @@ function Executor.spin_once (self, timeout_sec)
   end
   -- execute
   if handle then handle() end
-  Executor.resume_waiters(self)
+  _resume_waiters(self)
 end
 
 -- Allow to call Executor table.
@@ -270,7 +277,6 @@ __call = function ()
   local o = {}
   o._nodes = {}
   o._clock = rclbind.new_clock(rclbind.ClockType.STEADY_TIME)
-  o._is_shutdown = false
   -- counters
   o._sub_no = 0
   o._guard_no = 0

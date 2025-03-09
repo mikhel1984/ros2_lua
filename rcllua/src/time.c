@@ -29,6 +29,9 @@ const char* MT_DURATION = "ROS2.Duration";
 /**
  * Create time object.
  *
+ * Table: rclbind
+ * Method: new_time
+ *
  * Arguments:
  * - seconds (int, optional)
  * - nanoseconds (int, optional)
@@ -69,6 +72,9 @@ static int rcl_lua_time_init (lua_State* L)
 /**
  * Create duration object.
  *
+ * Table: rclbind
+ * Method: new_duration
+ *
  * Arguments:
  * - seconds (int, optional)
  * - nanoseconds (int, optional)
@@ -101,6 +107,9 @@ static int rcl_lua_time_init_dur (lua_State* L)
 
 /**
  * Create duration object from seconds as floating point value.
+ *
+ * Table: rclbind
+ * Method: new_duration_sec
  *
  * Arguments:
  * - seconds (float)
@@ -139,7 +148,7 @@ static int rcl_lua_time_init_dur_float (lua_State* L)
 static int rcl_lua_time_index (lua_State* L)
 {
   /* arg1 - time object */
-  rcl_time_point_t* time = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t* time = lua_touserdata(L, 1);
   /* arg2 - field name */
   const char* field = luaL_checkstring(L, 2);
 
@@ -173,7 +182,7 @@ static int rcl_lua_time_index (lua_State* L)
 static int rcl_lua_time_index_dur (lua_State* L)
 {
   /* arg1 - time object */
-  rcl_duration_t* dur = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t* dur = lua_touserdata(L, 1);
   /* arg2 - field name */
   const char* field = luaL_checkstring(L, 2);
 
@@ -191,6 +200,9 @@ static int rcl_lua_time_index_dur (lua_State* L)
 
 /**
  * Get time in seconds.
+ *
+ * Table: Time
+ * Method: seconds
  *
  * Arguments:
  * - time object
@@ -212,6 +224,9 @@ static int rcl_lua_time_seconds (lua_State* L)
 
 /**
  * Get duration in seconds.
+ *
+ * Table: Duration
+ * Method: seconds
  *
  * Arguments:
  * - duration object

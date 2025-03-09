@@ -16,8 +16,8 @@
 
 #include <rcl/service.h>
 #include <rcl/node.h>
-#include <rcl/error_handling.h>
 #include <rosidl_runtime_c/service_type_support_struct.h>
+#include <rcl/error_handling.h>
 
 #include <rosidl_luacommon/definition.h>
 
@@ -61,6 +61,9 @@ const char* MT_SERVICE = "ROS2.Service";
 /**
  * Create service object or wrap the existed one C structure. 
  * Save bindings to register.
+ *
+ * Table: rclbind
+ * Method: new_service
  *
  * Arguments:
  * - node object
@@ -182,7 +185,7 @@ static int rcl_lua_service_free (lua_State* L)
     /* finalize */
     rcl_ret_t ret = rcl_service_fini(srv, wrap->node);
     if (RCL_RET_OK != ret) {
-      luaL_error(L, "failed to fini service: %s", rcl_get_error_string().str);
+      luaL_error(L, "failed to fini service");
     }
 
   }
@@ -196,6 +199,9 @@ static int rcl_lua_service_free (lua_State* L)
 /**
  * Get service name.
  *
+ * Table: Service
+ * Method: get_name
+ *
  * Arguments:
  * - service object
  *
@@ -208,7 +214,7 @@ static int rcl_lua_service_free (lua_State* L)
 static int rcl_lua_service_get_name (lua_State* L)
 {
   /* arg1 - service object */
-  rcllua_service_wrap* wrap = lua_touserdata(L, 1);
+  rcllua_service_wrap* wrap = luaL_checkudata(L, 1, MT_SERVICE);
   const char* nm = rcl_service_get_service_name(wrap->service);
 
   lua_pushstring(L, nm);
@@ -217,6 +223,9 @@ static int rcl_lua_service_get_name (lua_State* L)
 
 /**
  * Get QoS profile.
+ *
+ * Table: Service
+ * Method: get_qos
  *
  * Arguments:
  * - service object
@@ -230,7 +239,7 @@ static int rcl_lua_service_get_name (lua_State* L)
 static int rcl_lua_service_get_qos (lua_State* L)
 {
   /* arg1 - service object */
-  rcllua_service_wrap* wrap = lua_touserdata(L, 1);
+  rcllua_service_wrap* wrap = luaL_checkudata(L, 1, MT_SERVICE);
   const rcl_service_options_t* options = rcl_service_get_options(wrap->service);
 
   rcl_lua_qos_push_copy(L, &(options->qos));
@@ -239,6 +248,9 @@ static int rcl_lua_service_get_qos (lua_State* L)
 
 /**
  * Send service response.
+ *
+ * Table: rclbind
+ * Method: service_send_response
  *
  * Arguments:
  * - table from service request receiving

@@ -18,6 +18,8 @@
 #include <threads.h>
 #include <lauxlib.h>
 
+#include <rcl/graph.h>
+
 #include "rcllua/utils.h"
 
 /* Save metatable */
@@ -49,8 +51,26 @@ void rcl_lua_utils_add_enum (lua_State* L, const char* name, const rcl_lua_enum*
   lua_setfield(L, -2, name);          // pop, lib['name'] = a
 }
 
+/* Convert names and types to Lua table. */
+void rcl_lua_utils_push_names_types (lua_State* L, const rcl_names_and_types_t* src)
+{
+  lua_createtable(L, 0, src->names.size);         // push table a
+  for (size_t i = 0; i < src->names.size; i++) {
+    lua_createtable(L, src->types[i].size, 0);    // push table b
+    for (size_t j = 0; j < src->types[i].size; j++) {
+      lua_pushstring(L, src->types[i].data[j]);   // push string
+      lua_rawseti(L, -2, j+1);                    // pop string
+    }
+    lua_setfield(L, -2, src->names.data[i]);      // pop table b
+  }
+  // keep table 'a' on the stack
+}
+
 /**
  * Stop execution for some time.
+ *
+ * Table: rclbind
+ * Method: sleep_thread
  *
  * Arguments:
  * - sleep duration, seconds
@@ -78,6 +98,9 @@ static int rcl_lua_utils_sleep_thread (lua_State* L)
 
 /**
  * Generate UUID value.
+ *
+ * Table: rclbind
+ * Method: uuid.new
  *
  * Return:
  * - table form uint8[16]
@@ -138,6 +161,9 @@ void rcl_lua_utils_push_uuid_str (lua_State* L, int pos)
 /**
  * String representation for UUID.
  *
+ * Table: rclbind
+ * Method: uuid.str
+ *
  * Arguments:
  * - message field or table with 16 uint.
  *
@@ -158,6 +184,9 @@ static int rcl_lua_utils_uuid_to_str (lua_State* L)
 
 /**
  * Check message type.
+ *
+ * Table: rclbind
+ * Method: is_instance
  *
  * Arguments:
  * - message to check

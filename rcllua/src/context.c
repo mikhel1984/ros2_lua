@@ -30,13 +30,15 @@ static bool context_init_ = false;
 /**
  * Initialize context state.
  *
+ * Table: rclbind
+ * Method: context_init
+ *
  * Arguments:
- * - command line arguments (table)
+ * - table of command line arguments
  *
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-
 static int rcl_lua_context_init (lua_State* L)
 {
   /* arg1 - command line arguments */
@@ -78,7 +80,6 @@ static int rcl_lua_context_init (lua_State* L)
     luaL_error(L, "failed to initialize logging system");
   }
 
-  lua_pop(L, 1);                   // pop argv
   context_init_ = true;
 
   return 0;
@@ -86,6 +87,9 @@ static int rcl_lua_context_init (lua_State* L)
 
 /**
  * Check context status.
+ *
+ * Table: rclbind
+ * Method: context_ok
  *
  * Return:
  * - true if the context is valid.
@@ -102,6 +106,9 @@ static int rcl_lua_context_ok (lua_State* L)
 
 /**
  * Finalize execution, free common objects.
+ *
+ * Table: rclbind
+ * Method: context_shutdown
  *
  * \param[inout] L Lua stack.
  * \return number of outputs.

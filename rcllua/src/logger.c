@@ -21,6 +21,9 @@
 /**
  * Write message full form into log.
  *
+ * Table: rclbind
+ * Method: write_log
+ *
  * Arguments:
  * - severity (enum)
  * - node name
@@ -57,6 +60,9 @@ static int rcl_lua_logger_log (lua_State* L)
 
 /**
  * Write message short form into log.
+ *
+ * Table: rclbind
+ * Method: simp_log
  *
  * Arguments:
  * - severity (enum)

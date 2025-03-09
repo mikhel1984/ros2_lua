@@ -55,6 +55,9 @@ static void duration_to_rmw_time (const rcl_duration_t* dur, rmw_time_t* tm)
 /**
  * Create QoS object.
  *
+ * Table: rclbind
+ * Method: new_qos
+ *
  * Arguments:
  * - QoS tipe (string, optional)
  *
@@ -274,6 +277,50 @@ static int rcl_lua_qos_newindex (lua_State* L)
   return 1;
 }
 
+/**
+ * Check QoS compatibility.
+ * In case of warning return true and warning message.
+ *
+ * Table: rclbind
+ * Method: qos_check_compatible
+ *
+ * Arguments:
+ * - publisher QoS
+ * - subscription QoS
+ *
+ * Return:
+ * - boolean
+ * - nil or reason of uncompatibility
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_qos_check_compatible (lua_State* L)
+{
+  /* arg1 - publisher QoS */
+  rmw_qos_profile_t* pub_qos = luaL_checkudata(L, 1, MT_QOS);
+  /* arg2 - subsctiption QoS */
+  rmw_qos_profile_t* sub_qos = luaL_checkudata(L, 2, MT_QOS);
+
+  rmw_qos_compatibility_type_t compatibility;
+  char reason[2048];
+  rmw_ret_t ret = rmw_qos_profile_check_compatible(
+    *pub_qos, *sub_qos, &compatibility, reason, sizeof(reason));
+  if (RMW_RET_OK != ret) {
+    luaL_error(L, "failed to check if qos profiles are compatible");
+  }
+
+  lua_pushboolean(L, RMW_QOS_COMPATIBILITY_ERROR != compatibility);
+  if (RMW_QOS_COMPATIBILITY_OK == compatibility) {
+    lua_pushnil(L);
+  } else {
+    // error or warning
+    lua_pushstring(L, reason);
+  }
+
+  return 2;
+}
+
 /** List of QoS methods */
 static const struct luaL_Reg qos_methods[] = {
   {"__index", rcl_lua_qos_index},
@@ -287,6 +334,10 @@ void rcl_lua_add_qos_methods (lua_State* L)
   /* constructor */
   lua_pushcfunction(L, rcl_lua_qos_init);   // push function
   lua_setfield(L, -2, "new_qos");           // pop, lib['new_qos'] = function
+
+  /* compatilibity checking */
+  lua_pushcfunction(L, rcl_lua_qos_check_compatible);
+  lua_setfield(L, -2, "qos_check_compatible");
 
   /* metamethods */
   rcl_lua_utils_add_mt(L, MT_QOS, qos_methods);

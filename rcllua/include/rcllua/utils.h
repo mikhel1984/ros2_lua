@@ -18,6 +18,7 @@
 #include <lua.h>
 
 struct luaL_Reg;
+struct rmw_names_and_types_s;
 
 /** Keep pairs 'name - value' to fill 'enum' in Lua. */
 typedef struct rcl_lua_enum
@@ -54,6 +55,15 @@ void rcl_lua_utils_add_enum (lua_State* L, const char* name, const rcl_lua_enum*
  * \param[in] pos Table index.
  */
 void rcl_lua_utils_push_uuid_str (lua_State* L, int pos);
+
+/**
+ * Convert names and types into Lua table.
+ * Push dictionary with result to the stack.
+ *
+ * \param[inout] L Lua stack.
+ * \param[in] src Structure with names and types.
+ */
+void rcl_lua_utils_push_names_types (lua_State* L, const struct rmw_names_and_types_s* src);
 
 /**
  * Add useful functions to library.

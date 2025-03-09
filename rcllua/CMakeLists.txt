@@ -42,6 +42,7 @@ add_library(${LIB_NAME} SHARED
   src/action_client.c
   src/action_server.c
   src/lifecycle.c
+  src/guard_condition.c
 )
 
 ament_target_dependencies(${LIB_NAME}

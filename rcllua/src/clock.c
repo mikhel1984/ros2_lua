@@ -28,6 +28,9 @@ const char* MT_CLOCK = "ROS2.Clock";
 /**
  * Create clock object.
  *
+ * Table: rclbind
+ * Method: new_clock
+ *
  * Arguments:
  * - clock tipe (int, optional)
  *
@@ -86,6 +89,9 @@ static int rcl_lua_clock_free (lua_State* L)
 /**
  * Get current time.
  *
+ * Table: Clock
+ * Method: now
+ *
  * Arguments:
  * - clock object.
  *
@@ -112,7 +118,98 @@ static int rcl_lua_clock_get_now (lua_State* L)
 }
 
 /**
+ * Check if ROS timer override is enabled.
+ *
+ * Arguments:
+ * - clock object.
+ *
+ * Return:
+ * - true when enabled
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_clock_ros_timer_override_enabled (lua_State* L)
+{
+  /* arg1 - clock */
+  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+
+  bool is_enabled = false;
+  rcl_ret_t ret = rcl_is_enabled_ros_time_override(clock, &is_enabled);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to get ROS time override status");
+  }
+
+  lua_pushboolean(L, is_enabled);
+  return 1;
+}
+
+/**
+ * Set override status for the ROS time.
+ *
+ * Table: Clock
+ * Method: set_ros_time_override_is_enabled
+ *
+ * Arguments:
+ * - clock object.
+ * - override flag
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_clock_set_ros_timer_override_enabled (lua_State* L)
+{
+  /* arg1 - clock */
+  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  /* arg2 - boolean flag */
+  luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean is expected");
+
+  rcl_ret_t ret;
+  if (lua_toboolean(L, 2)) {
+    ret = rcl_enable_ros_time_override(clock);
+  } else {
+    ret = rcl_disable_ros_time_override(clock);
+  }
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to set ROS time override");
+  }
+
+  return 0;
+}
+
+/**
+ * Override ROS time.
+ *
+ * Table: Clock
+ * Method: set_ros_time_override
+ *
+ * Arguments:
+ * - clock object.
+ * - time object.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_clock_set_ros_time_override (lua_State* L)
+{
+  /* arg1 - clock */
+  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  /* arg2 - time object */
+  rcl_time_point_t* time = luaL_checkudata(L, 2, MT_TIME);
+
+  rcl_ret_t ret = rcl_set_ros_time_override(clock, time->nanoseconds);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to set ROS time override");
+  }
+
+  return 0;
+}
+
+/**
  * Get clock type.
+ *
+ * Table: Clock
+ * Method: clock_type
  *
  * Arguments:
  * - clock object
@@ -145,6 +242,9 @@ static const rcl_lua_enum enum_clock_types[] = {
 static const struct luaL_Reg clock_methods[] = {
   {"now", rcl_lua_clock_get_now},
   {"clock_type", rcl_lua_clock_get_type},
+  {"get_ros_override_is_enabled", rcl_lua_clock_ros_timer_override_enabled},
+  {"set_ros_time_override_is_enabled", rcl_lua_clock_set_ros_timer_override_enabled},
+  {"set_ros_time_override", rcl_lua_clock_set_ros_time_override},
   {"__gc", rcl_lua_clock_free},
   {NULL, NULL}
 };

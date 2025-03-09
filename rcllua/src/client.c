@@ -15,7 +15,6 @@
 #include <lauxlib.h>
 
 #include <rcl/client.h>
-#include <rcl/error_handling.h>
 #include <rcl/node.h>
 #include <rcl/graph.h>
 #include <rosidl_runtime_c/service_type_support_struct.h>
@@ -57,6 +56,9 @@ const char* MT_CLIENT = "ROS2.Client";
 
 /**
  * Create client object. Save bindings to register.
+ *
+ * Table: rclbind
+ * Method: new_client
  *
  * Arguments:
  * - node object
@@ -159,7 +161,7 @@ static int rcl_lua_client_free (lua_State* L)
   /* finalize */
   rcl_ret_t ret = rcl_client_fini(cli, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini client: %s", rcl_get_error_string().str);
+    luaL_error(L, "failed to fini client");
   }
 
   /* free dependencies */
@@ -171,6 +173,9 @@ static int rcl_lua_client_free (lua_State* L)
 
 /**
  * Check if the service is available.
+ *
+ * Table: Client
+ * Method: service_is_available
  *
  * Arguments:
  * - client object
@@ -184,7 +189,8 @@ static int rcl_lua_client_free (lua_State* L)
 static int rcl_lua_client_service_is_available (lua_State* L)
 {
    /* arg1 - client object */
-  rcl_client_t* cli = luaL_checkudata(L, 1, MT_CLIENT);
+  rcl_client_t* cli = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != cli, 1, "client is expected");
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table
@@ -203,6 +209,9 @@ static int rcl_lua_client_service_is_available (lua_State* L)
 
 /**
  * Send request.
+ *
+ * Table: Client
+ * Method: send_request
  *
  * Arguments:
  * - client object
@@ -249,6 +258,9 @@ static int rcl_lua_client_send_request (lua_State* L)
 
 /**
  * Remove pending request.
+ *
+ * Table: Client
+ * Method: remove_pending_request
  *
  * Arguments:
  * - client object
@@ -331,7 +343,7 @@ bool rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
     return true;
   }
   lua_rawseti(L, -5, CLI_OUT_CALLBACK);    // pop function, a[.] = callback
-  
+
   /* remove this request */
   lua_pushinteger(L, header.request_id.sequence_number);  // push response sequence
   lua_pushnil(L);                          // push nil

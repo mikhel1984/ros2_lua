@@ -16,7 +16,6 @@
 
 #include <rcl/publisher.h>
 #include <rcl/node.h>
-#include <rcl/error_handling.h>
 #include <rmw/types.h>
 #include <rosidl_runtime_c/message_type_support_struct.h>
 
@@ -25,6 +24,7 @@
 #include "rcllua/publisher.h"
 #include "rcllua/qos.h"
 #include "rcllua/node.h"
+#include "rcllua/time.h"
 #include "rcllua/utils.h"
 
 /** Indices of publisher bindings in register */
@@ -42,6 +42,9 @@ const char* MT_PUBLISHER = "ROS2.Publisher";
 
 /**
  * Create publisher object.
+ *
+ * Table: rclbind
+ * Method: new_publisher
  *
  * Arguments:
  * - node object
@@ -134,8 +137,7 @@ static int rcl_lua_publisher_free (lua_State* L)
   /* finalize */
   rcl_ret_t ret = rcl_publisher_fini(publisher, node);
   if (RCL_RET_OK != ret) {
-    luaL_error(L, "failed to fini publisher: %s", rcl_get_error_string().str);
-    rcl_reset_error();
+    luaL_error(L, "failed to fini publisher");
   }
 
   /* free dependencies */
@@ -147,6 +149,9 @@ static int rcl_lua_publisher_free (lua_State* L)
 
 /**
  * Send message.
+ *
+ * Table: Publisher
+ * Method: publish
  *
  * Arguments:
  * - publisher object
@@ -175,9 +180,147 @@ static int rcl_lua_publisher_publish (lua_State* L)
   return 0;
 }
 
+/**
+ * Get node logger name.
+ *
+ * Table: Publisher
+ * Method: get_logger_name
+ *
+ * Arguments:
+ * - publisher object
+ *
+ * Return:
+ * - logger name
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_publisher_logger_name (lua_State* L)
+{
+  /* arg1 - publisher */
+  rcl_publisher_t* pub = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != pub, 1, "publisher is expected");
+
+  /* get node */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, pub);     // push table
+  lua_rawgeti(L, -1, PUB_REG_NODE);           // push node
+  rcl_node_t* node = lua_touserdata(L, -1);
+
+  const char* logger_name = rcl_node_get_logger_name(node);
+  if (NULL == logger_name) {
+    luaL_error(L, "node logger name not set");
+  }
+
+  lua_pushstring(L, logger_name);
+  return 1;
+}
+
+/**
+ * Get number of subscriptions.
+ *
+ * Table: Publisher
+ * Method: get_subscription_count
+ *
+ * Arguments:
+ * - publisher object
+ *
+ * Return:
+ * - subscription number.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_publisher_subscription_count (lua_State* L)
+{
+  /* arg1 - publisher */
+  rcl_publisher_t* pub = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != pub, 1, "publisher is expected");
+
+  size_t count = 0;
+  rcl_ret_t ret = rcl_publisher_get_subscription_count(pub, &count);
+  if (RCL_RET_OK != ret) {
+    luaL_error(L, "failed to get subscription count");
+  }
+
+  lua_pushinteger(L, count);
+  return 1;
+}
+
+/**
+ * Get topic name.
+ *
+ * Table: Publisher
+ * Method: get_topic_name
+ *
+ * Arguments:
+ * - publisher object
+ *
+ * Return:
+ * - topic name.
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_publisher_topic_name (lua_State* L)
+{
+  /* arg1 - publisher */
+  rcl_publisher_t* pub = lua_touserdata(L, 1);
+  luaL_argcheck(L, NULL != pub, 1, "publisher is expected");
+
+  const char* topic = rcl_publisher_get_topic_name(pub);
+  if (NULL == topic) {
+    luaL_error(L, "failed to get topic name");
+  }
+
+  lua_pushstring(L, topic);
+  return 1;
+}
+
+/**
+ * Wait untill all published message data is acknowledged.
+ *
+ * Table: Publisher
+ * Method: wait_for_all_acked
+ *
+ * Arguments:
+ * - publisher object
+ * - duration object
+ *
+ * Return:
+ * - false when time is out
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_publisher_wait_for_acked (lua_State* L)
+{
+  /* arg1 - publisher */
+  rcl_publisher_t* pub = luaL_checkudata(L, 1, MT_PUBLISHER);
+  /* arg2 - duration */
+  rcl_duration_t* dur = luaL_checkudata(L, 1, MT_DURATION);
+
+  bool result = true;
+  rcl_ret_t ret = rcl_publisher_wait_for_all_acked(pub, dur->nanoseconds);
+  switch (ret) {
+    case RCL_RET_OK: break;
+    case RCL_RET_TIMEOUT:
+      result = false;
+      break;
+    default:
+      luaL_error(L, "failed to wait for all acknowledgements");
+  }
+
+  lua_pushboolean(L, result);
+  return 1;
+}
+
 /** List of publisher methods */
 static const struct luaL_Reg pub_methods[] = {
   {"publish", rcl_lua_publisher_publish},
+  {"get_logger_name", rcl_lua_publisher_logger_name},
+  {"get_topic_name", rcl_lua_publisher_topic_name},
+  {"get_subscription_count", rcl_lua_publisher_subscription_count},
+  {"wait_for_all_acked", rcl_lua_publisher_wait_for_acked},
   {"__gc", rcl_lua_publisher_free},
   {NULL, NULL}
 };

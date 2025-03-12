@@ -31,18 +31,18 @@
  * \return setter function
  */
 #define FLOAT_SEQ_SET(STRUCT_NAME, TYPE_NAME, V_MAX) \
-static int STRUCT_NAME ## _seq_set (lua_State* L) \
+  static int STRUCT_NAME ## _seq_set (lua_State * L) \
 { \
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1); \
   lua_Integer ind = luaL_checkinteger(L, 2); \
   lua_Number val = luaL_checknumber(L, 3); \
-  luaL_argcheck(L, (-V_MAX) <= val && val <= V_MAX, 3, "wrong value");  \
-  TYPE_NAME* lst = rosidl_luacommon_array_check_ind(ptr, ind); \
+  luaL_argcheck(L, (-V_MAX) <= val && val <= V_MAX, 3, "wrong value"); \
+  TYPE_NAME * lst = rosidl_luacommon_array_check_ind(ptr, ind); \
   if (lst) { \
-    lst[ind-1] = val; \
+      lst[ind - 1] = val; \
   } \
-  return 0; \
-}
+    return 0; \
+  }
 
 /**
  * Get value by index.
@@ -52,18 +52,18 @@ static int STRUCT_NAME ## _seq_set (lua_State* L) \
  * \return getter function
  */
 #define FLOAT_SEQ_GET(STRUCT_NAME, TYPE_NAME) \
-static int STRUCT_NAME ## _seq_get (lua_State* L) \
+  static int STRUCT_NAME ## _seq_get (lua_State * L) \
 { \
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1); \
   lua_Integer ind = luaL_checkinteger(L, 2); \
-  TYPE_NAME* lst = rosidl_luacommon_array_check_ind(ptr, ind); \
+  TYPE_NAME * lst = rosidl_luacommon_array_check_ind(ptr, ind); \
   if (lst) { \
-    lua_pushnumber(L, lst[ind-1]); \
+      lua_pushnumber(L, lst[ind - 1]); \
   } else { \
-    lua_pushnil(L); \
+      lua_pushnil(L); \
   } \
-  return 1; \
-}
+    return 1; \
+  }
 
 /**
  * Message caller.
@@ -74,69 +74,69 @@ static int STRUCT_NAME ## _seq_get (lua_State* L) \
  * \return caller function
  */
 #define FLOAT_SEQ_CALL(STRUCT_NAME, TYPE_NAME, V_MAX) \
-static int STRUCT_NAME ## _seq_call (lua_State* L) \
+  static int STRUCT_NAME ## _seq_call (lua_State * L) \
 { \
   bool done = false; \
   int tp = lua_type(L, 2); \
-  if (LUA_TSTRING == tp) {  \
-    const char* cmd = lua_tostring(L, 2); \
-    if (strcmp(cmd, "resize") == 0) { \
-      lua_remove(L, 2); \
-      return STRUCT_NAME ## _seq_resize(L); \
-    } else if (strcmp(cmd, "copy") == 0) {  \
-      idl_lua_msg_t* msg = lua_touserdata(L, 1); \
-      size_t arr_len = 0, arr_cap = 0; \
-      TYPE_NAME* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
-      lua_createtable(L, arr_len, 0);  \
-      for (size_t i = 0; i < arr_len; i++) { \
-        lua_pushnumber(L, lst[i]);  \
-        lua_rawseti(L, -2, i+1);  \
+  if (LUA_TSTRING == tp) { \
+      const char * cmd = lua_tostring(L, 2); \
+      if (strcmp(cmd, "resize") == 0) { \
+        lua_remove(L, 2); \
+        return STRUCT_NAME ## _seq_resize(L); \
+      } else if (strcmp(cmd, "copy") == 0) { \
+        idl_lua_msg_t * msg = lua_touserdata(L, 1); \
+        size_t arr_len = 0, arr_cap = 0; \
+        TYPE_NAME * lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
+        lua_createtable(L, arr_len, 0); \
+        for (size_t i = 0; i < arr_len; i++) { \
+          lua_pushnumber(L, lst[i]); \
+          lua_rawseti(L, -2, i + 1); \
+        } \
+        return 1; \
       } \
-      return 1; \
-    } \
   } else if (LUA_TUSERDATA == tp) { \
-    return STRUCT_NAME ## _seq_copy(L); \
+      return STRUCT_NAME ## _seq_copy(L); \
   } else if (LUA_TTABLE == tp) { \
-    idl_lua_msg_t* msg = lua_touserdata(L, 1); \
-    int len = luaL_len(L, 2); \
-    if (len > 0 && msg->value >= IDL_LUA_SEQ) { \
-      size_t arr_len = 0, arr_cap = 0; \
-      TYPE_NAME* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
-      if (arr_len != (size_t) len) { \
-        if (IDL_LUA_SEQ == msg->value) { \
-          if ((size_t) len <= arr_cap) { \
-            ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence*)msg->obj)->size = (size_t) len; \
-          } else if (!STRUCT_NAME ## _do_resize(msg, (size_t) len, false)) { \
+      idl_lua_msg_t * msg = lua_touserdata(L, 1); \
+      int len = luaL_len(L, 2); \
+      if (len > 0 && msg->value >= IDL_LUA_SEQ) { \
+        size_t arr_len = 0, arr_cap = 0; \
+        TYPE_NAME * lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
+        if (arr_len != (size_t) len) { \
+          if (IDL_LUA_SEQ == msg->value) { \
+            if ((size_t) len <= arr_cap) { \
+              ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence *)msg->obj)->size = (size_t) len; \
+            } else if (!STRUCT_NAME ## _do_resize(msg, (size_t) len, false)) { \
+              goto failed; \
+            } \
+            lst = ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence *)msg->obj)->data; \
+          } else { \
             goto failed; \
           } \
-          lst = ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence*)msg->obj)->data; \
-        } else { \
-          goto failed; \
         } \
+        for (int i = 0; i < len; i++) { \
+          lua_pushinteger(L, i + 1); \
+          lua_gettable(L, 2); \
+          if (LUA_TNUMBER != lua_type(L, -1)) { \
+            goto failed; \
+          } \
+          lua_Number val = lua_tonumber(L, -1); \
+          if (!((-V_MAX) <= val && val <= V_MAX)) { \
+            goto failed; \
+          } \
+          *lst++ = (TYPE_NAME) val; \
+          lua_pop(L, 1); \
+        } \
+        done = true; \
       } \
-      for (int i = 0; i < len; i++) { \
-        lua_pushinteger(L, i+1); \
-        lua_gettable(L, 2); \
-        if (LUA_TNUMBER != lua_type(L, -1)) { \
-          goto failed; \
-        } \
-        lua_Number val = lua_tonumber(L, -1); \
-        if (!((-V_MAX) <= val && val <= V_MAX)) { \
-          goto failed; \
-        } \
-        *lst++ = (TYPE_NAME) val; \
-        lua_pop(L, 1); \
-      } \
-      done = true; \
-    } \
   } \
 failed: \
   lua_pushboolean(L, done); \
-  return 1; \
-}
+    return 1; \
+  }
 
 /** Float sequence metatable name. */
-const char* MT_SEQ_FLOAT = "primitives_sequence__msg__float__mt";
+const char * MT_SEQ_FLOAT = "primitives_sequence__msg__float__mt";
 
 FLOAT_SEQ_SET (float, float, FLT_MAX)
 FLOAT_SEQ_GET (float, float)
@@ -153,7 +153,7 @@ OBJ_METHODS(float, float_seq_len)
 OBJ_ADD_TABLE (float, MT_SEQ_FLOAT)
 
 /** Double sequence metatable name. */
-const char* MT_SEQ_DOUBLE = "primitives_sequence__msg__double__mt";
+const char * MT_SEQ_DOUBLE = "primitives_sequence__msg__double__mt";
 
 FLOAT_SEQ_SET (double, double, DBL_MAX)
 FLOAT_SEQ_GET (double, double)
@@ -169,7 +169,7 @@ OBJ_METHODS(double, float_seq_len)
 OBJ_ADD_TABLE (double, MT_SEQ_DOUBLE)
 
 /** Long double metatable name. */
-const char* MT_SEQ_LDOUBLE = "primitives_sequence__msg__long_double__mt";
+const char * MT_SEQ_LDOUBLE = "primitives_sequence__msg__long_double__mt";
 
 FLOAT_SEQ_SET (long_double, long double, LDBL_MAX)
 FLOAT_SEQ_GET (long_double, long double)

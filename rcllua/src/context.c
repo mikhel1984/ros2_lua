@@ -39,7 +39,7 @@ static bool context_init_ = false;
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_context_init (lua_State* L)
+static int rcl_lua_context_init(lua_State * L)
 {
   /* arg1 - command line arguments */
   luaL_argcheck(L, lua_istable(L, 1), 1, "expected table of arguments");
@@ -60,7 +60,7 @@ static int rcl_lua_context_init (lua_State* L)
 
   /* get strings from command line table */
   size_t n = lua_rawlen(L, 1) + 1;  // table size and 1 position for zero
-  const char** argv = lua_newuserdata(L, sizeof(char*) * n);  // push argv
+  const char ** argv = lua_newuserdata(L, sizeof(char *) * n);  // push argv
   for (size_t i = 0; i < n; ++i) {
     lua_rawgeti(L, 1, i);           // push value
     argv[i] = luaL_checkstring(L, -1);
@@ -97,7 +97,7 @@ static int rcl_lua_context_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_context_ok (lua_State* L)
+static int rcl_lua_context_ok(lua_State * L)
 {
   lua_pushboolean(L, rcl_context_is_valid(&context_));  // push flag
 
@@ -113,7 +113,7 @@ static int rcl_lua_context_ok (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_context_shutdown (lua_State* L)
+static int rcl_lua_context_shutdown(lua_State * L)
 {
   rcl_ret_t ret = rcl_shutdown(&context_);
   if (RCL_RET_OK != ret) {
@@ -135,7 +135,7 @@ static int rcl_lua_context_shutdown (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_context_free (lua_State* L)
+static int rcl_lua_context_free(lua_State * L)
 {
   if (rcl_context_is_valid(&context_)) {
     rcl_lua_context_shutdown(L);
@@ -149,7 +149,7 @@ static int rcl_lua_context_free (lua_State* L)
 }
 
 /** Context aware methods */
-static const struct luaL_Reg context_lib [] =
+static const struct luaL_Reg context_lib[] =
 {
   {"context_init", rcl_lua_context_init},
   {"context_ok", rcl_lua_context_ok},
@@ -159,13 +159,13 @@ static const struct luaL_Reg context_lib [] =
 };
 
 /* Add methods to library */
-void rcl_lua_add_context_methods (lua_State* L)
+void rcl_lua_add_context_methods(lua_State * L)
 {
   luaL_setfuncs(L, context_lib, 0);
 }
 
 /* Get pointer to the context object */
-rcl_context_t* rcl_lua_context_ref()
+rcl_context_t * rcl_lua_context_ref()
 {
   return context_init_ ? &context_ : NULL;
 }

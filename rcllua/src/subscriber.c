@@ -27,7 +27,8 @@
 #include "rcllua/utils.h"
 
 /** Indices of subscription bindings in register. */
-enum SubReg {
+enum SubReg
+{
   /** node reference */
   SUB_REG_NODE = 1,
   /** metatable name */
@@ -41,7 +42,8 @@ enum SubReg {
 };
 
 /** Indices of output elements. */
-enum SubOut {
+enum SubOut
+{
   /** received message */
   SUB_OUT_MSG = 1,
   /** callback function */
@@ -51,7 +53,7 @@ enum SubOut {
 };
 
 /** Subscription object metatable name */
-const char* MT_SUBSCRIPTION = "ROS2.Subscription";
+const char * MT_SUBSCRIPTION = "ROS2.Subscription";
 
 /**
  * Create subscription object. Save bindings to register.
@@ -72,10 +74,10 @@ const char* MT_SUBSCRIPTION = "ROS2.Subscription";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_subscription_init (lua_State* L)
+static int rcl_lua_subscription_init(lua_State * L)
 {
   /* arg1 - node */
-  rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
+  rcl_node_t * node = luaL_checkudata(L, 1, MT_NODE);
 
   /* arg2 - message type */
   rosidl_message_type_support_t *ts = NULL;
@@ -90,7 +92,7 @@ static int rcl_lua_subscription_init (lua_State* L)
   }
 
   /* arg3 - topic name */
-  const char* topic = luaL_checkstring(L, 3);
+  const char * topic = luaL_checkstring(L, 3);
   /* arg4 - callback function */
   luaL_argcheck(L, LUA_TFUNCTION == lua_type(L, 4), 4, "function expected");
 
@@ -98,10 +100,10 @@ static int rcl_lua_subscription_init (lua_State* L)
   rcl_subscription_options_t subscription_ops = rcl_subscription_get_default_options();
   /* arg5 - QoS profile */
   if (!lua_isnoneornil(L, 5)) {
-    rmw_qos_profile_t* qos = luaL_checkudata(L, 5, MT_QOS);
+    rmw_qos_profile_t * qos = luaL_checkudata(L, 5, MT_QOS);
     subscription_ops.qos = *qos;
   }
-  rcl_subscription_t* subscription = lua_newuserdata(L, sizeof(rcl_subscription_t));
+  rcl_subscription_t * subscription = lua_newuserdata(L, sizeof(rcl_subscription_t));
   *subscription = rcl_get_zero_initialized_subscription();
 
   rcl_ret_t ret = rcl_subscription_init(subscription, node, ts, topic, &subscription_ops);
@@ -118,7 +120,7 @@ static int rcl_lua_subscription_init (lua_State* L)
   lua_setmetatable(L, -2);                // pop metatable
 
   /* save node reference and metatable */
-  lua_createtable(L, SUB_REG_NUMBER-1, 0);   // push table a
+  lua_createtable(L, SUB_REG_NUMBER - 1, 0);   // push table a
   lua_pushvalue(L, 1);                    // push node
   lua_rawseti(L, -2, SUB_REG_NODE);       // pop node, a[1] = node
 
@@ -144,15 +146,15 @@ static int rcl_lua_subscription_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_subscription_free (lua_State* L)
+static int rcl_lua_subscription_free(lua_State * L)
 {
   /* arg1 - subscription */
-  rcl_subscription_t* subscription = lua_touserdata(L, 1);
+  rcl_subscription_t * subscription = lua_touserdata(L, 1);
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, subscription);  // push table
   lua_rawgeti(L, -1, SUB_REG_NODE);                 // push node
-  rcl_node_t* node = lua_touserdata(L, -1);
+  rcl_node_t * node = lua_touserdata(L, -1);
 
   /* finalize */
   rcl_ret_t ret = rcl_subscription_fini(subscription, node);
@@ -182,18 +184,18 @@ static int rcl_lua_subscription_free (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_subscription_logger_name (lua_State* L)
+static int rcl_lua_subscription_logger_name(lua_State * L)
 {
   /* arg1 - subscription object */
-  rcl_subscription_t* sub = lua_touserdata(L, 1);
+  rcl_subscription_t * sub = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != sub, 1, "subscription is expected");
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, sub);     // push table
   lua_rawgeti(L, -1, SUB_REG_NODE);           // push node
-  rcl_node_t* node = lua_touserdata(L, -1);
+  rcl_node_t * node = lua_touserdata(L, -1);
 
-  const char* logger_name = rcl_node_get_logger_name(node);
+  const char * logger_name = rcl_node_get_logger_name(node);
   if (NULL == logger_name) {
     luaL_error(L, "node logger name not set");
   }
@@ -217,13 +219,13 @@ static int rcl_lua_subscription_logger_name (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_subscription_topic_name (lua_State* L)
+static int rcl_lua_subscription_topic_name(lua_State * L)
 {
   /* arg1 - subscription object */
-  rcl_subscription_t* sub = lua_touserdata(L, 1);
+  rcl_subscription_t * sub = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != sub, 1, "subscription is expected");
 
-  const char* name = rcl_subscription_get_topic_name(sub);
+  const char * name = rcl_subscription_get_topic_name(sub);
   if (NULL == name) {
     luaL_error(L, "failed to get subscription topic name");
   }
@@ -241,7 +243,7 @@ static const struct luaL_Reg sub_methods[] = {
 };
 
 /* Add subscription to library */
-void rcl_lua_add_subscription_methods (lua_State* L)
+void rcl_lua_add_subscription_methods(lua_State * L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_subscription_init);  // push function
@@ -252,10 +254,10 @@ void rcl_lua_add_subscription_methods (lua_State* L)
 }
 
 /* Return table {message, callback}. */
-bool rcl_lua_subscription_push_callback (lua_State* L, const rcl_subscription_t* sub)
+bool rcl_lua_subscription_push_callback(lua_State * L, const rcl_subscription_t * sub)
 {
   /* save result into table */
-  lua_createtable(L, SUB_OUT_NUMBER-1, 0);  // push table a
+  lua_createtable(L, SUB_OUT_NUMBER - 1, 0);  // push table a
 
   /* get message constructor */
   if (lua_rawgetp(L, LUA_REGISTRYINDEX, sub) == LUA_TNIL) {  // push table b

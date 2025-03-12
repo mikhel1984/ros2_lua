@@ -17,13 +17,13 @@
 
 #include <lua.h>
 
-extern const char* MT_ACTION_CLIENT;
+extern const char * MT_ACTION_CLIENT;
 
 /**
  * Create action client metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_action_client_methods (lua_State* L);
+void rcl_lua_add_action_client_methods(lua_State * L);
 
 #endif  // RCLLUA__ACTION_CLIENT_H_

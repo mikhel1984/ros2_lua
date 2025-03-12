@@ -28,7 +28,8 @@
 #include "rcllua/utils.h"
 
 /** Indices of client bindings in register. */
-enum CliReg {
+enum CliReg
+{
   /** node reference */
   CLI_REG_NODE = 1,
   /** request metatable */
@@ -42,7 +43,8 @@ enum CliReg {
 };
 
 /** List of output elements */
-enum CliOut {
+enum CliOut
+{
   /** response message */
   CLI_OUT_RESPONSE = 1,
   /** callback function */
@@ -52,7 +54,7 @@ enum CliOut {
 };
 
 /** Client object metatable name. */
-const char* MT_CLIENT = "ROS2.Client";
+const char * MT_CLIENT = "ROS2.Client";
 
 /**
  * Create client object. Save bindings to register.
@@ -72,10 +74,10 @@ const char* MT_CLIENT = "ROS2.Client";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_client_init (lua_State* L)
+static int rcl_lua_client_init(lua_State * L)
 {
   /* arg1 - node */
-  rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
+  rcl_node_t * node = luaL_checkudata(L, 1, MT_NODE);
 
   /* arg2 - message type */
   rosidl_service_type_support_t *ts = NULL;
@@ -91,13 +93,13 @@ static int rcl_lua_client_init (lua_State* L)
   }
 
   /* arg3 - service name */
-  const char* srv_name = luaL_checkstring(L, 3);
+  const char * srv_name = luaL_checkstring(L, 3);
 
   /* init client */
   rcl_client_options_t client_ops = rcl_client_get_default_options();
   /* arg4 - QoS profile */
   if (!lua_isnoneornil(L, 4)) {
-    rmw_qos_profile_t* qos = luaL_checkudata(L, 4, MT_QOS);
+    rmw_qos_profile_t * qos = luaL_checkudata(L, 4, MT_QOS);
     client_ops.qos = *qos;
   }
   rcl_client_t *cli = lua_newuserdata(L, sizeof(rcl_client_t));  // push object
@@ -117,7 +119,7 @@ static int rcl_lua_client_init (lua_State* L)
   lua_setmetatable(L, -2);          // pop metatable
 
   /* save reference objects */
-  lua_createtable(L, CLI_REG_NUMBER-1, 0);    // push table a
+  lua_createtable(L, CLI_REG_NUMBER - 1, 0);    // push table a
   lua_pushvalue(L, 1);                 // push node
   lua_rawseti(L, -2, CLI_REG_NODE);    // pop node, a[.] = node
 
@@ -148,15 +150,15 @@ static int rcl_lua_client_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_client_free (lua_State* L)
+static int rcl_lua_client_free(lua_State * L)
 {
   /* arg1 - client object */
-  rcl_client_t* cli = lua_touserdata(L, 1);
+  rcl_client_t * cli = lua_touserdata(L, 1);
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table
   lua_rawgeti(L, -1, CLI_REG_NODE);        // push node
-  rcl_node_t* node = lua_touserdata(L, -1);
+  rcl_node_t * node = lua_touserdata(L, -1);
 
   /* finalize */
   rcl_ret_t ret = rcl_client_fini(cli, node);
@@ -186,16 +188,16 @@ static int rcl_lua_client_free (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_client_service_is_available (lua_State* L)
+static int rcl_lua_client_service_is_available(lua_State * L)
 {
    /* arg1 - client object */
-  rcl_client_t* cli = lua_touserdata(L, 1);
+  rcl_client_t * cli = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != cli, 1, "client is expected");
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table
   lua_rawgeti(L, -1, CLI_REG_NODE);        // push node
-  rcl_node_t* node = lua_touserdata(L, -1);
+  rcl_node_t * node = lua_touserdata(L, -1);
 
   bool is_ready = false;
   rcl_ret_t ret = rcl_service_server_is_available(node, cli, &is_ready);
@@ -224,16 +226,16 @@ static int rcl_lua_client_service_is_available (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_client_send_request (lua_State* L)
+static int rcl_lua_client_send_request(lua_State * L)
 {
   /* arg1 - client object */
-  rcl_client_t* cli = luaL_checkudata(L, 1, MT_CLIENT);
+  rcl_client_t * cli = luaL_checkudata(L, 1, MT_CLIENT);
 
   /* arg2 - request object */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);  // push table a
   lua_rawgeti(L, -1, CLI_REG_MT_REQUEST);  // push metatable name
-  const char* mt = lua_tostring(L, -1);
-  idl_lua_msg_t* req = luaL_checkudata(L, 2, mt);
+  const char * mt = lua_tostring(L, -1);
+  idl_lua_msg_t * req = luaL_checkudata(L, 2, mt);
   lua_pop(L, 1);                           // pop name
 
   /* arg3 - callback function */
@@ -269,10 +271,10 @@ static int rcl_lua_client_send_request (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_client_remove_request (lua_State* L)
+static int rcl_lua_client_remove_request(lua_State * L)
 {
   /* arg1 - client object */
-  rcl_client_t* cli = luaL_checkudata(L, 1, MT_CLIENT);
+  rcl_client_t * cli = luaL_checkudata(L, 1, MT_CLIENT);
   /* arg2 - request id */
   luaL_argcheck(L, lua_isinteger(L, 2), 2, "sequence ID is expected");
 
@@ -296,7 +298,7 @@ static const struct luaL_Reg cli_methods[] = {
 };
 
 /* Add client to library. */
-void rcl_lua_add_client_methods (lua_State* L)
+void rcl_lua_add_client_methods(lua_State * L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_client_init);  // push function
@@ -307,10 +309,10 @@ void rcl_lua_add_client_methods (lua_State* L)
 }
 
 /* Receive response */
-bool rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
+bool rcl_lua_client_push_response(lua_State * L, const rcl_client_t * cli)
 {
   /* save result into table */
-  lua_createtable(L, CLI_OUT_NUMBER-1, 0);  // push table a
+  lua_createtable(L, CLI_OUT_NUMBER - 1, 0);  // push table a
 
   /* prepare response message */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cli);   // push table b (bindings)
@@ -320,7 +322,7 @@ bool rcl_lua_client_push_response (lua_State* L, const rcl_client_t* cli)
   }
   lua_rawgeti(L, -1, CLI_REG_NEW_RESPONSE);   // push constructor from b
   lua_call(L, 0, 1);                        // pop constructor, push message
-  idl_lua_msg_t* msg = lua_touserdata(L, -1);
+  idl_lua_msg_t * msg = lua_touserdata(L, -1);
 
   /* get response */
   rmw_service_info_t header;

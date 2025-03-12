@@ -35,18 +35,18 @@
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_logger_log (lua_State* L)
+static int rcl_lua_logger_log(lua_State * L)
 {
   /* arg1 - severity */
   int severity = luaL_checkinteger(L, 1);
   /* arg2 - name */
-  const char* name = luaL_checkstring(L, 2);
+  const char * name = luaL_checkstring(L, 2);
   /* arg3 - message */
-  const char* message = luaL_checkstring(L, 3);
+  const char * message = luaL_checkstring(L, 3);
   /* arg4 - function name */
-  const char* func_name = luaL_checkstring(L, 4);
+  const char * func_name = luaL_checkstring(L, 4);
   /* arg5 - file name */
-  const char* file_name = luaL_checkstring(L, 5);
+  const char * file_name = luaL_checkstring(L, 5);
   /* arg6 - line number */
   lua_Integer num = luaL_checkinteger(L, 6);
   luaL_argcheck(L, num > 0, 6, "negative line number");
@@ -72,14 +72,14 @@ static int rcl_lua_logger_log (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_logger_log_simp (lua_State* L)
+static int rcl_lua_logger_log_simp(lua_State * L)
 {
   /* arg1 - severity */
   int severity = luaL_checkinteger(L, 1);
   /* arg2 - name */
-  const char* name = luaL_checkstring(L, 2);
+  const char * name = luaL_checkstring(L, 2);
   /* arg3 - message */
-  const char* message = luaL_checkstring(L, 3);
+  const char * message = luaL_checkstring(L, 3);
 
   /* write */
   rcutils_log(NULL, severity, name, "%s", message);
@@ -99,7 +99,7 @@ static const rcl_lua_enum enum_log_types[] = {
 };
 
 /* Add logging to library */
-void rcl_lua_add_logger_methods (lua_State* L)
+void rcl_lua_add_logger_methods(lua_State * L)
 {
   /* full log message */
   lua_pushcfunction(L, rcl_lua_logger_log);       // push function

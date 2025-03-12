@@ -23,7 +23,7 @@
 #include "rcllua/utils.h"
 
 /** Clock object metatable name. */
-const char* MT_CLOCK = "ROS2.Clock";
+const char * MT_CLOCK = "ROS2.Clock";
 
 /**
  * Create clock object.
@@ -40,7 +40,7 @@ const char* MT_CLOCK = "ROS2.Clock";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_clock_init (lua_State* L)
+static int rcl_lua_clock_init(lua_State * L)
 {
   /* arg1 - clock type */
   int tp = luaL_optinteger(L, 1, RCL_SYSTEM_TIME);
@@ -48,7 +48,7 @@ static int rcl_lua_clock_init (lua_State* L)
     L, RCL_CLOCK_UNINITIALIZED <= tp && tp <= RCL_STEADY_TIME, 1, "wrong clock type");
 
   /* make */
-  rcl_clock_t* clock = lua_newuserdata(L, sizeof(rcl_clock_t));  // push object
+  rcl_clock_t * clock = lua_newuserdata(L, sizeof(rcl_clock_t));  // push object
   rcl_allocator_t allocator = rcl_get_default_allocator();
 
   rcl_ret_t ret = rcl_clock_init(tp, clock, &allocator);
@@ -72,10 +72,10 @@ static int rcl_lua_clock_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_clock_free (lua_State* L)
+static int rcl_lua_clock_free(lua_State * L)
 {
   /* arg1 - clock object */
-  rcl_clock_t* clock = lua_touserdata(L, 1);
+  rcl_clock_t * clock = lua_touserdata(L, 1);
 
   rcl_ret_t ret = rcl_clock_fini(clock);
   if (RCL_RET_OK != ret) {
@@ -101,10 +101,10 @@ static int rcl_lua_clock_free (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_clock_get_now (lua_State* L)
+static int rcl_lua_clock_get_now(lua_State * L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  rcl_clock_t * clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   /* get time */
   rcl_time_point_value_t time_ns;
@@ -129,10 +129,10 @@ static int rcl_lua_clock_get_now (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_clock_ros_timer_override_enabled (lua_State* L)
+static int rcl_lua_clock_ros_timer_override_enabled(lua_State * L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  rcl_clock_t * clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   bool is_enabled = false;
   rcl_ret_t ret = rcl_is_enabled_ros_time_override(clock, &is_enabled);
@@ -157,10 +157,10 @@ static int rcl_lua_clock_ros_timer_override_enabled (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_clock_set_ros_timer_override_enabled (lua_State* L)
+static int rcl_lua_clock_set_ros_timer_override_enabled(lua_State * L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  rcl_clock_t * clock = luaL_checkudata(L, 1, MT_CLOCK);
   /* arg2 - boolean flag */
   luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean is expected");
 
@@ -190,12 +190,12 @@ static int rcl_lua_clock_set_ros_timer_override_enabled (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_clock_set_ros_time_override (lua_State* L)
+static int rcl_lua_clock_set_ros_time_override(lua_State * L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  rcl_clock_t * clock = luaL_checkudata(L, 1, MT_CLOCK);
   /* arg2 - time object */
-  rcl_time_point_t* time = luaL_checkudata(L, 2, MT_TIME);
+  rcl_time_point_t * time = luaL_checkudata(L, 2, MT_TIME);
 
   rcl_ret_t ret = rcl_set_ros_time_override(clock, time->nanoseconds);
   if (RCL_RET_OK != ret) {
@@ -220,10 +220,10 @@ static int rcl_lua_clock_set_ros_time_override (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_clock_get_type (lua_State* L)
+static int rcl_lua_clock_get_type(lua_State * L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  rcl_clock_t * clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   lua_pushinteger(L, clock->type);
   return 1;
@@ -250,7 +250,7 @@ static const struct luaL_Reg clock_methods[] = {
 };
 
 /* Add to library */
-void rcl_lua_add_clock_methods (lua_State* L)
+void rcl_lua_add_clock_methods(lua_State * L)
 {
   /* clock constructor */
   lua_pushcfunction(L, rcl_lua_clock_init);   // push function

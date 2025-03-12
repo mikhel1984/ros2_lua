@@ -22,7 +22,7 @@
 #include "rosidl_luacommon/utility.h"
 
 /* Boolean sequence metatable name. */
-const char* MT_SEQ_BOOLEAN = "primitives_sequence__msg__boolean__mt";
+const char * MT_SEQ_BOOLEAN = "primitives_sequence__msg__boolean__mt";
 
 /**
  * Set boolean value by index.
@@ -35,10 +35,10 @@ const char* MT_SEQ_BOOLEAN = "primitives_sequence__msg__boolean__mt";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int boolean_seq_set (lua_State* L)
+static int boolean_seq_set(lua_State * L)
 {
   /* arg1 - message wrapper */
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1);
   /* arg2 - index */
   lua_Integer ind = luaL_checkinteger(L, 2);
 
@@ -49,11 +49,11 @@ static int boolean_seq_set (lua_State* L)
   bool val = lua_toboolean(L, 3);
 
   /* get pointer */
-  bool* lst = rosidl_luacommon_array_check_ind(ptr, ind);
+  bool * lst = rosidl_luacommon_array_check_ind(ptr, ind);
 
   /* set */
   if (lst) {
-    lst[ind-1] = val;
+    lst[ind - 1] = val;
   }
 
   return 0;
@@ -72,19 +72,19 @@ static int boolean_seq_set (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int boolean_seq_get (lua_State* L)
+static int boolean_seq_get(lua_State * L)
 {
   /* arg1 - message wrapper */
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1);
   /* arg2 - index */
   lua_Integer ind = luaL_checkinteger(L, 2);
 
   /* get pointer */
-  bool* lst = rosidl_luacommon_array_check_ind(ptr, ind);
+  bool * lst = rosidl_luacommon_array_check_ind(ptr, ind);
 
   /* get */
   if (lst) {
-    lua_pushboolean(L, lst[ind-1]);
+    lua_pushboolean(L, lst[ind - 1]);
   } else {
     lua_pushnil(L);
   }
@@ -112,14 +112,14 @@ OBJ_SEQ_COPY (boolean, bool, MT_SEQ_BOOLEAN)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int boolean_seq_call (lua_State* L)
+static int boolean_seq_call(lua_State * L)
 {
   bool done = false;
   int tp = lua_type(L, 2);
 
   if (LUA_TSTRING == tp) {
     /* arg2 - command */
-    const char* cmd = lua_tostring(L, 2);
+    const char * cmd = lua_tostring(L, 2);
 
     if (strcmp(cmd, "resize") == 0) {
       /* arg3 - new size */
@@ -127,45 +127,45 @@ static int boolean_seq_call (lua_State* L)
       return boolean_seq_resize(L);
 
     } else if (strcmp(cmd, "copy") == 0) {
-      idl_lua_msg_t* msg = lua_touserdata(L, 1);
+      idl_lua_msg_t * msg = lua_touserdata(L, 1);
       size_t arr_len = 0, arr_cap = 0;
-      bool* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      bool * lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
       lua_createtable(L, arr_len, 0);   // push table for data array
       for (size_t i = 0; i < arr_len; i++) {
         lua_pushboolean(L, lst[i]);   // push value
-        lua_rawseti(L, -2, i+1);      // pop value
+        lua_rawseti(L, -2, i + 1);      // pop value
       }
       return 1;
     }
- 
+
   } else if (LUA_TUSERDATA == tp) {
     /* arg2 - other message */
     return boolean_seq_copy(L);
 
   } else if (LUA_TTABLE == tp) {
     /* arg2 - table */
-    idl_lua_msg_t* msg = lua_touserdata(L, 1);
+    idl_lua_msg_t * msg = lua_touserdata(L, 1);
     int len = luaL_len(L, 2);
 
     if (len > 0 && msg->value >= IDL_LUA_SEQ) {
       /* check array */
       size_t arr_len = 0, arr_cap = 0;
-      bool* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      bool * lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
       if (arr_len != (size_t) len) {
         if (IDL_LUA_SEQ == msg->value) {
           if ((size_t) len <= arr_cap) {
-            ((rosidl_runtime_c__boolean__Sequence*)msg->obj)->size = (size_t) len;
+            ((rosidl_runtime_c__boolean__Sequence *)msg->obj)->size = (size_t) len;
           } else if (!boolean_do_resize(msg, (size_t) len, false)) {
             goto failed;
           }
-          lst = ((rosidl_runtime_c__boolean__Sequence*)msg->obj)->data;
+          lst = ((rosidl_runtime_c__boolean__Sequence *)msg->obj)->data;
         } else {
           goto failed;
         }
       }
       /* copy */
       for (int i = 0; i < len; i++) {
-        lua_pushinteger(L, i+1);   // push index
+        lua_pushinteger(L, i + 1);   // push index
         lua_gettable(L, 2);        // pop index, push value
         if (LUA_TBOOLEAN != lua_type(L, -1)) {
           goto failed;

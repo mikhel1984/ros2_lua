@@ -22,15 +22,16 @@ struct rcl_service_s;
 struct rcl_node_s;
 
 /** Keep pointer to service object. */
-typedef struct rcllua_service_wrap_s {
+typedef struct rcllua_service_wrap_s
+{
   /** rcl service */
-  struct rcl_service_s* service;
+  struct rcl_service_s * service;
   /** rcl node */
-  struct rcl_node_s* node;
+  struct rcl_node_s * node;
 } rcllua_service_wrap;
 
 
-extern const char* MT_SERVICE;
+extern const char * MT_SERVICE;
 
 
 /**
@@ -38,7 +39,7 @@ extern const char* MT_SERVICE;
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_service_methods (lua_State* L);
+void rcl_lua_add_service_methods(lua_State * L);
 
 /**
  * Take request message, translate to Lua object.
@@ -48,6 +49,6 @@ void rcl_lua_add_service_methods (lua_State* L);
  * \param[in] srv pointer to service.
  * \return true when put result.
  */
-bool rcl_lua_service_push_callback (lua_State* L, const struct rcl_service_s* srv);
+bool rcl_lua_service_push_callback(lua_State * L, const struct rcl_service_s * srv);
 
 #endif  // RCLLUA__SERVICE_H_

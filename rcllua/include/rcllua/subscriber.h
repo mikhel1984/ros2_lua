@@ -27,7 +27,7 @@ extern const char * MT_SUBSCRIPTION;
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_subscription_methods (lua_State* L);
+void rcl_lua_add_subscription_methods(lua_State * L);
 
 /**
  * Read incoming message, translate to Lua object.
@@ -37,7 +37,7 @@ void rcl_lua_add_subscription_methods (lua_State* L);
  * \param[in] sub pointer to subscription.
  * \return true when push result.
  */
-bool rcl_lua_subscription_push_callback (
-  lua_State* L, const struct rcl_subscription_s* sub);
+bool rcl_lua_subscription_push_callback(
+  lua_State * L, const struct rcl_subscription_s * sub);
 
 #endif  // RCLLUA__SUBSCRIBER_H_

@@ -18,13 +18,13 @@
 #include <lua.h>
 
 /* Inform other components */
-extern const char* MT_NODE;
+extern const char * MT_NODE;
 
 /**
  * Create node metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_node_methods (lua_State* L);
+void rcl_lua_add_node_methods(lua_State * L);
 
 #endif  // RCLLUA__NODE_H_

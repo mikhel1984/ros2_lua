@@ -24,7 +24,8 @@
 #include "rcllua/utils.h"
 
 /** Collect structure fields for access. */
-enum QoSFields {
+enum QoSFields
+{
   QOS_F_HISTORY,
   QOS_F_DEPTH,
   QOS_F_RELIABILITY,
@@ -38,7 +39,7 @@ enum QoSFields {
 };
 
 /** QoS object metatable name. */
-const char* MT_QOS = "ROS2.QoS";
+const char * MT_QOS = "ROS2.QoS";
 
 /**
  * Convert rcl duration into rmw datatype.
@@ -46,7 +47,7 @@ const char* MT_QOS = "ROS2.QoS";
  * \param[in] dur rcl duration
  * \param[out] tm rmw duration
  */
-static void duration_to_rmw_time (const rcl_duration_t* dur, rmw_time_t* tm)
+static void duration_to_rmw_time(const rcl_duration_t * dur, rmw_time_t * tm)
 {
   tm->sec = RCL_NS_TO_S(dur->nanoseconds);
   tm->nsec = dur->nanoseconds % NSEC_IN_SEC;
@@ -67,10 +68,10 @@ static void duration_to_rmw_time (const rcl_duration_t* dur, rmw_time_t* tm)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_qos_init (lua_State* L)
+static int rcl_lua_qos_init(lua_State * L)
 {
   /* arg1 - type name */
-  const char* profile = luaL_optstring(L, 1, "qos_profile_default");
+  const char * profile = luaL_optstring(L, 1, "qos_profile_default");
   rmw_qos_profile_t *qos = lua_newuserdata(L, sizeof(rmw_qos_profile_t));  // push object
 
   /* choose settings */
@@ -104,7 +105,7 @@ static int rcl_lua_qos_init (lua_State* L)
  *
  * \param[inout] L Lua stack.
  */
-static void rcl_lua_qos_set_types (lua_State* L)
+static void rcl_lua_qos_set_types(lua_State * L)
 {
   /* set to metatable */
   luaL_getmetatable(L, MT_QOS);            // push metatable
@@ -141,9 +142,9 @@ static void rcl_lua_qos_set_types (lua_State* L)
  * \param[inout] L Lua stack.
  * \param[in] tm rmw duration.
  */
-static void rcl_lua_qos_push_duration (lua_State* L, const rmw_time_t* tm)
+static void rcl_lua_qos_push_duration(lua_State * L, const rmw_time_t * tm)
 {
-  rcl_duration_t* dur = lua_newuserdata(L, sizeof(rcl_duration_t));
+  rcl_duration_t * dur = lua_newuserdata(L, sizeof(rcl_duration_t));
   dur->nanoseconds = tm->nsec;
   dur->nanoseconds += tm->sec * NSEC_IN_SEC;
 
@@ -164,12 +165,12 @@ static void rcl_lua_qos_push_duration (lua_State* L, const rmw_time_t* tm)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_qos_index (lua_State* L)
+static int rcl_lua_qos_index(lua_State * L)
 {
   /* arg1 - qos object, find index */
   luaL_getmetafield(L, 1, "_fields");                // push _fields
   /* arg2 - field name */
-  const char* field = luaL_checkstring(L, 2);
+  const char * field = luaL_checkstring(L, 2);
   if (LUA_TNUMBER != lua_getfield(L, -1, field)) {   // push int
     luaL_error(L, "%s not found", field);
   }
@@ -177,7 +178,7 @@ static int rcl_lua_qos_index (lua_State* L)
   lua_pop(L, 2);                                     // pop int and _fields
 
   /* get value */
-  rmw_qos_profile_t* qos = lua_touserdata(L, 1);
+  rmw_qos_profile_t * qos = lua_touserdata(L, 1);
   switch (id) {
     case QOS_F_HISTORY:
       lua_pushinteger(L, qos->history);
@@ -224,12 +225,12 @@ static int rcl_lua_qos_index (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_qos_newindex (lua_State* L)
+static int rcl_lua_qos_newindex(lua_State * L)
 {
   /* arg1 - qos object, find index */
   luaL_getmetafield(L, 1, "_fields");                // push _fields
   /* arg2 - field name */
-  const char* field = luaL_checkstring(L, 2);
+  const char * field = luaL_checkstring(L, 2);
   if (LUA_TNUMBER != lua_getfield(L, -1, field)) {   // push int
     luaL_error(L, "%s not found", field);
   }
@@ -237,8 +238,8 @@ static int rcl_lua_qos_newindex (lua_State* L)
   lua_pop(L, 2);                                     // pop int and _fields
 
   /* arg3 - value, set */
-  rmw_qos_profile_t* qos = lua_touserdata(L, 1);
-  rcl_duration_t* dur = NULL;
+  rmw_qos_profile_t * qos = lua_touserdata(L, 1);
+  rcl_duration_t * dur = NULL;
   switch (id) {
     case QOS_F_HISTORY:
       qos->history = (rmw_qos_history_policy_t) luaL_checkinteger(L, 3);
@@ -295,12 +296,12 @@ static int rcl_lua_qos_newindex (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_qos_check_compatible (lua_State* L)
+static int rcl_lua_qos_check_compatible(lua_State * L)
 {
   /* arg1 - publisher QoS */
-  rmw_qos_profile_t* pub_qos = luaL_checkudata(L, 1, MT_QOS);
+  rmw_qos_profile_t * pub_qos = luaL_checkudata(L, 1, MT_QOS);
   /* arg2 - subsctiption QoS */
-  rmw_qos_profile_t* sub_qos = luaL_checkudata(L, 2, MT_QOS);
+  rmw_qos_profile_t * sub_qos = luaL_checkudata(L, 2, MT_QOS);
 
   rmw_qos_compatibility_type_t compatibility;
   char reason[2048];
@@ -329,7 +330,7 @@ static const struct luaL_Reg qos_methods[] = {
 };
 
 /* Add to library */
-void rcl_lua_add_qos_methods (lua_State* L)
+void rcl_lua_add_qos_methods(lua_State * L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_qos_init);   // push function
@@ -347,7 +348,7 @@ void rcl_lua_add_qos_methods (lua_State* L)
 }
 
 /* Make copy of the gimen QoS object. */
-void rcl_lua_qos_push_copy (lua_State* L, const rmw_qos_profile_t* src)
+void rcl_lua_qos_push_copy(lua_State * L, const rmw_qos_profile_t * src)
 {
   if (NULL == src) {
     luaL_error(L, "no QoS");

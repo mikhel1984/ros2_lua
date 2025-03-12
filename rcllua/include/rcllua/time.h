@@ -20,15 +20,15 @@
 /** Number of nanoseconds in one second */
 #define NSEC_IN_SEC 1000000000
 
-extern const char* MT_TIME;
-extern const char* MT_DURATION;
+extern const char * MT_TIME;
+extern const char * MT_DURATION;
 
 /**
  * Create time metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_time_methods (lua_State* L);
+void rcl_lua_add_time_methods(lua_State * L);
 
 /**
  * Create time object, init and push to the stack.
@@ -37,7 +37,7 @@ void rcl_lua_add_time_methods (lua_State* L);
  * \param[in] ns time in nanoseconds.
  * \param[in] clock_type type of clock.
  */
-void rcl_lua_time_push_time (lua_State* L, int64_t ns, int clock_type);
+void rcl_lua_time_push_time(lua_State * L, int64_t ns, int clock_type);
 
 /**
  * Create duration object, init and push to the stack.
@@ -45,6 +45,6 @@ void rcl_lua_time_push_time (lua_State* L, int64_t ns, int clock_type);
  * \param[inout] L Lua stack.
  * \param[in] ns time in nanoseconds.
  */
-void rcl_lua_time_push_duration (lua_State* L, int64_t ns);
+void rcl_lua_time_push_duration(lua_State * L, int64_t ns);
 
 #endif  // RCLLUA__TIME_H_

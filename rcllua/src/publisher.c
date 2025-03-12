@@ -28,7 +28,8 @@
 #include "rcllua/utils.h"
 
 /** Indices of publisher bindings in register */
-enum PubReg {
+enum PubReg
+{
   /** node reference */
   PUB_REG_NODE = 1,
   /** metatable name */
@@ -38,7 +39,7 @@ enum PubReg {
 };
 
 /** Publisher object metatable name. */
-const char* MT_PUBLISHER = "ROS2.Publisher";
+const char * MT_PUBLISHER = "ROS2.Publisher";
 
 /**
  * Create publisher object.
@@ -58,10 +59,10 @@ const char* MT_PUBLISHER = "ROS2.Publisher";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_publisher_init (lua_State* L)
+static int rcl_lua_publisher_init(lua_State * L)
 {
   /* arg1 - node */
-  rcl_node_t* node = luaL_checkudata(L, 1, MT_NODE);
+  rcl_node_t * node = luaL_checkudata(L, 1, MT_NODE);
 
   /* arg2 - message type */
   rosidl_message_type_support_t *ts = NULL;
@@ -77,13 +78,13 @@ static int rcl_lua_publisher_init (lua_State* L)
   }
 
   /* arg3 - topic name */
-  const char* topic = luaL_checkstring(L, 3);
+  const char * topic = luaL_checkstring(L, 3);
 
   /* init object */
   rcl_publisher_options_t publisher_opt = rcl_publisher_get_default_options();
   /* arg4 - QoS profile */
   if (!lua_isnoneornil(L, 4)) {
-    rmw_qos_profile_t* qos = luaL_checkudata(L, 4, MT_QOS);
+    rmw_qos_profile_t * qos = luaL_checkudata(L, 4, MT_QOS);
     publisher_opt.qos = *qos;
   }
   rcl_publisher_t *publisher = lua_newuserdata(L, sizeof(rcl_publisher_t));  // push object
@@ -103,7 +104,7 @@ static int rcl_lua_publisher_init (lua_State* L)
   lua_setmetatable(L, -2);             // pop metatable
 
   /* save publisher dependencies */
-  lua_createtable(L, PUB_REG_NUMBER-1, 0);  // push table a
+  lua_createtable(L, PUB_REG_NUMBER - 1, 0);  // push table a
   lua_pushvalue(L, 1);                 // push node
   lua_rawseti(L, -2, PUB_REG_NODE);    // pop node, a[1] = node
 
@@ -124,15 +125,15 @@ static int rcl_lua_publisher_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_publisher_free (lua_State* L)
+static int rcl_lua_publisher_free(lua_State * L)
 {
   /* arg1 - publisher */
-  rcl_publisher_t* publisher = lua_touserdata(L, 1);
+  rcl_publisher_t * publisher = lua_touserdata(L, 1);
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, publisher);  // push table
   lua_rawgeti(L, -1, PUB_REG_NODE);              // push node
-  rcl_node_t* node = lua_touserdata(L, -1);
+  rcl_node_t * node = lua_touserdata(L, -1);
 
   /* finalize */
   rcl_ret_t ret = rcl_publisher_fini(publisher, node);
@@ -160,7 +161,7 @@ static int rcl_lua_publisher_free (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_publisher_publish (lua_State* L)
+static int rcl_lua_publisher_publish(lua_State * L)
 {
   /* arg1 - publisher */
   rcl_publisher_t *publisher = luaL_checkudata(L, 1, MT_PUBLISHER);
@@ -168,7 +169,7 @@ static int rcl_lua_publisher_publish (lua_State* L)
   /* arg2 - message object */
   lua_rawgetp(L, LUA_REGISTRYINDEX, publisher);  // push table
   lua_rawgeti(L, -1, PUB_REG_MT);                // push metatable name
-  const char* mt = lua_tostring(L, -1);
+  const char * mt = lua_tostring(L, -1);
   idl_lua_msg_t *msg = luaL_checkudata(L, 2, mt);
 
   /* send */
@@ -195,18 +196,18 @@ static int rcl_lua_publisher_publish (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_publisher_logger_name (lua_State* L)
+static int rcl_lua_publisher_logger_name(lua_State * L)
 {
   /* arg1 - publisher */
-  rcl_publisher_t* pub = lua_touserdata(L, 1);
+  rcl_publisher_t * pub = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != pub, 1, "publisher is expected");
 
   /* get node */
   lua_rawgetp(L, LUA_REGISTRYINDEX, pub);     // push table
   lua_rawgeti(L, -1, PUB_REG_NODE);           // push node
-  rcl_node_t* node = lua_touserdata(L, -1);
+  rcl_node_t * node = lua_touserdata(L, -1);
 
-  const char* logger_name = rcl_node_get_logger_name(node);
+  const char * logger_name = rcl_node_get_logger_name(node);
   if (NULL == logger_name) {
     luaL_error(L, "node logger name not set");
   }
@@ -230,10 +231,10 @@ static int rcl_lua_publisher_logger_name (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_publisher_subscription_count (lua_State* L)
+static int rcl_lua_publisher_subscription_count(lua_State * L)
 {
   /* arg1 - publisher */
-  rcl_publisher_t* pub = lua_touserdata(L, 1);
+  rcl_publisher_t * pub = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != pub, 1, "publisher is expected");
 
   size_t count = 0;
@@ -261,13 +262,13 @@ static int rcl_lua_publisher_subscription_count (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_publisher_topic_name (lua_State* L)
+static int rcl_lua_publisher_topic_name(lua_State * L)
 {
   /* arg1 - publisher */
-  rcl_publisher_t* pub = lua_touserdata(L, 1);
+  rcl_publisher_t * pub = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != pub, 1, "publisher is expected");
 
-  const char* topic = rcl_publisher_get_topic_name(pub);
+  const char * topic = rcl_publisher_get_topic_name(pub);
   if (NULL == topic) {
     luaL_error(L, "failed to get topic name");
   }
@@ -292,12 +293,12 @@ static int rcl_lua_publisher_topic_name (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_publisher_wait_for_acked (lua_State* L)
+static int rcl_lua_publisher_wait_for_acked(lua_State * L)
 {
   /* arg1 - publisher */
-  rcl_publisher_t* pub = luaL_checkudata(L, 1, MT_PUBLISHER);
+  rcl_publisher_t * pub = luaL_checkudata(L, 1, MT_PUBLISHER);
   /* arg2 - duration */
-  rcl_duration_t* dur = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t * dur = luaL_checkudata(L, 1, MT_DURATION);
 
   bool result = true;
   rcl_ret_t ret = rcl_publisher_wait_for_all_acked(pub, dur->nanoseconds);
@@ -326,7 +327,7 @@ static const struct luaL_Reg pub_methods[] = {
 };
 
 /* Add publisher to library */
-void rcl_lua_add_publisher_methods (lua_State* L)
+void rcl_lua_add_publisher_methods(lua_State * L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_publisher_init);   // push function

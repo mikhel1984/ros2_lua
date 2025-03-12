@@ -20,14 +20,14 @@
 
 struct rcl_client_s;
 
-extern const char* MT_CLIENT;
+extern const char * MT_CLIENT;
 
 /**
  * Create client metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_client_methods (lua_State* L);
+void rcl_lua_add_client_methods(lua_State * L);
 
 /**
  * Take response message, translate to Lua object.
@@ -37,6 +37,6 @@ void rcl_lua_add_client_methods (lua_State* L);
  * \param[in] cli pointer to client.
  * \return true when push result.
  */
-bool rcl_lua_client_push_response (lua_State* L, const struct rcl_client_s* cli);
+bool rcl_lua_client_push_response(lua_State * L, const struct rcl_client_s * cli);
 
 #endif  // RCLLUA__CLIENT_H_

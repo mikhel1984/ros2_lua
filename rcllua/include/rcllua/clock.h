@@ -17,13 +17,13 @@
 
 #include <lua.h>
 
-extern const char* MT_CLOCK;
+extern const char * MT_CLOCK;
 
 /**
  * Create clock metatable, add constructor and enum to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_clock_methods (lua_State* L);
+void rcl_lua_add_clock_methods(lua_State * L);
 
 #endif  // RCLLUA__CLOCK_H_

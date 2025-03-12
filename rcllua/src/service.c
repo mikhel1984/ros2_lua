@@ -189,7 +189,6 @@ static int rcl_lua_service_free(lua_State * L)
     if (RCL_RET_OK != ret) {
       luaL_error(L, "failed to fini service");
     }
-
   }
   /* free dependencies */
   lua_pushnil(L);

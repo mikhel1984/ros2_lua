@@ -31,7 +31,7 @@ function rut:getting()
   assert(rut:eql(qos.avoid_ros_namespace_conventions, true))
   assert(rut:eql(qos.lifespan.sec, 123))
   assert(rut:eql(qos.deadline.sec, 123))
-  assert(rut:eql(qos.liveliness_lease_duration.nsec, 456))
+  assert(rut:eql(qos.liveliness_lease_duration.nanosec, 456))
 end
 
 function rut:qos_profile()

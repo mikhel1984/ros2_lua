@@ -115,7 +115,7 @@ msg_getters = []
 msg_setters = []
 msg_metatable = msg_typename + '__mt'
 }@
-static int @(msg_prefix)__lcall (lua_State* L);
+static int @(msg_prefix)__lcall(lua_State * L);
 
 /**
  * Message constructor.
@@ -124,9 +124,9 @@ static int @(msg_prefix)__lcall (lua_State* L);
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lnew (lua_State* L) {
+static int @(msg_prefix)__lnew(lua_State * L) {
   /* message object */
-  @(msg_typename)* msg = @(msg_typename)__create();
+  @(msg_typename) * msg = @(msg_typename)__create();
   if (NULL == msg) {
     luaL_error(L, "failed to create message");
   }
@@ -136,7 +136,7 @@ static int @(msg_prefix)__lnew (lua_State* L) {
   }
 
   /* object wrapper */
-  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
+  idl_lua_msg_t * ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
   ptr->obj = msg;                // message
   ptr->value = IDL_LUA_OBJECT;   // pointer type
 
@@ -159,8 +159,8 @@ static int @(msg_prefix)__lnew (lua_State* L) {
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lgc (lua_State* L) {
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
+static int @(msg_prefix)__lgc(lua_State * L) {
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1);
   if (IDL_LUA_OBJECT == ptr->value && NULL != ptr->obj) {
     @(msg_typename)__fini(ptr->obj);
     @(msg_typename)__destroy(ptr->obj);
@@ -177,14 +177,14 @@ static int @(msg_prefix)__lgc (lua_State* L) {
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__leq (lua_State* L) {
+static int @(msg_prefix)__leq(lua_State * L) {
   if (rosidl_luacommon_push_wrong_args(L)) {
     return 1;
   }
 
   /* compare data */
-  idl_lua_msg_t* p1 = lua_touserdata(L, 1);
-  idl_lua_msg_t* p2 = lua_touserdata(L, 2);
+  idl_lua_msg_t * p1 = lua_touserdata(L, 1);
+  idl_lua_msg_t * p2 = lua_touserdata(L, 2);
 
   if (p1->value < IDL_LUA_SEQ && p2->value < IDL_LUA_SEQ) {
     /* object or reference */
@@ -193,14 +193,14 @@ static int @(msg_prefix)__leq (lua_State* L) {
     /* lists */
     @(msg_typename)__Sequence s1, s2;
     if (p1->value == IDL_LUA_SEQ) {
-      s1 = *(@(msg_typename)__Sequence*) p1->obj;
+      s1 = *(@(msg_typename)__Sequence *) p1->obj;
     } else {
       /* array, to Sequence object */
       s1.data = p1->obj;
       s1.size = s1.capacity = p1->value;
     }
     if (p2->value == IDL_LUA_SEQ) {
-      s2 = *(@(msg_typename)__Sequence*) p2->obj;
+      s2 = *(@(msg_typename)__Sequence *) p2->obj;
     } else {
       /* array, to Sequence object */
       s2.data = p2->obj;
@@ -221,14 +221,14 @@ static int @(msg_prefix)__leq (lua_State* L) {
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lcopy (lua_State* L) {
+static int @(msg_prefix)__lcopy(lua_State * L) {
   if (rosidl_luacommon_push_wrong_args(L)) {
     return 1;
   }
 
   /* data */
-  idl_lua_msg_t* dst = lua_touserdata(L, 1);
-  idl_lua_msg_t* src = lua_touserdata(L, 2);
+  idl_lua_msg_t * dst = lua_touserdata(L, 1);
+  idl_lua_msg_t * src = lua_touserdata(L, 2);
   bool done = false;
 
   if (dst->value < IDL_LUA_SEQ && src->value < IDL_LUA_SEQ) {
@@ -252,7 +252,7 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
       b = src->obj;
     } else if (src->value == IDL_LUA_SEQ) {
       /* from list */
-      @(msg_typename)__Sequence* seq = src->obj;
+      @(msg_typename)__Sequence * seq = src->obj;
       if (seq->size == (size_t) dst->value) {
         b = seq->data;
       }
@@ -275,7 +275,7 @@ static int @(msg_prefix)__lcopy (lua_State* L) {
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__llen (lua_State* L)
+static int @(msg_prefix)__llen(lua_State * L)
 {
   return rosidl_luacommon_push_length(L);
 }
@@ -286,7 +286,7 @@ static int @(msg_prefix)__llen (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lstr (lua_State* L)
+static int @(msg_prefix)__lstr(lua_State * L)
 {
   return rosidl_luacommon_push_msg_string(L, "@(msg_typename)");
 }
@@ -297,7 +297,7 @@ static int @(msg_prefix)__lstr (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lbnot (lua_State* L)
+static int @(msg_prefix)__lbnot(lua_State * L)
 {
   return rosidl_luacommon_push_msg_keys(L, "getters");
 }
@@ -310,9 +310,9 @@ static int @(msg_prefix)__lbnot (lua_State* L)
  * \param[in] copy Flag to make copy of the stored data.
  * \return true in case of success.
  */
-bool @(msg_prefix)__do_resize (idl_lua_msg_t* ptr, size_t n, bool copy)
+bool @(msg_prefix)__do_resize(idl_lua_msg_t * ptr, size_t n, bool copy)
 {
-  @(msg_typename)__Sequence* seq = ptr->obj;
+  @(msg_typename)__Sequence * seq = ptr->obj;
   bool done = true;
 
   if (copy) {
@@ -346,7 +346,7 @@ bool @(msg_prefix)__do_resize (idl_lua_msg_t* ptr, size_t n, bool copy)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lresize (lua_State* L)
+static int @(msg_prefix)__lresize(lua_State * L)
 {
   return rosidl_luacommon_push_realloc(L, @(msg_prefix)__do_resize);
 }
@@ -366,10 +366,10 @@ setter_ = '_'.join((msg_prefix, '_set', member.name))
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(setter_) (lua_State* L) {
+static int @(setter_)(lua_State * L) {
   /* stack [object, field name, new value] */
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1);
-  @(msg_typename)* ros_msg = ptr->obj;
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1);
+  @(msg_typename) * ros_msg = ptr->obj;
 @{
 type_ = member.type
 if isinstance(type_, AbstractNestedType):
@@ -391,7 +391,7 @@ nested_metatable = nested_type + '__mt'
   }
 
   /* wrap object to call metamethod */
-  idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
+  idl_lua_msg_t * dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
 @[    if isinstance(member.type, AbstractNestedType)]@
 @[      if isinstance(member.type, AbstractSequence)]@
   dst->obj = &(ros_msg->@(member.name));      // pointer to sequence
@@ -422,7 +422,7 @@ nested_metatable = nested_type + '__mt'
   }
 
   /* create object to call metamethod */
-  idl_lua_msg_t* dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));   // push object
+  idl_lua_msg_t * dst = lua_newuserdata(L, sizeof(idl_lua_msg_t));   // push object
 @[    if isinstance(member.type, AbstractSequence)]@
   dst->obj = &(ros_msg->@(member.name));      // sequence
   dst->value = IDL_LUA_SEQ;
@@ -463,7 +463,7 @@ type_dict = NUMERIC_LUA_TYPES[member.type.typename]
   ros_msg->@(member.name) = value;
 @[  elif isinstance(member.type, AbstractString)]@
 
-  const char* value = luaL_checkstring(L, 3);
+  const char * value = luaL_checkstring(L, 3);
   rosidl_runtime_c__String__assign(&ros_msg->@(member.name), value);
 @[  elif isinstance(member.type, AbstractWString)]@
 @# ignore
@@ -495,10 +495,10 @@ getter_ = '_'.join((msg_prefix, '_get', member.name))
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(getter_) (lua_State* L) {
+static int @(getter_)(lua_State * L) {
   /* stack [object, field name] */
-  idl_lua_msg_t* src = lua_touserdata(L, 1);
-  @(msg_typename)* ros_msg = src->obj;
+  idl_lua_msg_t * src = lua_touserdata(L, 1);
+  @(msg_typename) * ros_msg = src->obj;
 @{
 type_ = member.type
 if isinstance(type_, AbstractNestedType):
@@ -511,7 +511,7 @@ mtbl = nested_type + '__mt'
 }@
 
   /* return new object */
-  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
+  idl_lua_msg_t * ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
 @[    if isinstance(member.type, AbstractNestedType)]@
 @[      if isinstance(member.type, AbstractSequence)]@
   ptr->obj = &(ros_msg->@(member.name));      // pointer to sequence
@@ -528,7 +528,7 @@ mtbl = nested_type + '__mt'
   lua_setmetatable(L, -2);                    // pop metatable
 @[  elif isinstance(member.type, AbstractNestedType)]@
 
-  idl_lua_msg_t* ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
+  idl_lua_msg_t * ptr = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push object
 @[    if isinstance(member.type, AbstractSequence)]@
   ptr->obj = &(ros_msg->@(member.name));
   ptr->value = IDL_LUA_SEQ;
@@ -576,16 +576,16 @@ msg_getters.append((member.name, getter_))
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lindex (lua_State* L) {
-  idl_lua_msg_t* msg = lua_touserdata(L, 1);
+static int @(msg_prefix)__lindex(lua_State * L) {
+  idl_lua_msg_t * msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
     lua_Integer n = luaL_checkinteger(L, 2);
     /* object list, same metatable, get by index */
-    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);
+    @(msg_typename) * lst = rosidl_luacommon_array_check_ind(msg, n);
 
     if (lst) {
-      idl_lua_msg_t* res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
+      idl_lua_msg_t * res = lua_newuserdata(L, sizeof(idl_lua_msg_t));  // push obj
       res->obj = &(lst[n-1]);                   // index from 1
       res->value = IDL_LUA_PTR;
       lua_getmetatable(L, 1);                   // push metatable
@@ -606,16 +606,16 @@ static int @(msg_prefix)__lindex (lua_State* L) {
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lnewindex (lua_State* L) {
-  idl_lua_msg_t* msg = lua_touserdata(L, 1);
+static int @(msg_prefix)__lnewindex(lua_State * L) {
+  idl_lua_msg_t * msg = lua_touserdata(L, 1);
 
   if (msg->value >= IDL_LUA_SEQ) {
     lua_Integer n = luaL_checkinteger(L, 2);
     /* object list, same metatable, by index */
-    @(msg_typename)* lst = rosidl_luacommon_array_check_ind(msg, n);
+    @(msg_typename) * lst = rosidl_luacommon_array_check_ind(msg, n);
 
     /* right part */
-    idl_lua_msg_t* src = luaL_checkudata(L, 3, "@(msg_metatable)");
+    idl_lua_msg_t * src = luaL_checkudata(L, 3, "@(msg_metatable)");
     if (src->value >= IDL_LUA_SEQ) {
       luaL_error(L, "different types");
     }
@@ -636,7 +636,7 @@ static int @(msg_prefix)__lnewindex (lua_State* L) {
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int @(msg_prefix)__lcall (lua_State* L) {
+static int @(msg_prefix)__lcall(lua_State * L) {
   bool done = false;
   int tp = lua_type(L, 2);
 
@@ -663,18 +663,18 @@ static int @(msg_prefix)__lcall (lua_State* L) {
         lua_createtable(L, arr_len, 0);   // push table for data array
         for (size_t i = 0; i < arr_len; i++) {
           @(msg_prefix)__lnew(L);   // push new message
-          idl_lua_msg_t* dst = lua_touserdata(L, -1);
-          done = @(msg_typename)__copy(lst+i, dst->obj);
+          idl_lua_msg_t * dst = lua_touserdata(L, -1);
+          done = @(msg_typename)__copy(lst + i, dst->obj);
           if (!done) {
             lua_pushnil(L);
             return 1;
           }
-          lua_rawseti(L, -2, i+1);  // pop message
+          lua_rawseti(L, -2, i + 1);  // pop message
         }
       } else {
         /* single message */
         @(msg_prefix)__lnew(L);   // push new message
-        idl_lua_msg_t* dst = lua_touserdata(L, -1);
+        idl_lua_msg_t * dst = lua_touserdata(L, -1);
         done = @(msg_typename)__copy(src->obj, dst->obj);
         if (!done) {
           lua_pushnil(L);
@@ -690,23 +690,23 @@ static int @(msg_prefix)__lcall (lua_State* L) {
     if (len > 0 && msg->value >= IDL_LUA_SEQ) {
       /* element-wise copy */
       size_t arr_len = 0, arr_cap = 0;
-      @(msg_typename)* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
+      @(msg_typename) * lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap);
       if (arr_len != (size_t) len) {
         if (IDL_LUA_SEQ == msg->value) {
           if ((size_t) len <= arr_cap) {
-            ((@(msg_typename)__Sequence*) msg->obj)->size = (size_t) len;
+            ((@(msg_typename)__Sequence *) msg->obj)->size = (size_t) len;
           } else if (!@(msg_prefix)__do_resize(msg, (size_t) len, false)) {
             goto failed;
           }
-          lst = ((@(msg_typename)__Sequence*) msg->obj)->data;
+          lst = ((@(msg_typename)__Sequence *) msg->obj)->data;
         } else {
           goto failed;
         }
       }
       /* copy members */
-      idl_lua_msg_t* src = NULL;
+      idl_lua_msg_t * src = NULL;
       for (int i = 0; i < len; i++) {
-        lua_pushinteger(L, i+1);  // push index
+        lua_pushinteger(L, i + 1);  // push index
         lua_gettable(L, -2);      // pop index, push value
         src = luaL_checkudata(L, -1, "@(msg_metatable)");
         if (src->value >= IDL_LUA_SEQ || !@(msg_typename)__copy(src->obj, lst++)) {
@@ -731,7 +731,7 @@ failed:  // false by default
  * Init message methods.
  * \param[inout] L Lua stack.
  */
-static void @(msg_prefix)__lconstructor (lua_State* L) {
+static void @(msg_prefix)__lconstructor(lua_State * L) {
 @{
 name_parts = msg_components[2].rsplit('_', 1)
 fn_name = name_parts[-1]
@@ -815,7 +815,7 @@ static const struct luaL_Reg @(msg_prefix)__common[] = {
  * Add to library.
  * \param[inout] L Lua stack.
  */
-void @(msg_prefix)__add_methods (lua_State* L) {
+void @(msg_prefix)__add_methods(lua_State * L) {
   /* metatable */
   luaL_newmetatable(L, "@(msg_metatable)");  // push metatable
 

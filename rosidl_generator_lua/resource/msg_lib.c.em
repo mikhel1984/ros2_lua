@@ -28,12 +28,12 @@ for message in content:
 // prototypes
 
 @[for message in content]@
-void @(make_prefix(message))__add_methods (lua_State* L);
+void @(make_prefix(message))__add_methods(lua_State * L);
 @[end for]@
 
 // library
 
-int luaopen_@(package_name)_msg (lua_State* L)
+int luaopen_@(package_name)_msg(lua_State * L)
 {
 @[for pair in nested_list]@
   ROSIDL_LUA_REQUIRE("@('.'.join(pair))");

@@ -447,11 +447,13 @@ static int rcl_lua_lifecycle_get_available_transitions(lua_State * L)
     lua_rawseti(L, -2, 2);      // pop string
     lua_pushinteger(L, fsm->current_state->valid_transitions[i].start->id);  // push int
     lua_rawseti(L, -2, 3);      // pop int
-    lua_pushstring(L, MAYBE_NULL(fsm->current_state->valid_transitions[i].start->label));  // push string
+    lua_pushstring(
+      L, MAYBE_NULL(fsm->current_state->valid_transitions[i].start->label));  // push string
     lua_rawseti(L, -2, 4);      // pop string
     lua_pushinteger(L, fsm->current_state->valid_transitions[i].goal->id);   // push int
     lua_rawseti(L, -2, 5);      // pop int
-    lua_pushstring(L, MAYBE_NULL(fsm->current_state->valid_transitions[i].goal->label));  // push string
+    lua_pushstring(
+      L, MAYBE_NULL(fsm->current_state->valid_transitions[i].goal->label));  // push string
     lua_rawseti(L, -2, 6);      // pop string
     lua_rawseti(L, -2, i + 1);    // pop table b
   }

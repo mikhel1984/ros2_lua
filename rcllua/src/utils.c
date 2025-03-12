@@ -84,8 +84,8 @@ static int rcl_lua_utils_sleep_thread(lua_State * L)
   /* arg1 - time value */
   double sec = luaL_checknumber(L, 1);
   luaL_argcheck(L, sec >= 1E-9, 1, "duration >= 1ns is expected");
-  long full = (long) sec;
-  long part = (long) ((sec - full) * 1E9);
+  int64_t full = (int64_t) sec;
+  int64_t part = (int64_t) ((sec - full) * 1E9);
 
   /* sleep */
   struct timespec time;

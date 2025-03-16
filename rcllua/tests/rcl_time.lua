@@ -27,8 +27,12 @@ function rut:duration_value()
   assert(rut:eql(dur.sec, 123))
   assert(rut:eql(dur.nanosec, 456))
 
-  -- immrutable
- rut:catch(function() tm.sec = 3 end)
+  -- immutable
+  rut:catch(function() tm.sec = 3 end)
+
+  local dur2 = rclbind.new_duration_sec(123 + 456*1E-9)
+  assert(rut:eql(dur2.sec, 123))
+  assert(rut:eql(dur2.nanosec, 456))
 end
 
 function rut:compare_time()
@@ -40,7 +44,7 @@ function rut:compare_time()
   assert(t2 >= t2, "ge failed")
 
   -- different clock type
-  local t3 = rclbind.new_time(1, 2, 3)
+  local t3 = rclbind.new_time(1, 2, rclbind.ClockType.STEADY_TIME)
   rut:catch(function() return (t1 == t3) end)
 end
 
@@ -57,17 +61,23 @@ function rut:add_sub()
   local t1 = rclbind.new_time(100)
   local d = rclbind.new_duration(1)
 
+  -- get time
   local t2 = t1 + d
   assert(t2 > t1)
 
   local t3 = t1 + (-d)
   assert(t3 < t1)
 
+  -- get duration
   local d2 = t2 - t1
   assert(d == d2)
 
   local d3 = t1 - t2
   assert(d3 == -d)
+
+  -- duration sum
+  local d4 = d + d
+  assert(rut:eql(d4.sec, 2*d.sec))
 end
 
 rut:run()

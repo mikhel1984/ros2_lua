@@ -458,6 +458,18 @@ static int rcl_lua_time_sub(lua_State * L)
   return 1;
 }
 
+/**
+ * Change duration sign.
+ *
+ * Arguments:
+ * - duration
+ *
+ * Return:
+ * - opposite duration
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
 static int rcl_lua_time_unm_dur(lua_State * L)
 {
   /* arg1 - duration object */
@@ -465,6 +477,31 @@ static int rcl_lua_time_unm_dur(lua_State * L)
 
   /* init */
   rcl_lua_time_push_duration(L, -d->nanoseconds);
+  return 1;
+}
+
+/**
+ * Add durations.
+ *
+ * Arguments:
+ * - first duration
+ * - second duration
+ *
+ * Return:
+ * - duration sum
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_time_add_dur(lua_State * L)
+{
+  /* arg1 - duration object */
+  rcl_duration_t * d1 = luaL_checkudata(L, 1, MT_DURATION);
+  /* arg2 - duration object */
+  rcl_duration_t * d2 = luaL_checkudata(L, 2, MT_DURATION);
+
+  /* result */
+  rcl_lua_time_push_duration(L, d1->nanoseconds + d2->nanoseconds);
   return 1;
 }
 
@@ -487,6 +524,7 @@ static const struct luaL_Reg duration_methods[] = {
   {"__lt", rcl_lua_time_lt_dur},
   {"__le", rcl_lua_time_le_dur},
   {"__unm", rcl_lua_time_unm_dur},
+  {"__add", rcl_lua_time_add_dur},
   {"seconds", rcl_lua_time_seconds_dur},
   {NULL, NULL}
 };

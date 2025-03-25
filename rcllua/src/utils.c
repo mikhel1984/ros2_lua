@@ -23,7 +23,7 @@
 #include "rcllua/utils.h"
 
 /* Save metatable */
-void rcl_lua_utils_add_mt (lua_State* L, const char* name, const luaL_Reg* fn)
+void rcl_lua_utils_add_mt(lua_State * L, const char * name, const luaL_Reg * fn)
 {
   /* table */
   luaL_newmetatable(L, name);      // push metatable
@@ -36,11 +36,12 @@ void rcl_lua_utils_add_mt (lua_State* L, const char* name, const luaL_Reg* fn)
 }
 
 /* Save 'enum' */
-void rcl_lua_utils_add_enum (lua_State* L, const char* name, const rcl_lua_enum* ps)
+void rcl_lua_utils_add_enum(lua_State * L, const char * name, const rcl_lua_enum * ps)
 {
   /* find length */
   int n = 0;
-  for (n = 0; ps[n].name; ++n) {}
+  for (n = 0; ps[n].name; ++n) {
+  }
   /* fill table */
   lua_createtable(L, 0, n);           // push table a
   for (int i = 0; i < n; ++i) {
@@ -52,14 +53,14 @@ void rcl_lua_utils_add_enum (lua_State* L, const char* name, const rcl_lua_enum*
 }
 
 /* Convert names and types to Lua table. */
-void rcl_lua_utils_push_names_types (lua_State* L, const rcl_names_and_types_t* src)
+void rcl_lua_utils_push_names_types(lua_State * L, const rcl_names_and_types_t * src)
 {
   lua_createtable(L, 0, src->names.size);         // push table a
   for (size_t i = 0; i < src->names.size; i++) {
     lua_createtable(L, src->types[i].size, 0);    // push table b
     for (size_t j = 0; j < src->types[i].size; j++) {
       lua_pushstring(L, src->types[i].data[j]);   // push string
-      lua_rawseti(L, -2, j+1);                    // pop string
+      lua_rawseti(L, -2, j + 1);                    // pop string
     }
     lua_setfield(L, -2, src->names.data[i]);      // pop table b
   }
@@ -78,13 +79,13 @@ void rcl_lua_utils_push_names_types (lua_State* L, const rcl_names_and_types_t* 
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_utils_sleep_thread (lua_State* L)
+static int rcl_lua_utils_sleep_thread(lua_State * L)
 {
   /* arg1 - time value */
   double sec = luaL_checknumber(L, 1);
   luaL_argcheck(L, sec >= 1E-9, 1, "duration >= 1ns is expected");
-  long full = (long) sec;
-  long part = (long) ((sec - full)*1E9);
+  int64_t full = (int64_t) sec;
+  int64_t part = (int64_t) ((sec - full) * 1E9);
 
   /* sleep */
   struct timespec time;
@@ -109,7 +110,7 @@ static int rcl_lua_utils_sleep_thread (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_utils_get_uuid (lua_State* L)
+static int rcl_lua_utils_get_uuid(lua_State * L)
 {
   /* init */
   static bool gen_init = false;
@@ -129,15 +130,15 @@ static int rcl_lua_utils_get_uuid (lua_State* L)
   }
 
   char uuid[16];
-  *(uint64_t*)(&uuid[0]) = uuid_msb;
-  *(uint64_t*)(&uuid[8]) = uuid_lsb;
+  *(uint64_t *)(&uuid[0]) = uuid_msb;
+  *(uint64_t *)(&uuid[8]) = uuid_lsb;
 
   /* as table */
   lua_createtable(L, 16, 0);
-  uint8_t *seq = (uint8_t*) uuid;
+  uint8_t *seq = (uint8_t *) uuid;
   for (int i = 0; i < 16; i++) {
     lua_pushinteger(L, seq[i]);
-    lua_rawseti(L, -2, i+1);
+    lua_rawseti(L, -2, i + 1);
   }
 
   /* as string */
@@ -146,7 +147,7 @@ static int rcl_lua_utils_get_uuid (lua_State* L)
 }
 
 /* Convert UUID to string, push result to stack. */
-void rcl_lua_utils_push_uuid_str (lua_State* L, int pos)
+void rcl_lua_utils_push_uuid_str(lua_State * L, int pos)
 {
   char uuid[16];
   for (int i = 0; i < 16; i++) {
@@ -173,7 +174,7 @@ void rcl_lua_utils_push_uuid_str (lua_State* L, int pos)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_utils_uuid_to_str (lua_State* L)
+static int rcl_lua_utils_uuid_to_str(lua_State * L)
 {
   /* arg1 - table or userdata with 16 integers */
   luaL_argcheck(L, lua_istable(L, 1) || lua_isuserdata(L, 1), 1, "expected message field or table");
@@ -198,14 +199,14 @@ static int rcl_lua_utils_uuid_to_str (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_utils_is_instance (lua_State* L)
+static int rcl_lua_utils_is_instance(lua_State * L)
 {
   bool equal = false;
   /* arg1 - message object */
   /* arg2 - message table */
   if (lua_istable(L, 2)) {
     lua_getfield(L, 2, "_metatable");    // push name
-    const char* mt = lua_tostring(L, -1);
+    const char * mt = lua_tostring(L, -1);
     equal = (mt != NULL) && (luaL_testudata(L, 1, mt) != NULL);
   }
 
@@ -214,7 +215,7 @@ static int rcl_lua_utils_is_instance (lua_State* L)
 }
 
 /* Add to library */
-void rcl_lua_add_util_methods (lua_State* L)
+void rcl_lua_add_util_methods(lua_State * L)
 {
   /* sleep some time */
   lua_pushcfunction(L, rcl_lua_utils_sleep_thread);  // push function

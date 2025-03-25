@@ -20,14 +20,14 @@
 
 struct rcl_timer_s;
 
-extern const char* MT_TIMER;
+extern const char * MT_TIMER;
 
 /**
  * Create timer metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_timer_methods (lua_State* L);
+void rcl_lua_add_timer_methods(lua_State * L);
 
 /**
  * Push to the stack timer callback and reference (light userdata).
@@ -36,6 +36,6 @@ void rcl_lua_add_timer_methods (lua_State* L);
  * \param[in] timer pointer to timer.
  * \return true when push result
  */
-bool rcl_lua_timer_push_callback (lua_State* L, const struct rcl_timer_s* timer);
+bool rcl_lua_timer_push_callback(lua_State * L, const struct rcl_timer_s * timer);
 
 #endif  // RCLLUA__TIMER_H_

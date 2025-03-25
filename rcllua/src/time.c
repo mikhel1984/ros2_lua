@@ -22,9 +22,9 @@
 #include "rcllua/utils.h"
 
 /** Time object metatable name. */
-const char* MT_TIME = "ROS2.Time";
+const char * MT_TIME = "ROS2.Time";
 /** Duration object metatable name. */
-const char* MT_DURATION = "ROS2.Duration";
+const char * MT_DURATION = "ROS2.Duration";
 
 /**
  * Create time object.
@@ -43,7 +43,7 @@ const char* MT_DURATION = "ROS2.Duration";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_init (lua_State* L)
+static int rcl_lua_time_init(lua_State * L)
 {
   /* arg1 - seconds */
   lua_Integer sec = luaL_optinteger(L, 1, 0);
@@ -57,7 +57,7 @@ static int rcl_lua_time_init (lua_State* L)
   luaL_argcheck(L, nsec >= 0, 2, "negative value");
   luaL_argcheck(
     L, RCL_CLOCK_UNINITIALIZED <= tp && tp <= RCL_STEADY_TIME, 3, "wrong clock type");
-  if ((sec*1E9 + (double)nsec) > UINT64_MAX) {
+  if ((sec * 1E9 + (double)nsec) > UINT64_MAX) {
     luaL_error(L, "too large value of nanoseconds");
   }
 
@@ -85,7 +85,7 @@ static int rcl_lua_time_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_init_dur (lua_State* L)
+static int rcl_lua_time_init_dur(lua_State * L)
 {
   /* arg1 - seconds */
   lua_Integer sec = luaL_optinteger(L, 1, 0);
@@ -93,13 +93,13 @@ static int rcl_lua_time_init_dur (lua_State* L)
   lua_Integer nsec = luaL_optinteger(L, 2, 0);
 
   /* check overflow */
-  double sum = sec*1E9 + nsec;
+  double sum = sec * 1E9 + nsec;
   if (sum > INT64_MAX || sum < INT64_MIN) {
     luaL_error(L, "out of range");
   }
 
   rcl_duration_value_t val = nsec;
-  val += sec*NSEC_IN_SEC;
+  val += sec * NSEC_IN_SEC;
   rcl_lua_time_push_duration(L, val);
 
   return 1;
@@ -120,7 +120,7 @@ static int rcl_lua_time_init_dur (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_init_dur_float (lua_State* L)
+static int rcl_lua_time_init_dur_float(lua_State * L)
 {
   /* arg1 - seconds (float) */
   lua_Number sec = luaL_checknumber(L, 1);
@@ -145,12 +145,12 @@ static int rcl_lua_time_init_dur_float (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_index (lua_State* L)
+static int rcl_lua_time_index(lua_State * L)
 {
   /* arg1 - time object */
-  rcl_time_point_t* time = lua_touserdata(L, 1);
+  rcl_time_point_t * time = lua_touserdata(L, 1);
   /* arg2 - field name */
-  const char* field = luaL_checkstring(L, 2);
+  const char * field = luaL_checkstring(L, 2);
 
   /* get */
   if (0 == strcmp(field, "sec")) {
@@ -179,12 +179,12 @@ static int rcl_lua_time_index (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_index_dur (lua_State* L)
+static int rcl_lua_time_index_dur(lua_State * L)
 {
   /* arg1 - time object */
-  rcl_duration_t* dur = lua_touserdata(L, 1);
+  rcl_duration_t * dur = lua_touserdata(L, 1);
   /* arg2 - field name */
-  const char* field = luaL_checkstring(L, 2);
+  const char * field = luaL_checkstring(L, 2);
 
   /* get */
   if (0 == strcmp(field, "sec")) {
@@ -213,10 +213,10 @@ static int rcl_lua_time_index_dur (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_seconds (lua_State* L)
+static int rcl_lua_time_seconds(lua_State * L)
 {
   /* arg1 - time object */
-  rcl_time_point_t* time = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t * time = luaL_checkudata(L, 1, MT_TIME);
 
   lua_pushnumber(L, time->nanoseconds * 1E-9);  // push seconds
   return 1;
@@ -237,10 +237,10 @@ static int rcl_lua_time_seconds (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_seconds_dur (lua_State* L)
+static int rcl_lua_time_seconds_dur(lua_State * L)
 {
   /* arg1 - time object */
-  rcl_duration_t* dur = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t * dur = luaL_checkudata(L, 1, MT_DURATION);
 
   lua_pushnumber(L, dur->nanoseconds * 1E-9);  // push seconds
   return 1;
@@ -259,12 +259,12 @@ static int rcl_lua_time_seconds_dur (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_eq (lua_State* L)
+static int rcl_lua_time_eq(lua_State * L)
 {
   /* arg1 - first time */
-  rcl_time_point_t* t1 = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t * t1 = luaL_checkudata(L, 1, MT_TIME);
   /* arg2 - second time */
-  rcl_time_point_t* t2 = luaL_checkudata(L, 2, MT_TIME);
+  rcl_time_point_t * t2 = luaL_checkudata(L, 2, MT_TIME);
 
   if (t1->clock_type != t2->clock_type) {
     luaL_error(L, "different clock type");
@@ -287,12 +287,12 @@ static int rcl_lua_time_eq (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_lt (lua_State* L)
+static int rcl_lua_time_lt(lua_State * L)
 {
   /* arg1 - first time */
-  rcl_time_point_t* t1 = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t * t1 = luaL_checkudata(L, 1, MT_TIME);
   /* arg2 - second time */
-  rcl_time_point_t* t2 = luaL_checkudata(L, 2, MT_TIME);
+  rcl_time_point_t * t2 = luaL_checkudata(L, 2, MT_TIME);
 
   if (t1->clock_type != t2->clock_type) {
     luaL_error(L, "different clock type");
@@ -315,12 +315,12 @@ static int rcl_lua_time_lt (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_le (lua_State* L)
+static int rcl_lua_time_le(lua_State * L)
 {
   /* arg1 - first time */
-  rcl_time_point_t* t1 = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t * t1 = luaL_checkudata(L, 1, MT_TIME);
   /* arg2 - second time */
-  rcl_time_point_t* t2 = luaL_checkudata(L, 2, MT_TIME);
+  rcl_time_point_t * t2 = luaL_checkudata(L, 2, MT_TIME);
 
   if (t1->clock_type != t2->clock_type) {
     luaL_error(L, "different clock type");
@@ -343,12 +343,12 @@ static int rcl_lua_time_le (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_eq_dur (lua_State* L)
+static int rcl_lua_time_eq_dur(lua_State * L)
 {
   /* arg1 - first time */
-  rcl_duration_t* d1 = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t * d1 = luaL_checkudata(L, 1, MT_DURATION);
   /* arg2 - second time */
-  rcl_duration_t* d2 = luaL_checkudata(L, 2, MT_DURATION);
+  rcl_duration_t * d2 = luaL_checkudata(L, 2, MT_DURATION);
 
   lua_pushboolean(L, d1->nanoseconds == d2->nanoseconds);
   return 1;
@@ -367,12 +367,12 @@ static int rcl_lua_time_eq_dur (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_lt_dur (lua_State* L)
+static int rcl_lua_time_lt_dur(lua_State * L)
 {
   /* arg1 - first time */
-  rcl_duration_t* d1 = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t * d1 = luaL_checkudata(L, 1, MT_DURATION);
   /* arg2 - second time */
-  rcl_duration_t* d2 = luaL_checkudata(L, 2, MT_DURATION);
+  rcl_duration_t * d2 = luaL_checkudata(L, 2, MT_DURATION);
 
   lua_pushboolean(L, d1->nanoseconds < d2->nanoseconds);
   return 1;
@@ -391,12 +391,12 @@ static int rcl_lua_time_lt_dur (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_le_dur (lua_State* L)
+static int rcl_lua_time_le_dur(lua_State * L)
 {
   /* arg1 - first time */
-  rcl_duration_t* d1 = luaL_checkudata(L, 1, MT_DURATION);
+  rcl_duration_t * d1 = luaL_checkudata(L, 1, MT_DURATION);
   /* arg2 - second time */
-  rcl_duration_t* d2 = luaL_checkudata(L, 2, MT_DURATION);
+  rcl_duration_t * d2 = luaL_checkudata(L, 2, MT_DURATION);
 
   lua_pushboolean(L, d1->nanoseconds <= d2->nanoseconds);
   return 1;
@@ -415,12 +415,12 @@ static int rcl_lua_time_le_dur (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_add (lua_State* L)
+static int rcl_lua_time_add(lua_State * L)
 {
   /* arg1 - time object */
-  rcl_time_point_t* t = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t * t = luaL_checkudata(L, 1, MT_TIME);
   /* arg2 - duration object */
-  rcl_duration_t* d = luaL_checkudata(L, 2, MT_DURATION);
+  rcl_duration_t * d = luaL_checkudata(L, 2, MT_DURATION);
 
   /* check result */
   double sum = t->nanoseconds + (double) d->nanoseconds;
@@ -429,7 +429,7 @@ static int rcl_lua_time_add (lua_State* L)
   }
 
   /* init */
-  rcl_lua_time_push_time( L, t->nanoseconds + d->nanoseconds, t->clock_type);
+  rcl_lua_time_push_time(L, t->nanoseconds + d->nanoseconds, t->clock_type);
   return 1;
 }
 
@@ -446,25 +446,62 @@ static int rcl_lua_time_add (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_time_sub (lua_State* L)
+static int rcl_lua_time_sub(lua_State * L)
 {
   /* arg1 - time object */
-  rcl_time_point_t* t1 = luaL_checkudata(L, 1, MT_TIME);
+  rcl_time_point_t * t1 = luaL_checkudata(L, 1, MT_TIME);
   /* arg2 - time object */
-  rcl_time_point_t* t2 = luaL_checkudata(L, 2, MT_TIME);
+  rcl_time_point_t * t2 = luaL_checkudata(L, 2, MT_TIME);
 
   /* init */
   rcl_lua_time_push_duration(L, t1->nanoseconds - t2->nanoseconds);
   return 1;
 }
 
-static int rcl_lua_time_unm_dur (lua_State* L)
+/**
+ * Change duration sign.
+ *
+ * Arguments:
+ * - duration
+ *
+ * Return:
+ * - opposite duration
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_time_unm_dur(lua_State * L)
 {
   /* arg1 - duration object */
-  rcl_duration_t* d = lua_touserdata(L, 1);
+  rcl_duration_t * d = lua_touserdata(L, 1);
 
   /* init */
-  rcl_lua_time_push_duration(L, - d->nanoseconds);
+  rcl_lua_time_push_duration(L, -d->nanoseconds);
+  return 1;
+}
+
+/**
+ * Add durations.
+ *
+ * Arguments:
+ * - first duration
+ * - second duration
+ *
+ * Return:
+ * - duration sum
+ *
+ * \param[inout] L Lua stack.
+ * \return number of outputs.
+ */
+static int rcl_lua_time_add_dur(lua_State * L)
+{
+  /* arg1 - duration object */
+  rcl_duration_t * d1 = luaL_checkudata(L, 1, MT_DURATION);
+  /* arg2 - duration object */
+  rcl_duration_t * d2 = luaL_checkudata(L, 2, MT_DURATION);
+
+  /* result */
+  rcl_lua_time_push_duration(L, d1->nanoseconds + d2->nanoseconds);
   return 1;
 }
 
@@ -487,12 +524,13 @@ static const struct luaL_Reg duration_methods[] = {
   {"__lt", rcl_lua_time_lt_dur},
   {"__le", rcl_lua_time_le_dur},
   {"__unm", rcl_lua_time_unm_dur},
+  {"__add", rcl_lua_time_add_dur},
   {"seconds", rcl_lua_time_seconds_dur},
   {NULL, NULL}
 };
 
 /* Add to library */
-void rcl_lua_add_time_methods (lua_State* L)
+void rcl_lua_add_time_methods(lua_State * L)
 {
   /* time constructor */
   lua_pushcfunction(L, rcl_lua_time_init);  // push function
@@ -513,9 +551,9 @@ void rcl_lua_add_time_methods (lua_State* L)
 }
 
 /* Create time object, init and push to the stack. */
-void rcl_lua_time_push_time (lua_State* L, int64_t ns, int clock_type)
+void rcl_lua_time_push_time(lua_State * L, int64_t ns, int clock_type)
 {
-  rcl_time_point_t* time = lua_newuserdata(L, sizeof(rcl_time_point_t));  // push object
+  rcl_time_point_t * time = lua_newuserdata(L, sizeof(rcl_time_point_t));  // push object
   time->nanoseconds = ns;
   time->clock_type = clock_type;
 
@@ -525,9 +563,9 @@ void rcl_lua_time_push_time (lua_State* L, int64_t ns, int clock_type)
 }
 
 /* Create duration object, init and push to the stack. */
-void rcl_lua_time_push_duration (lua_State* L, int64_t ns)
+void rcl_lua_time_push_duration(lua_State * L, int64_t ns)
 {
-  rcl_duration_t* dur = lua_newuserdata(L, sizeof(rcl_duration_t));  // push object
+  rcl_duration_t * dur = lua_newuserdata(L, sizeof(rcl_duration_t));  // push object
   dur->nanoseconds = ns;
 
   /* set metamethods */

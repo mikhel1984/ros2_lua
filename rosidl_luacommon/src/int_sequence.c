@@ -32,18 +32,18 @@
  * \return setter function
  */
 #define INT_SEQ_SET(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
-static int STRUCT_NAME ## _seq_set (lua_State* L) \
+  static int STRUCT_NAME ## _seq_set (lua_State * L) \
 { \
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1); \
   lua_Integer ind = luaL_checkinteger(L, 2); \
   lua_Integer val = luaL_checkinteger(L, 3); \
-  luaL_argcheck(L, V_MIN <= val && ((TYPE_NAME) val) <= V_MAX, 3, "wrong value");  \
-  TYPE_NAME* lst = rosidl_luacommon_array_check_ind(ptr, ind); \
+  luaL_argcheck(L, V_MIN <= val && ((TYPE_NAME) val) <= V_MAX, 3, "wrong value"); \
+  TYPE_NAME * lst = rosidl_luacommon_array_check_ind(ptr, ind); \
   if (lst) { \
-    lst[ind-1] = val; \
+      lst[ind - 1] = val; \
   } \
-  return 0; \
-}
+    return 0; \
+  }
 
 /**
  * Get value by index.
@@ -53,18 +53,18 @@ static int STRUCT_NAME ## _seq_set (lua_State* L) \
  * \return getter function
  */
 #define INT_SEQ_GET(STRUCT_NAME, TYPE_NAME) \
-static int STRUCT_NAME ## _seq_get (lua_State* L) \
+  static int STRUCT_NAME ## _seq_get (lua_State * L) \
 { \
-  idl_lua_msg_t* ptr = lua_touserdata(L, 1); \
+  idl_lua_msg_t * ptr = lua_touserdata(L, 1); \
   lua_Integer ind = luaL_checkinteger(L, 2); \
-  TYPE_NAME* lst = rosidl_luacommon_array_check_ind(ptr, ind); \
+  TYPE_NAME * lst = rosidl_luacommon_array_check_ind(ptr, ind); \
   if (lst) { \
-    lua_pushinteger(L, lst[ind-1]); \
+      lua_pushinteger(L, lst[ind - 1]); \
   } else { \
-    lua_pushnil(L); \
+      lua_pushnil(L); \
   } \
-  return 1; \
-}
+    return 1; \
+  }
 
 /**
  * Message caller.
@@ -76,66 +76,66 @@ static int STRUCT_NAME ## _seq_get (lua_State* L) \
  * \return caller function
  */
 #define INT_SEQ_CALL(STRUCT_NAME, TYPE_NAME, V_MIN, V_MAX) \
-static int STRUCT_NAME ## _seq_call (lua_State* L) \
+  static int STRUCT_NAME ## _seq_call (lua_State * L) \
 { \
   bool done = false; \
   int tp = lua_type(L, 2); \
   if (LUA_TSTRING == tp) { \
-    const char* cmd = lua_tostring(L, 2);  \
-    if (strcmp(cmd, "resize") == 0) { \
-      lua_remove(L, 2); \
-      return STRUCT_NAME ## _seq_resize(L); \
-    } else if (strcmp(cmd, "copy") == 0) { \
-      idl_lua_msg_t* msg = lua_touserdata(L, 1); \
-      size_t arr_len = 0, arr_cap = 0; \
-      TYPE_NAME* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
-      lua_createtable(L, arr_len, 0); \
-      for (size_t i = 0; i < arr_len; i++) { \
-        lua_pushinteger(L, lst[i]); \
-        lua_rawseti(L, -2, i+1); \
+      const char * cmd = lua_tostring(L, 2); \
+      if (strcmp(cmd, "resize") == 0) { \
+        lua_remove(L, 2); \
+        return STRUCT_NAME ## _seq_resize(L); \
+      } else if (strcmp(cmd, "copy") == 0) { \
+        idl_lua_msg_t * msg = lua_touserdata(L, 1); \
+        size_t arr_len = 0, arr_cap = 0; \
+        TYPE_NAME * lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
+        lua_createtable(L, arr_len, 0); \
+        for (size_t i = 0; i < arr_len; i++) { \
+          lua_pushinteger(L, lst[i]); \
+          lua_rawseti(L, -2, i + 1); \
+        } \
+        return 1; \
       } \
-      return 1; \
-    } \
   } else if (LUA_TUSERDATA == tp) { \
-    return STRUCT_NAME ## _seq_copy(L); \
+      return STRUCT_NAME ## _seq_copy(L); \
   } else if (LUA_TTABLE == tp) { \
-    idl_lua_msg_t* msg = lua_touserdata(L, 1); \
-    int len = luaL_len(L, 2); \
-    if (len > 0 && msg->value >= IDL_LUA_SEQ) { \
-      size_t arr_len = 0, arr_cap = 0; \
-      TYPE_NAME* lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
-      if (arr_len != (size_t) len) { \
-        if (IDL_LUA_SEQ == msg->value) { \
-          if ((size_t) len <= arr_cap) { \
-            ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence*)msg->obj)->size = (size_t) len; \
-          } else if (!STRUCT_NAME ## _do_resize(msg, (size_t) len, false)) { \
+      idl_lua_msg_t * msg = lua_touserdata(L, 1); \
+      int len = luaL_len(L, 2); \
+      if (len > 0 && msg->value >= IDL_LUA_SEQ) { \
+        size_t arr_len = 0, arr_cap = 0; \
+        TYPE_NAME * lst = rosidl_luacommon_list_info(msg, &arr_len, &arr_cap); \
+        if (arr_len != (size_t) len) { \
+          if (IDL_LUA_SEQ == msg->value) { \
+            if ((size_t) len <= arr_cap) { \
+              ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence *)msg->obj)->size = (size_t) len; \
+            } else if (!STRUCT_NAME ## _do_resize(msg, (size_t) len, false)) { \
+              goto failed; \
+            } \
+            lst = ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence *)msg->obj)->data; \
+          } else { \
             goto failed; \
           } \
-          lst = ((rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence*)msg->obj)->data; \
-        } else { \
-          goto failed; \
         } \
-      } \
-      for (int i = 0; i < len; i++) { \
-        lua_pushinteger(L, i+1); \
-        lua_gettable(L, 2); \
-        lua_Integer val = luaL_checkinteger(L, -1); \
-        if (!(V_MIN <= val && ((TYPE_NAME) val) <= V_MAX)) { \
-          goto failed; \
+        for (int i = 0; i < len; i++) { \
+          lua_pushinteger(L, i + 1); \
+          lua_gettable(L, 2); \
+          lua_Integer val = luaL_checkinteger(L, -1); \
+          if (!(V_MIN <= val && ((TYPE_NAME) val) <= V_MAX)) { \
+            goto failed; \
+          } \
+          *lst++ = (TYPE_NAME) val; \
+          lua_pop(L, 1); \
         } \
-        *lst++ = (TYPE_NAME) val; \
-        lua_pop(L, 1); \
+        done = true; \
       } \
-      done = true; \
-    } \
   } \
 failed: \
   lua_pushboolean(L, done); \
-  return 1; \
-}
+    return 1; \
+  }
 
 /** int8 sequence metatable name. */
-const char* MT_SEQ_INT8 = "primitives_sequence__msg__int8__mt";
+const char * MT_SEQ_INT8 = "primitives_sequence__msg__int8__mt";
 
 INT_SEQ_SET (int8, int8_t, INT8_MIN, INT8_MAX)
 INT_SEQ_GET (int8, int8_t)
@@ -152,7 +152,7 @@ OBJ_METHODS (int8, int8_seq_len)
 OBJ_ADD_TABLE (int8, MT_SEQ_INT8)
 
 /** uint8 sequence metatable name. */
-const char* MT_SEQ_UINT8 = "primitives_sequence__msg__uint8__mt";
+const char * MT_SEQ_UINT8 = "primitives_sequence__msg__uint8__mt";
 
 INT_SEQ_SET (uint8, uint8_t, 0, UINT8_MAX)
 INT_SEQ_GET (uint8, uint8_t)
@@ -168,7 +168,7 @@ OBJ_METHODS (uint8, int8_seq_len)
 OBJ_ADD_TABLE (uint8, MT_SEQ_UINT8)
 
 /** int16 sequence metatable name. */
-const char* MT_SEQ_INT16 = "primitives_sequence__msg__int16__mt";
+const char * MT_SEQ_INT16 = "primitives_sequence__msg__int16__mt";
 
 INT_SEQ_SET (int16, int16_t, INT16_MIN, INT16_MAX)
 INT_SEQ_GET (int16, int16_t)
@@ -184,7 +184,7 @@ OBJ_METHODS (int16, int8_seq_len)
 OBJ_ADD_TABLE (int16, MT_SEQ_INT16)
 
 /* uint16 sequence metatable name. */
-const char* MT_SEQ_UINT16 = "primitives_sequence__msg__uint16__mt";
+const char * MT_SEQ_UINT16 = "primitives_sequence__msg__uint16__mt";
 
 INT_SEQ_SET (uint16, uint16_t, 0, UINT16_MAX)
 INT_SEQ_GET (uint16, uint16_t)
@@ -200,7 +200,7 @@ OBJ_METHODS (uint16, int8_seq_len)
 OBJ_ADD_TABLE (uint16, MT_SEQ_UINT16)
 
 /* int32 sequence metatable name. */
-const char* MT_SEQ_INT32 = "primitives_sequence__msg__int32__mt";
+const char * MT_SEQ_INT32 = "primitives_sequence__msg__int32__mt";
 
 INT_SEQ_SET (int32, int32_t, INT32_MIN, INT32_MAX)
 INT_SEQ_GET (int32, int32_t)
@@ -216,7 +216,7 @@ OBJ_METHODS (int32, int8_seq_len)
 OBJ_ADD_TABLE (int32, MT_SEQ_INT32)
 
 /* uint32 sequence metatable name. */
-const char* MT_SEQ_UINT32 = "primitives_sequence__msg__uint32__mt";
+const char * MT_SEQ_UINT32 = "primitives_sequence__msg__uint32__mt";
 
 INT_SEQ_SET (uint32, uint32_t, 0, UINT32_MAX)
 INT_SEQ_GET (uint32, uint32_t)
@@ -232,7 +232,7 @@ OBJ_METHODS (uint32, int8_seq_len)
 OBJ_ADD_TABLE (uint32, MT_SEQ_UINT32)
 
 /* int64 sequence metatable name. */
-const char* MT_SEQ_INT64 = "primitives_sequence__msg__int64__mt";
+const char * MT_SEQ_INT64 = "primitives_sequence__msg__int64__mt";
 
 INT_SEQ_SET (int64, int64_t, INT64_MIN, INT64_MAX)
 INT_SEQ_GET (int64, int64_t)
@@ -248,7 +248,7 @@ OBJ_METHODS (int64, int8_seq_len)
 OBJ_ADD_TABLE (int64, MT_SEQ_INT64)
 
 /* uint64 sequence metatable name. */
-const char* MT_SEQ_UINT64 = "primitives_sequence__msg__uint64__mt";
+const char * MT_SEQ_UINT64 = "primitives_sequence__msg__uint64__mt";
 
 INT_SEQ_SET (uint64, uint64_t, 0, UINT64_MAX)
 INT_SEQ_GET (uint64, uint64_t)

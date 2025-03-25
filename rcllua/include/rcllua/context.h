@@ -24,7 +24,7 @@ struct rcl_context_s;
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_context_methods(lua_State* L);
+void rcl_lua_add_context_methods(lua_State * L);
 
 /**
  * Get pointer to the context object. If it is not initialized,
@@ -32,6 +32,6 @@ void rcl_lua_add_context_methods(lua_State* L);
  *
  * \return pointer or NULL.
  */
-struct rcl_context_s* rcl_lua_context_ref();
+struct rcl_context_s * rcl_lua_context_ref();
 
 #endif  // RCLLUA__CONTEXT_H_

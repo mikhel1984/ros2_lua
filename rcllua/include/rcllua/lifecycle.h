@@ -22,6 +22,6 @@
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_lifecycle_methods (lua_State* L);
+void rcl_lua_add_lifecycle_methods(lua_State * L);
 
 #endif  // RCLLUA__LIFECYCLE_H_

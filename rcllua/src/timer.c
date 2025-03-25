@@ -22,13 +22,14 @@
 #include "rcllua/utils.h"
 
 /* Check timer status. */
-static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer);
+static int rcl_lua_timer_push_ready(lua_State * L, const rcl_timer_t * timer);
 
 /* Start timer */
-static int rcl_lua_timer_do_call (lua_State* L, rcl_timer_t* timer);
+static int rcl_lua_timer_do_call(lua_State * L, rcl_timer_t * timer);
 
 /** Indices of output elements. */
-enum TmOut {
+enum TmOut
+{
   /** callback function */
   TM_OUT_CALLBACK = 1,
   /** light userdata */
@@ -38,7 +39,7 @@ enum TmOut {
 };
 
 /** Timer object metatable name. */
-const char* MT_TIMER = "ROS2.Timer";
+const char * MT_TIMER = "ROS2.Timer";
 
 /**
  * Create new timer.
@@ -57,10 +58,10 @@ const char* MT_TIMER = "ROS2.Timer";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_init (lua_State* L)
+static int rcl_lua_timer_init(lua_State * L)
 {
   /* arg1 - clock */
-  rcl_clock_t* clock = luaL_checkudata(L, 1, MT_CLOCK);
+  rcl_clock_t * clock = luaL_checkudata(L, 1, MT_CLOCK);
 
   /* arg2 - period */
   lua_Number sec = luaL_checknumber(L, 2);
@@ -72,8 +73,8 @@ static int rcl_lua_timer_init (lua_State* L)
 
   /* init timer */
   rcl_allocator_t allocator = rcl_get_default_allocator();
-  rcl_context_t* context = rcl_lua_context_ref();
-  rcl_timer_t* timer = lua_newuserdata(L, sizeof(rcl_timer_t));  // push timer
+  rcl_context_t * context = rcl_lua_context_ref();
+  rcl_timer_t * timer = lua_newuserdata(L, sizeof(rcl_timer_t));  // push timer
   *timer = rcl_get_zero_initialized_timer();
 
   rcl_ret_t ret = rcl_timer_init(
@@ -102,7 +103,7 @@ static int rcl_lua_timer_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_free (lua_State* L)
+static int rcl_lua_timer_free(lua_State * L)
 {
   /* arg1 - timer object */
   rcl_timer_t *timer = lua_touserdata(L, 1);
@@ -130,10 +131,10 @@ static int rcl_lua_timer_free (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_is_ready (lua_State* L)
+static int rcl_lua_timer_is_ready(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_push_ready(L, timer);
@@ -154,10 +155,10 @@ static int rcl_lua_timer_is_ready (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_is_ready_ptr (lua_State* L)
+static int rcl_lua_timer_is_ready_ptr(lua_State * L)
 {
   /* arg1 - light userdata */
-  const rcl_timer_t* timer = lua_topointer(L, 1);
+  const rcl_timer_t * timer = lua_topointer(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_push_ready(L, timer);
@@ -175,10 +176,10 @@ static int rcl_lua_timer_is_ready_ptr (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_call (lua_State* L)
+static int rcl_lua_timer_call(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_do_call(L, timer);
@@ -196,10 +197,10 @@ static int rcl_lua_timer_call (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_call_ptr (lua_State* L)
+static int rcl_lua_timer_call_ptr(lua_State * L)
 {
   /* arg1 - light userdata */
-  rcl_timer_t* timer = (rcl_timer_t*) lua_topointer(L, 1);
+  rcl_timer_t * timer = (rcl_timer_t *) lua_topointer(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   return rcl_lua_timer_do_call(L, timer);
@@ -220,10 +221,10 @@ static int rcl_lua_timer_call_ptr (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_time_until_next_call (lua_State* L)
+static int rcl_lua_timer_time_until_next_call(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* get rest */
@@ -252,10 +253,10 @@ static int rcl_lua_timer_time_until_next_call (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_time_since_last_call (lua_State* L)
+static int rcl_lua_timer_time_since_last_call(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* get time */
@@ -284,10 +285,10 @@ static int rcl_lua_timer_time_since_last_call (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_get_period (lua_State* L)
+static int rcl_lua_timer_get_period(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* get period */
@@ -317,10 +318,10 @@ static int rcl_lua_timer_get_period (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_change_period (lua_State* L)
+static int rcl_lua_timer_change_period(lua_State * L)
 {
   /* arg1 - timer */
-  rcl_timer_t* timer = luaL_checkudata(L, 1, MT_TIMER);
+  rcl_timer_t * timer = luaL_checkudata(L, 1, MT_TIMER);
   /* arg2 - new period */
   lua_Number sec = luaL_checknumber(L, 2);
 
@@ -346,10 +347,10 @@ static int rcl_lua_timer_change_period (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_reset (lua_State* L)
+static int rcl_lua_timer_reset(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* reset state */
@@ -373,10 +374,10 @@ static int rcl_lua_timer_reset (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_cancel (lua_State* L)
+static int rcl_lua_timer_cancel(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* cancel */
@@ -403,10 +404,10 @@ static int rcl_lua_timer_cancel (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_timer_is_canceled (lua_State* L)
+static int rcl_lua_timer_is_canceled(lua_State * L)
 {
   /* arg1 - timer object */
-  rcl_timer_t* timer = lua_touserdata(L, 1);
+  rcl_timer_t * timer = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != timer, 1, "timer object is expected");
 
   /* check status */
@@ -436,7 +437,7 @@ static const struct luaL_Reg timer_methods[] = {
 };
 
 /* Add to library */
-void rcl_lua_add_timer_methods (lua_State* L)
+void rcl_lua_add_timer_methods(lua_State * L)
 {
   /* timer constructor */
   lua_pushcfunction(L, rcl_lua_timer_init);  // push function
@@ -461,7 +462,7 @@ void rcl_lua_add_timer_methods (lua_State* L)
  * \param[in] timer Timer object.
  * \return number of outputs.
  */
-static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer)
+static int rcl_lua_timer_push_ready(lua_State * L, const rcl_timer_t * timer)
 {
   /* check status */
   bool ready = false;
@@ -481,7 +482,7 @@ static int rcl_lua_timer_push_ready (lua_State* L, const rcl_timer_t* timer)
  * \param[in] timer Timer object.
  * \return number of outputs.
  */
-static int rcl_lua_timer_do_call (lua_State* L, rcl_timer_t* timer)
+static int rcl_lua_timer_do_call(lua_State * L, rcl_timer_t * timer)
 {
   rcl_ret_t ret = rcl_timer_call(timer);
   if (RCL_RET_OK != ret) {
@@ -492,10 +493,10 @@ static int rcl_lua_timer_do_call (lua_State* L, rcl_timer_t* timer)
 }
 
 /* Return table {callback, ref}. */
-bool rcl_lua_timer_push_callback (lua_State* L, const rcl_timer_t* timer)
+bool rcl_lua_timer_push_callback(lua_State * L, const rcl_timer_t * timer)
 {
   /* save result into table */
-  lua_createtable(L, TM_OUT_NUMBER-1, 0);  // push table a
+  lua_createtable(L, TM_OUT_NUMBER - 1, 0);  // push table a
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, timer);  // push function
   if (lua_isnil(L, -1)) {
@@ -504,7 +505,7 @@ bool rcl_lua_timer_push_callback (lua_State* L, const rcl_timer_t* timer)
   }
   lua_rawseti(L, -2, TM_OUT_CALLBACK);     // pop, a[.] = callback
 
-  lua_pushlightuserdata(L, (void*) timer);         // push reference
+  lua_pushlightuserdata(L, (void *) timer);         // push reference
   lua_rawseti(L, -2, TM_OUT_REF);          // pop, a[.] = reference
   /* keep table 'a' on stack */
   return true;

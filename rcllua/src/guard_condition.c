@@ -21,11 +21,11 @@
 #include "rcllua/utils.h"
 
 /** Guard condition metatable name. */
-const char* MT_GUARD_CONDITION = "ROS2.GuardCondition";
+const char * MT_GUARD_CONDITION = "ROS2.GuardCondition";
 
 /**
  * Create guard condition object.
- * 
+ *
  * Table: rclbind
  * Method: new_guard_condition
  *
@@ -38,10 +38,10 @@ const char* MT_GUARD_CONDITION = "ROS2.GuardCondition";
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_guard_condition_init (lua_State* L)
+static int rcl_lua_guard_condition_init(lua_State * L)
 {
   /* make object */
-  rcl_guard_condition_t* guard = lua_newuserdata(L, sizeof(rcl_guard_condition_t));
+  rcl_guard_condition_t * guard = lua_newuserdata(L, sizeof(rcl_guard_condition_t));
   *guard = rcl_get_zero_initialized_guard_condition();
   rcl_guard_condition_options_t opt = rcl_guard_condition_get_default_options();
 
@@ -72,10 +72,10 @@ static int rcl_lua_guard_condition_init (lua_State* L)
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_guard_condition_free (lua_State* L)
+static int rcl_lua_guard_condition_free(lua_State * L)
 {
   /* arg1 - guard condition object */
-  rcl_guard_condition_t* guard = lua_touserdata(L, 1);
+  rcl_guard_condition_t * guard = lua_touserdata(L, 1);
 
   rcl_ret_t ret = rcl_guard_condition_fini(guard);
   if (RCL_RET_OK != ret) {
@@ -90,21 +90,21 @@ static int rcl_lua_guard_condition_free (lua_State* L)
  *
  * Arguments:
  * - guard condition object
- * 
+ *
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-static int rcl_lua_guard_condition_trigger (lua_State* L)
+static int rcl_lua_guard_condition_trigger(lua_State * L)
 {
   /* arg1 - guard condition object */
-  rcl_guard_condition_t* guard = lua_touserdata(L, 1);
+  rcl_guard_condition_t * guard = lua_touserdata(L, 1);
   luaL_argcheck(L, NULL != guard, 1, "guard condition is expected");
 
   rcl_ret_t ret = rcl_trigger_guard_condition(guard);
   if (RCL_RET_OK != ret) {
     luaL_error(L, "failed to trigger guard condition");
   }
-  
+
   return 0;
 }
 
@@ -116,7 +116,7 @@ static const struct luaL_Reg guard_methods[] = {
 };
 
 /* Add guard condition to library */
-void rcl_lua_add_guard_condition_methods (lua_State* L)
+void rcl_lua_add_guard_condition_methods(lua_State * L)
 {
   /* constructor */
   lua_pushcfunction(L, rcl_lua_guard_condition_init);  // push function
@@ -127,7 +127,7 @@ void rcl_lua_add_guard_condition_methods (lua_State* L)
 }
 
 /* Get guard condition callback */
-bool rcl_lua_guard_condition_push_callback (lua_State* L, const rcl_guard_condition_t* guard)
+bool rcl_lua_guard_condition_push_callback(lua_State * L, const rcl_guard_condition_t * guard)
 {
   return lua_rawgetp(L, LUA_REGISTRYINDEX, guard) != LUA_TNIL;
 }

@@ -20,7 +20,7 @@
 #include "rosidl_luacommon/definition.h"
 
 /** Prototype for data reallocation. */
-typedef bool (*msg_mem_realloc)(idl_lua_msg_t*, size_t, bool);
+typedef bool (*msg_mem_realloc)(idl_lua_msg_t *, size_t, bool);
 
 /**
  * Find length of array or sequence, push result to stack.
@@ -28,7 +28,7 @@ typedef bool (*msg_mem_realloc)(idl_lua_msg_t*, size_t, bool);
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-int rosidl_luacommon_push_length (lua_State* L);
+int rosidl_luacommon_push_length(lua_State * L);
 
 /**
  * Push simplified string representation of a message to the stack.
@@ -37,7 +37,7 @@ int rosidl_luacommon_push_length (lua_State* L);
  * \param[in] prefix Message name.
  * \return number of outputs.
  */
-int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix);
+int rosidl_luacommon_push_msg_string(lua_State * L, const char * prefix);
 
 /**
  * Update sequence length. Push boolean result of operation to the stack.
@@ -46,7 +46,7 @@ int rosidl_luacommon_push_msg_string (lua_State* L, const char* prefix);
  * \param[in] fn Message-related method for memory allocation.
  * \return number of outputs.
  */
-int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn);
+int rosidl_luacommon_push_realloc(lua_State * L, msg_mem_realloc fn);
 
 /**
  * Get pointer to message array if the index is not out of range.
@@ -55,7 +55,7 @@ int rosidl_luacommon_push_realloc (lua_State* L, msg_mem_realloc fn);
  * \param ind Element index.
  * \return pointer to array or NULL.
  */
-void* rosidl_luacommon_array_check_ind (idl_lua_msg_t* msg, int ind);
+void * rosidl_luacommon_array_check_ind(idl_lua_msg_t * msg, int ind);
 
 /**
  * Execute function from the given table.
@@ -64,7 +64,7 @@ void* rosidl_luacommon_array_check_ind (idl_lua_msg_t* msg, int ind);
  * \param[in] table Name of the table with functions.
  * \param[in] top Expected stack top before function call.
  */
-void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top);
+void rosidl_luacommon_field_apply(lua_State * L, const char * table, int top);
 
 /**
  * Read elements from dictionary and set the message fields.
@@ -73,7 +73,7 @@ void rosidl_luacommon_field_apply (lua_State* L, const char* table, int top);
  * \param[inout] L Lua stack.
  * \return true in case of success.
  */
-bool rosidl_luacommon_fill_from_table (lua_State* L);
+bool rosidl_luacommon_fill_from_table(lua_State * L);
 
 /**
  * Check if the geven arguments are of different type, push false in this case.
@@ -81,7 +81,7 @@ bool rosidl_luacommon_fill_from_table (lua_State* L);
  * \param[inout] L Lua stack.
  * \return true when the arguments are different.
  */
-bool rosidl_luacommon_push_wrong_args (lua_State* L);
+bool rosidl_luacommon_push_wrong_args(lua_State * L);
 
 /**
  * When the argement contains array or sequence, find its length, capacity and data pointer.
@@ -91,7 +91,7 @@ bool rosidl_luacommon_push_wrong_args (lua_State* L);
  * \param[out] capacity List capacity, equal to size for array.
  * \return List data pointer or NULL.
  */
-void* rosidl_luacommon_list_info (const idl_lua_msg_t* msg, size_t* size, size_t* capacity);
+void * rosidl_luacommon_list_info(const idl_lua_msg_t * msg, size_t * size, size_t * capacity);
 
 /**
  * Get list of keys or element type, push result to stack.
@@ -100,7 +100,7 @@ void* rosidl_luacommon_list_info (const idl_lua_msg_t* msg, size_t* size, size_t
  * \param[in] table Table name with fields.
  * \return number of outputs.
  */
-int rosidl_luacommon_push_msg_keys (lua_State* L, const char* table);
+int rosidl_luacommon_push_msg_keys(lua_State * L, const char * table);
 
 /**
  * Push new message, fill it from C structure.
@@ -109,7 +109,6 @@ int rosidl_luacommon_push_msg_keys (lua_State* L, const char* table);
  * \param[in] pos Stack position of the interface table.
  * \param[in] data Source C structure.
  */
-void rosidl_luacommon_struct_to_msg (lua_State* L, int pos, void* data);
+void rosidl_luacommon_struct_to_msg(lua_State * L, int pos, void * data);
 
 #endif  // ROSIDL_LUACOMMON__UTILITY_H_
-

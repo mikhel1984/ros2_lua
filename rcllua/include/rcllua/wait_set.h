@@ -18,13 +18,13 @@
 #include <lua.h>
 
 /* Metatable name */
-extern const char* MT_WAIT_SET;
+extern const char * MT_WAIT_SET;
 
 /**
  * Create WaitSet metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_wait_set_methods (lua_State* L);
+void rcl_lua_add_wait_set_methods(lua_State * L);
 
 #endif  // RCLLUA__WAIT_SET_H_

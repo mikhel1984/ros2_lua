@@ -16,21 +16,21 @@
 
 /* Prototipes */
 
-void rosidl_luacommon_add_float (lua_State* L);
-void rosidl_luacommon_add_double (lua_State* L);
-void rosidl_luacommon_add_long_double (lua_State* L);
+void rosidl_luacommon_add_float(lua_State * L);
+void rosidl_luacommon_add_double(lua_State * L);
+void rosidl_luacommon_add_long_double(lua_State * L);
 
-void rosidl_luacommon_add_int8 (lua_State* L);
-void rosidl_luacommon_add_uint8 (lua_State* L);
-void rosidl_luacommon_add_int16 (lua_State* L);
-void rosidl_luacommon_add_uint16 (lua_State* L);
-void rosidl_luacommon_add_int32 (lua_State* L);
-void rosidl_luacommon_add_uint32 (lua_State* L);
-void rosidl_luacommon_add_int64 (lua_State* L);
-void rosidl_luacommon_add_uint64 (lua_State* L);
+void rosidl_luacommon_add_int8(lua_State * L);
+void rosidl_luacommon_add_uint8(lua_State * L);
+void rosidl_luacommon_add_int16(lua_State * L);
+void rosidl_luacommon_add_uint16(lua_State * L);
+void rosidl_luacommon_add_int32(lua_State * L);
+void rosidl_luacommon_add_uint32(lua_State * L);
+void rosidl_luacommon_add_int64(lua_State * L);
+void rosidl_luacommon_add_uint64(lua_State * L);
 
-void rosidl_luacommon_add_boolean (lua_State* L);
-void rosidl_luacommon_add_String (lua_State* L);
+void rosidl_luacommon_add_boolean(lua_State * L);
+void rosidl_luacommon_add_String(lua_State * L);
 
 /**
  * Make Lua library with sequences of primitive types.
@@ -38,7 +38,7 @@ void rosidl_luacommon_add_String (lua_State* L);
  * \param[inout] L Lua stack.
  * \return number of outputs.
  */
-int luaopen_rosidl_luacommon_sequence (lua_State* L)
+int luaopen_rosidl_luacommon_sequence(lua_State * L)
 {
   lua_createtable(L, 0, 0);  // TODO(Mikhel) save metatables
 

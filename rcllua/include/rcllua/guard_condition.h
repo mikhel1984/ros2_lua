@@ -19,14 +19,14 @@
 
 struct rcl_guard_condition_s;
 
-extern const char* MT_GUARD_CONDITION;
+extern const char * MT_GUARD_CONDITION;
 
 /**
  * Create guard condition metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_guard_condition_methods (lua_State* L);
+void rcl_lua_add_guard_condition_methods(lua_State * L);
 
 /**
  * Push to the stack callback if any.
@@ -35,8 +35,8 @@ void rcl_lua_add_guard_condition_methods (lua_State* L);
  * \param[in] guard Guard condition pointer.
  * \return true when callback is found.
  */
-bool rcl_lua_guard_condition_push_callback (
-  lua_State* L, 
-  const struct rcl_guard_condition_s* guard);
+bool rcl_lua_guard_condition_push_callback(
+  lua_State * L,
+  const struct rcl_guard_condition_s * guard);
 
 #endif  // RCLLUA__GUARD_CONDITION_H_

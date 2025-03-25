@@ -23,33 +23,33 @@
  * \return function for equality checking.
  */
 #define OBJ_SEQ_EQ(STRUCT_NAME, METATABLE) \
-static int STRUCT_NAME ## _seq_eq (lua_State* L) \
+  static int STRUCT_NAME ## _seq_eq (lua_State * L) \
 { \
-  idl_lua_msg_t* ptr1 = lua_touserdata(L, 1); \
-  idl_lua_msg_t* ptr2 = luaL_checkudata(L, 2, METATABLE); \
+  idl_lua_msg_t * ptr1 = lua_touserdata(L, 1); \
+  idl_lua_msg_t * ptr2 = luaL_checkudata(L, 2, METATABLE); \
   rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence s1, s2; \
   if (ptr1->value == IDL_LUA_SEQ) { \
-    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr1->obj; \
-    s1 = *seq; \
+      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence * seq = ptr1->obj; \
+      s1 = *seq; \
   } else if (ptr1->value > 0) { \
-    s1.data = ptr1->obj; \
-    s1.size = s1.capacity = ptr1->value; \
+      s1.data = ptr1->obj; \
+      s1.size = s1.capacity = ptr1->value; \
   } else { \
-    luaL_error(L, "unexpected object"); \
+      luaL_error(L, "unexpected object"); \
   } \
   if (ptr2->value == IDL_LUA_SEQ) { \
-    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr2->obj; \
-    s2 = *seq; \
+      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence * seq = ptr2->obj; \
+      s2 = *seq; \
   } else if (ptr2->value > 0) { \
-    s2.data = ptr2->obj; \
-    s2.size = s2.capacity = ptr2->value; \
+      s2.data = ptr2->obj; \
+      s2.size = s2.capacity = ptr2->value; \
   } else { \
-    luaL_error(L, "unexpected object"); \
+      luaL_error(L, "unexpected object"); \
   } \
   lua_pushboolean(L, \
-    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__are_equal(&s1, &s2));  \
-  return 1; \
-}
+    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__are_equal(&s1, &s2)); \
+    return 1; \
+  }
 
 /**
  * Get sequence length.
@@ -58,10 +58,10 @@ static int STRUCT_NAME ## _seq_eq (lua_State* L) \
  * \return function for getting length.
  */
 #define OBJ_SEQ_LEN(STRUCT_NAME) \
-static int STRUCT_NAME ## _seq_len (lua_State* L) \
+  static int STRUCT_NAME ## _seq_len (lua_State * L) \
 { \
-  return rosidl_luacommon_push_length(L); \
-}
+    return rosidl_luacommon_push_length(L); \
+  }
 
 /**
  * Short string description.
@@ -70,10 +70,10 @@ static int STRUCT_NAME ## _seq_len (lua_State* L) \
  * \return function for getting string description.
  */
 #define OBJ_SEQ_STR(STRUCT_NAME) \
-static int STRUCT_NAME ## _seq_str (lua_State* L) \
+  static int STRUCT_NAME ## _seq_str (lua_State * L) \
 { \
-  return rosidl_luacommon_push_msg_string(L, #STRUCT_NAME); \
-}
+    return rosidl_luacommon_push_msg_string(L, #STRUCT_NAME); \
+  }
 
 /**
  * Make copy of sequence.
@@ -84,40 +84,40 @@ static int STRUCT_NAME ## _seq_str (lua_State* L) \
  * \return function for making copy.
  */
 #define OBJ_SEQ_COPY(STRUCT_NAME, TYPE_NAME, METATABLE) \
-static int STRUCT_NAME ## _seq_copy (lua_State* L) \
+  static int STRUCT_NAME ## _seq_copy (lua_State * L) \
 { \
-  idl_lua_msg_t* dst = luaL_checkudata(L, 1, METATABLE); \
-  idl_lua_msg_t* src = luaL_checkudata(L, 2, METATABLE); \
+  idl_lua_msg_t * dst = luaL_checkudata(L, 1, METATABLE); \
+  idl_lua_msg_t * src = luaL_checkudata(L, 2, METATABLE); \
   bool done = false; \
   if (dst->value == IDL_LUA_SEQ) { \
-    if (src->value == IDL_LUA_SEQ) { \
-      done = rosidl_runtime_c__ ## STRUCT_NAME ##__Sequence__copy(src->obj, dst->obj); \
-    } else if (src->value > 0) { \
-      rosidl_runtime_c__ ## STRUCT_NAME ##__Sequence tmp; \
-      tmp.data = src->obj; \
-      tmp.size = tmp.capacity = (size_t) src->value; \
-      done = rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__copy(&tmp, dst->obj); \
-    } \
+      if (src->value == IDL_LUA_SEQ) { \
+        done = rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__copy(src->obj, dst->obj); \
+      } else if (src->value > 0) { \
+        rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence tmp; \
+        tmp.data = src->obj; \
+        tmp.size = tmp.capacity = (size_t) src->value; \
+        done = rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__copy(&tmp, dst->obj); \
+      } \
   } else if (dst->value > 0) { \
-    TYPE_NAME *a = dst->obj, *b = NULL; \
-    if (src->value > 0 && dst->value == src->value) { \
-      b = src->obj; \
-    } else if (src->value == IDL_LUA_SEQ) { \
-      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = src->obj; \
-      if (seq->size == (size_t) dst->value) { \
-        b = seq->data; \
+      TYPE_NAME *a = dst->obj, *b = NULL; \
+      if (src->value > 0 && dst->value == src->value) { \
+        b = src->obj; \
+      } else if (src->value == IDL_LUA_SEQ) { \
+        rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence * seq = src->obj; \
+        if (seq->size == (size_t) dst->value) { \
+          b = seq->data; \
+        } \
       } \
-    } \
-    if (b != NULL) { \
-      for (int i = 0; i < dst->value; i++) { \
-        *a++ = *b++; \
+      if (b != NULL) { \
+        for (int i = 0; i < dst->value; i++) { \
+          *a++ = *b++; \
+        } \
+        done = true; \
       } \
-      done = true; \
-    } \
   } \
   lua_pushboolean(L, done); \
-  return 1; \
-}
+    return 1; \
+  }
 
 /**
  * Update sequence size with message-specific functions.
@@ -126,30 +126,30 @@ static int STRUCT_NAME ## _seq_copy (lua_State* L) \
  * \return function for message resize.
  */
 #define OBJ_SEQ_DO_RESIZE(STRUCT_NAME) \
-bool STRUCT_NAME ## _do_resize (idl_lua_msg_t* ptr, size_t n, bool copy) \
+  bool STRUCT_NAME ## _do_resize (idl_lua_msg_t * ptr, size_t n, bool copy) \
 { \
-  rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence* seq = ptr->obj; \
+  rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence * seq = ptr->obj; \
   bool done = true; \
   if (copy) { \
-    rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence newseq; \
-    if (rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(&newseq, n) && \
+      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence newseq; \
+      if (rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(&newseq, n) && \
         rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__copy(seq, &newseq)) \
-    { \
-      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence tmp = *seq; \
-      *seq = newseq; \
-      seq->size = n; \
-      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(&tmp); \
-    } else { \
-      done = false; \
-    } \
+      { \
+        rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence tmp = *seq; \
+        *seq = newseq; \
+        seq->size = n; \
+        rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(&tmp); \
+      } else { \
+        done = false; \
+      } \
   } else { \
-    if (seq->capacity) { \
-      rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(seq); \
-    } \
-    done = rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(seq, n); \
+      if (seq->capacity) { \
+        rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__fini(seq); \
+      } \
+      done = rosidl_runtime_c__ ## STRUCT_NAME ## __Sequence__init(seq, n); \
   } \
-  return done; \
-}
+    return done; \
+  }
 
 /**
  * Get array type.
@@ -158,10 +158,10 @@ bool STRUCT_NAME ## _do_resize (idl_lua_msg_t* ptr, size_t n, bool copy) \
  * \param function to get type.
  */
 #define OBJ_SEQ_BNOT(STRUCT_NAME) \
-static int STRUCT_NAME ## _seq_bnot (lua_State* L) \
+  static int STRUCT_NAME ## _seq_bnot (lua_State * L) \
 { \
-  return rosidl_luacommon_push_msg_keys(L, ""); \
-}
+    return rosidl_luacommon_push_msg_keys(L, ""); \
+  }
 
 /**
  * Resize sequence.
@@ -170,10 +170,10 @@ static int STRUCT_NAME ## _seq_bnot (lua_State* L) \
  * \return function for changing size.
  */
 #define OBJ_SEQ_RESIZE(STRUCT_NAME) \
-static int STRUCT_NAME ## _seq_resize (lua_State* L) \
+  static int STRUCT_NAME ## _seq_resize (lua_State * L) \
 { \
-  return rosidl_luacommon_push_realloc(L, STRUCT_NAME ## _do_resize); \
-}
+    return rosidl_luacommon_push_realloc(L, STRUCT_NAME ## _do_resize); \
+  }
 
 /**
  * Prepare list of metamethods.
@@ -183,18 +183,18 @@ static int STRUCT_NAME ## _seq_resize (lua_State* L) \
  * \return array of metamethods.
  */
 #define OBJ_METHODS(STRUCT_NAME, LEN_METHOD) \
-static const struct luaL_Reg STRUCT_NAME ## _seq_methods[] = {\
-  {"__index", STRUCT_NAME ## _seq_get}, \
-  {"__newindex", STRUCT_NAME ## _seq_set}, \
-  {"__eq", STRUCT_NAME ## _seq_eq}, \
-  {"__len", LEN_METHOD}, \
-  {"__tostring", STRUCT_NAME ## _seq_str}, \
-  {"__call", STRUCT_NAME ## _seq_call}, \
-  {"__bnot", STRUCT_NAME ## _seq_bnot}, \
-  {"copy", STRUCT_NAME ## _seq_copy}, \
-  {"resize", STRUCT_NAME ## _seq_resize}, \
-  {NULL, NULL} \
-};
+  static const struct luaL_Reg STRUCT_NAME ## _seq_methods[] = { \
+    {"__index", STRUCT_NAME ## _seq_get}, \
+    {"__newindex", STRUCT_NAME ## _seq_set}, \
+    {"__eq", STRUCT_NAME ## _seq_eq}, \
+    {"__len", LEN_METHOD}, \
+    {"__tostring", STRUCT_NAME ## _seq_str}, \
+    {"__call", STRUCT_NAME ## _seq_call}, \
+    {"__bnot", STRUCT_NAME ## _seq_bnot}, \
+    {"copy", STRUCT_NAME ## _seq_copy}, \
+    {"resize", STRUCT_NAME ## _seq_resize}, \
+    {NULL, NULL} \
+  };
 
 /**
  * Defin metatable, fill with methods.
@@ -204,11 +204,11 @@ static const struct luaL_Reg STRUCT_NAME ## _seq_methods[] = {\
  * \return function for saving metamethods to library.
  */
 #define OBJ_ADD_TABLE(STRUCT_NAME, METATABLE) \
-void rosidl_luacommon_add_ ## STRUCT_NAME (lua_State* L) \
+  void rosidl_luacommon_add_ ## STRUCT_NAME (lua_State * L) \
 { \
   luaL_newmetatable(L, METATABLE); \
-  luaL_setfuncs(L, STRUCT_NAME ## _seq_methods , 0); \
+  luaL_setfuncs(L, STRUCT_NAME ## _seq_methods, 0); \
   lua_pop(L, 1); \
-}
+  }
 
 #endif  // ROSIDL_LUACOMMON__SEQUENCE_MACRO_H_

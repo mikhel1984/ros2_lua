@@ -38,7 +38,7 @@
  *
  * \param[inout] L Lua stack.
  */
-int luaopen_rcllua_rclbind (lua_State* L)
+int luaopen_rcllua_rclbind(lua_State * L)
 {
   lua_createtable(L, 0, 30);  // TODO(Mikhel) set number
 

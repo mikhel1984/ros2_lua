@@ -17,13 +17,13 @@
 
 #include <lua.h>
 
-extern const char* MT_ACTION_SERVER;
+extern const char * MT_ACTION_SERVER;
 
 /**
  * Create action server metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_action_server_methods (lua_State* L);
+void rcl_lua_add_action_server_methods(lua_State * L);
 
 #endif  // RCLLUA__ACTION_SERVER_H_

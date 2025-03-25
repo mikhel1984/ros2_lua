@@ -20,14 +20,14 @@
 struct rmw_qos_profile_s;
 
 /* Metatable name */
-extern const char* MT_QOS;
+extern const char * MT_QOS;
 
 /**
  * Create QoS metatable, add constructor to library.
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_qos_methods (lua_State* L);
+void rcl_lua_add_qos_methods(lua_State * L);
 
 /**
  * Make copy of the gimen QoS object.
@@ -35,6 +35,6 @@ void rcl_lua_add_qos_methods (lua_State* L);
  * \param[inout] L Lua stack.
  * \param[in] src object making copy.
  */
-void rcl_lua_qos_push_copy (lua_State* L, const struct rmw_qos_profile_s* src);
+void rcl_lua_qos_push_copy(lua_State * L, const struct rmw_qos_profile_s * src);
 
 #endif  // RCLLUA__QOS_H_

@@ -22,7 +22,8 @@
  * Type of the LUA wrapper for ROS message.
  * Negative value is used to object reference, positive - array size.
  */
-typedef enum {
+typedef enum
+{
   /* Must be deleted with 'fini'. */
   /** Main pointer to the object. */
   IDL_LUA_OBJECT = -2,
@@ -36,14 +37,15 @@ typedef enum {
 } IDL_LUA_TYPE;
 
 /** Wrapper for ROS message. */
-typedef struct {
+typedef struct
+{
   /** Pointer to message or list of messages. */
   void *obj;
   /** Define pointer type. In the case of array define its length. */
   int value;
 } idl_lua_msg_t;
 
-/** 
+/**
  * Call 'require' to get library.
  *
  * \param lib library name.

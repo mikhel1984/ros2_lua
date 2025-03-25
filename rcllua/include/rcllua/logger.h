@@ -22,6 +22,6 @@
  *
  * \param[inout] L Lua stack.
  */
-void rcl_lua_add_logger_methods (lua_State* L);
+void rcl_lua_add_logger_methods(lua_State * L);
 
 #endif  // RCLLUA__LOGGER_H_

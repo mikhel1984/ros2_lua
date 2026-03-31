@@ -26,6 +26,50 @@ ROS2 содержит богатый набор [CLI](https://docs.ros.org/en/hu
 
 Начать знакомство со структурой кода можно на [сайте](https://docs.ros.org/en/humble/Concepts/Advanced/About-Internal-Interfaces.html) ROS2. Однако наилучшая документация, которую мне удалось найти, это описание функций в самой библиотеке [rcl](https://github.com/ros2/rcl). Также полезно рассмотреть реализацию официальных клиентских библиотек [rclcpp](https://github.com/ros2/rclcpp), [rclpy](https://github.com/ros2/rclpy), [rclc](https://github.com/ros2/rclc), однако они перегружены дополнительным функционалом, разобраться в котором может быть непросто. Очень помогли сторонние библиотеки типа [ros2_dotnet](https://github.com/ros2-dotnet/ros2_dotnet), [ros2_rust](https://github.com/ros2-rust/ros2_rust), так как в них проще найти "скелет", который требуется реализовать.
 
+## фыфвыф
 
+Состояние исполняемого ROS2 файла хранится в объекте *rcl_context_t*, который должен быть первым создан и последним освобожден. Библиотеки *rclcpp* и *rclpy* допускают наличие нескольких контекстов и создают их динамически. Если же вы считаете, что одного контекста более чем достаточно, можно пойти по пути *rcldontnet* и объявить статическую переменную. Работа с контекстом может выглядеть следующим образом. Каждый объект *rcl* имеет конструктор по умолчанию (_get_zero_initialized), функцию инициализации (_init) и освобождения ресуросов (_fini). Задача клиентской библиотеки заключается, в том числе, в обеспечении правильного порядка их вызовов.  
+```c
+static rcl_context_t context_;
+
+// инициализация
+static int rcl_lua_context_init (lua_State* L)
+{
+  // инициализация пустого объекта
+  context_ = rcl_get_zero_initialized_context();
+
+  // опции запуска по умолчанию
+  rcl_allocator_t allocator = rcl_get_default_allocator();
+  rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+  rcl_ret_t ret = rcl_init_options_init(&init_options, allocator);
+
+  // заполнение полей контекста
+  ret = rcl_init(argc, argv, &init_options, &context_);
+
+  // инициализация логирования
+  rcutils_ret_t rcret = rcutils_logging_initialize();
+
+  return 0;
+}
+
+// проверка текущего состояния контекста
+static int rcl_lua_context_ok (lua_State* L)
+{
+  lua_pushboolean(L, rcl_context_is_valid(&context_));
+
+  return 1;
+}
+
+// освобождение ресурсов
+static int rcl_lua_context_shutdown (lua_State* L)
+{
+  // контекст
+  rcl_ret_t ret = rcl_shutdown(&context_);
+  // логирование
+  rcutils_ret_t rcret = rcutils_logging_shutdown();
+
+  return 0;
+}
+```
 
 

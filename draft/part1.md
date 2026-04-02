@@ -29,7 +29,15 @@ ROS2 содержит богатый набор [CLI](https://docs.ros.org/en/hu
 ## фыфвыф
 
 Состояние исполняемого ROS2 файла хранится в объекте *rcl_context_t*, который должен быть первым создан и последним освобожден. Библиотеки *rclcpp* и *rclpy* допускают наличие нескольких контекстов и создают их динамически. Если же вы считаете, что одного контекста более чем достаточно, можно пойти по пути *rcldontnet* и объявить статическую переменную. Работа с контекстом может выглядеть следующим образом. Каждый объект *rcl* имеет конструктор по умолчанию (_get_zero_initialized), функцию инициализации (_init) и освобождения ресуросов (_fini). Задача клиентской библиотеки заключается, в том числе, в обеспечении правильного порядка их вызовов.  
+
+Зависимость от rcutils...
+
 ```c
+#include <rcl/allocator.h>
+#include <rcl/init.h>
+#include <rcl/init_options.h>
+#include <rcl/logging.h>
+
 static rcl_context_t context_;
 
 // инициализация
@@ -72,4 +80,175 @@ static int rcl_lua_context_shutdown (lua_State* L)
 }
 ```
 
+Логирование мы инициализировали, теперь нужно добавить функцию, которая будет выводить сообщение пользователя. Для этого используем rcutils_log(), первым аргументом тут является структура rcutils_log_location_t, содержащая дополнительную информацию о файле, функции и строке кода, но можно обойтись без нее.
+
+```c
+#include <rcutils/logging.h>
+
+static int rcl_lua_logger_log_simp (lua_State* L)
+{
+  rcutils_log(NULL, severity, name, "%s", message);
+
+  return 0;
+}
+```
+
+Для того чтобы публиковать сообщения по таймеру, нам нужны два объекта: собственно таймер и часы. 
+
+Про часы ...
+
+```c
+#include <rcl/time.h>
+
+static int rcl_lua_clock_init (lua_State* L)
+{  
+  rcl_clock_t* clock = lua_newuserdata(L, sizeof(rcl_clock_t));
+  rcl_allocator_t allocator = rcl_get_default_allocator();
+  rcl_ret_t ret = rcl_clock_init(clock_type, clock, &allocator);
+
+  return 1;
+}
+
+static int rcl_lua_clock_free (lua_State* L)
+{
+  rcl_ret_t ret = rcl_clock_fini(clock);
+
+  return 0;
+}
+```
+
+Для таймера на данный момент достаточно иметь возможность создания, освобождения, и запуска.
+
+```c
+#include <rcl/timer.h>
+
+static int rcl_lua_timer_init (lua_State* L)
+{
+  rcl_allocator_t allocator = rcl_get_default_allocator();
+  rcl_timer_t* timer = lua_newuserdata(L, sizeof(rcl_timer_t));
+  *timer = rcl_get_zero_initialized_timer();
+
+  rcl_ret_t ret = rcl_timer_init(
+    timer, clock, context_, period_nsec, NULL, allocator);
+
+  return 1;
+}
+
+static int rcl_lua_timer_free (lua_State* L)
+{
+  rcl_ret_t ret = rcl_timer_fini(timer);
+
+  return 0;
+}
+
+static int rcl_lua_timer_call (lua_State* L)
+{
+  rcl_ret_t ret = rcl_timer_call(timer);
+
+  return 0;
+}
+```
+
+За асинхронность в ROS2 отвечает объект wait_set_t...
+
+```c
+#include <rcl/wait.h>
+
+static int rcl_lua_wait_set_init (lua_State* L)
+{
+  rcl_wait_set_t* wait_set = lua_newuserdata(L, sizeof(rcl_wait_set_t));
+  *wait_set = rcl_get_zero_initialized_wait_set();
+  rcl_ret_t ret = rcl_wait_set_init(
+    wait_set,
+    (size_t) num_sub,     // число подписчиков
+    (size_t) num_guard,   // число ?
+    (size_t) num_timers,  // число таймеров
+    (size_t) num_cli,     // число клиентов
+    (size_t) num_srv,     // число сервисов
+    (size_t) num_ev,      // число событий
+    context_,
+    rcl_get_default_allocator());
+
+  return 1;
+}
+
+static int rcl_lua_wait_set_free (lua_State* L)
+{
+  rcl_ret_t ret = rcl_wait_set_fini(wait_set);
+
+  return 0;
+}
+
+static int rcl_lua_wait_set_clear (lua_State* L)
+{
+  rcl_ret_t ret = rcl_wait_set_clear(wait_set);
+
+  return 0;
+}
+
+static int rcl_lua_wait_set_add_timer (lua_State* L)
+{
+  size_t index = 0;
+  rcl_ret_t ret = rcl_wait_set_add_timer(wait_set, timer, &index);
+
+  return 1;
+}
+
+static int rcl_lua_wait_set_wait (lua_State* L)
+{
+  rcl_ret_t ret = rcl_wait(wait_set, timeout);
+  switch (ret) {
+    case RCL_RET_OK: break;
+    case RCL_RET_TIMEOUT:
+      // успешно
+    default:
+      // ошибка
+  }
+
+  return 1;
+}
+
+static int rcl_lua_wait_set_ready_timers (lua_State* L)
+{
+  for (size_t i = 0; i < wait_set->size_of_timers; i++) {
+    if (wait_set->timers[i]))
+    {   
+      // помещяем связанную функцию в список
+    }
+  }
+
+  return 1;
+}
+```
+
+После того как библиотека скомпилирована, можно написать исполняемый файл ...
+
+```lua
+local rclbind = require("rcllua.rclbind")
+
+local function timer_cb ()
+  rclbind.simp_log(rclbind.LogLevel.INFO, "rcllua", "Hello world")
+end
+
+rclbind.context_init(arg)
+
+local clock = rclbind.new_clock(rclbind.ClockType.STEADY_TIME)
+local timer = rclbind.new_timer(clock, 0.5, timer_cb)
+local wait_set = rclbind.new_wait_set(0, 0, 1, 0, 0, 0)
+
+timer:call()
+
+while rclbind.context_ok() do
+  wait_set:clear()
+  wait_set:add_timer(timer)
+
+  wait_set:wait(-1)
+
+  -- извлечение через wait_set:ready_timers()
+  timer_cb()
+  timer:call()
+end
+
+rclbind.context_shutdown()
+```
 

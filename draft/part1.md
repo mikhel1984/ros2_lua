@@ -254,7 +254,7 @@ static int rcl_lua_wait_set_ready_timers (lua_State* L)
 ```
 Здесь показаны таймеры, однако для других объектов (подписчиков, клиентов и пр.) метод добавления в Wait Set и проверки состояния аналогичен.
 
-После того как библиотека скомпилирована, можно написать программу. Для ее запуска colcon не нужен, достаточно вызвать исполняемый файл. В случае Lua код может быть следующим.
+После того как библиотека скомпилирована, можно написать программу. В случае Lua код может быть следующим.
 ```lua
 -- подключение функций rcl
 local rclbind = require("rcllua.rclbind")
@@ -292,4 +292,121 @@ end
 rclbind.context_shutdown()
 ```
 Здесь мы использовали "сырые" вызовы функций обертки над *rcl*, что, очевидно, неудобно для конечного пользователя, хотя и эффективно с точки зрения вычислений. Повышение уровня абстракции для удобства применения - задача следующего уровня клиентской библиотеки.
+
+## adasf
+
+Команда **ros2 run** выполняет поиск и запуск исполняемого файла, т.е. можно обойтись без нее, достаточно напрямую вызвать написанную программу.
+Однако, если мы хотим полноценно пользоваться инструментами ROS2, нужно как минимум настроить сборку через **colcon build** и запуск через **ros2 run**.
+
+В Lua нет стандартной системы сборки, во всяком случая я с такой не сталкивался. Поэтому использовал "стандартные" для ROS2 CMake и bash, и добавил в сборку пакет с cmake функциями.
+
+Для того чтобы написанная нами программа была видна ROS-у, нужно указать, где её искать, а ещё желательно положить в нужное место и создать исполняемый файл. Во первых, создадим шаблон для обновления путей поиска исполняемых файлов. Здесь определяется функция для формирования списка путей без дубликатов и пустых строк, которая потом применяется к текущему пути. Данный файл на 95% процентов совпадает с автогенерируемым кодом в пакете ROS2, отличие заключается только в использовании разделителя ";", который принят в Lua. Если ваш язык программирования использует ":", такой файл можно не добавлять. 
+```bash
+ament_append_unique_value() {
+  # аргументы
+  _listname=$1
+  _value=$2
+
+  # проверка наличия переменной
+  eval _values=\$$_listname
+  _duplicate=
+  _ament_append_unique_value_IFS=$IFS
+  IFS=";"
+  if [ "$AMENT_SHELL" = "zsh" ]; then
+    ament_zsh_to_array _values
+  fi
+  for _item in $_values; do
+    # пустые строки игнорируются
+    if [ -z "$_item" ]; then
+      continue
+    fi
+    if [ $_item = $_value ]; then
+      _duplicate=1
+    fi
+  done
+  unset _item
+
+  # дубликаты игнорируются
+  if [ -z "$_duplicate" ]; then
+    # устранение начального разделителя
+    if [ -z "$_values" ]; then
+      eval $_listname=\"$_value\"
+    else
+      # конкатенация
+      unset IFS
+      eval $_listname=\"\$$_listname\;$_value\"
+    fi
+  fi
+  IFS=$_ament_append_unique_value_IFS
+  unset _ament_append_unique_value_IFS
+  unset _duplicate
+  unset _values
+  unset _value
+  unset _listname
+}
+
+if [ -z "$LUA_PATH" ]; then
+  export LUA_PATH=";;$COLCON_CURRENT_PREFIX/lib/lua/?.lua"
+else
+  ament_append_unique_value LUA_PATH "$COLCON_CURRENT_PREFIX/lib/lua/?.lua"
+fi
+```
+
+Чтобы шаблон был "подхвачен" при сборке, нужно создать переменную, имя которой оканчивается на _ENVIRONMENT_HOOK_REGISTERED. Для этого определим макрос в CMake, он переместит исполняемые файлы в директорию проекта install/имя_пакета/lib/lua, а также настроит обновление окружения при запуске install/setup.bash.
+```
+macro(rcllua_cmake_install_lib src_name)
+  install(
+    DIRECTORY ${src_name}
+    DESTINATION lib/lua
+  )
+
+  if(NOT DEFINED _AMENT_CMAKE_LUA_ENVIRONMENT_HOOK_REGISTERED)
+    set(_AMENT_CMAKE_LUA_ENVIRONMENT_HOOK_REGISTERED TRUE)
+
+    find_package(ament_cmake_core QUIET REQUIRED)
+
+    ament_environment_hooks(
+      "${rcllua_cmake_DIR}/templates/env_hook_lua.sh.in")
+  endif()
+endmacro()
+```
+
+Для того чтобы срабатывала команда ros2 run необходим исполяемый файл. Можно обязать пользователя явно указывать shebang, но если он забудет это сделать, работоспособность нарушится. Я решил пойти тем же путем, что и rclpy, и генерировать новый файл, который при запуске вызывает пользовательскую программу. Для этого служит следующий макрос, создает файл с указанием пути к вызываемой программе, помещает его в install/имя_пакета/lib/имя_пакета и делает исполняемым.
+```
+set(RCLLUA_EXEC /usr/local/bin/lua)
+
+macro(rcllua_cmake_executable src_name exec_name)
+  set(_out_dir ${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME})
+  file(MAKE_DIRECTORY "${_out_dir}")
+  # создаем файл
+  file(WRITE "${_out_dir}/${exec_name}"
+    "#!${RCLLUA_EXEC}\n"
+    "local script = loadfile('${CMAKE_SOURCE_DIR}/${src_name}')\n"
+    "script()"
+  )
+  # настраиваем права доступа
+  file(CHMOD "${_out_dir}/${exec_name}"
+    PERMISSIONS
+      OWNER_READ OWNER_EXECUTE
+      GROUP_READ GROUP_EXECUTE
+      WORLD_READ WORLD_EXECUTE
+  )
+endmacro()
+```
+
+Теперь пользователь может добавить в CMakeLists.txt следующий код.
+```
+# зависимости
+find_package(rcllua REQUIRED)
+find_package(rcllua_cmake REQUIRED)
+
+# создание исполяемого файла hello
+rcllua_cmake_executable(${PROJECT_NAME}/hello.lua hello)
+# для доступа из других пакетов и файлов
+# можно настроить пути к текущему пакету 
+rcllua_cmake_install_lib(${PROJECT_NAME})
+```
+После сборки настройки путей будут добавлены в install/setup.bash, а файлы будут доступны для вызова через ros2 run.
+
+Код проекта [ros2_lua](https://github.com/mikhel1984/ros2_lua).
 

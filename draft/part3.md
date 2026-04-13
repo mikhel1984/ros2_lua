@@ -31,3 +31,82 @@ function Node.__call (self, ...)
   return o
 end
 ```
+
+## Издатели и подписчики
+
+Издатель (publisher) и подписчик (subscriber) служат для широковещательной трансляции данных: для каждого топика число издателей и подписчиков может быть произвольным. При создании они требуют указывать связанную ноду, тип сообщения, имя топика и QoS канала связи.
+```c
+static int rcl_lua_publisher_init (lua_State* L)
+{
+  rcl_publisher_options_t publisher_opt = rcl_publisher_get_default_options();
+  rcl_publisher_t *publisher = lua_newuserdata(L, sizeof(rcl_publisher_t));
+  *publisher = rcl_get_zero_initialized_publisher();
+
+  rcl_ret_t ret = rcl_publisher_init(publisher, node, message_type, topic, &publisher_opt);
+
+  return 1;
+}
+```
+Публикация сообщения сводится к вызову *rcl_publish(publisher, message, NULL)*. Что касается подписчика, основная сложность заключается в том, чтобы связать callback-функцию с указателем на объект на уровне целевого языка программирования, поскольку в **rcl** такой функционал не предусмотрен.
+
+## Сервисы и клиенты
+
+Как понятно из названия, логика работы стандартная: клиент посылает запрос, сервис его обрабатывает и возвращает ответ. Сервис может обрабатывать запросы многих клиентов, но последовательно; клиент работает с одним сервисом, но может послать несколько запросов, не дожидаясь ответа. Отсюда вытекают требования к реализации: сервис должен понимать, кому возвращать результат, а клиент должен знать, которому из запросов соответствует полученный ответ. Первая задача решается сохранением id клиента, вторая - id запроса. В обоих случаях для хранения данных между вызовами используются какие-то сущности, которые должны удаляться после передачи/получения ответа. Для обмена данными служат следующие функции **rcl**.
+```c
+  // сервис
+  // получение запроса
+  rmw_service_info_t header;  // сохранение информации о клиенте
+  rcl_ret_t ret = rcl_take_request_with_info(srv, &header, request);
+  // передача результата
+  rcl_ret_t ret = rcl_send_response(srv, &header->request_id, response);
+
+  // -------------------
+
+  // клиент
+  // передача запроса
+  int64_t seq_num = 0;
+  rcl_ret_t ret = rcl_send_request(cli, request, &seq_num);
+  // получение результата
+  rmw_service_info_t header;
+  rcl_ret_t ret = rcl_take_response_with_info(cli, &header, response);
+  // идентификатор находится в header.request_id.sequence_number
+```
+
+При работе с клиентом у пользователя есть выбор: остановить выполнение программы до получения ответа или продолжить работу. На уровне **rcl** нет синхронного или асинхронного вызова, логика работы с Wait Set будет одинаковая в обоих случаях, поэтому данный функционал реализуется с помощью целевого языка программирования. Для "асинхронного" вызова может быть добавлен объект *Future*, в котором хранится промежуточная информация и результат обработки запроса.
+```lua
+-- конструктор Future
+local function new_future (fn, mt)
+  local o = {
+    _is_future = true,
+    _is_done = false,
+    _req_id = -1,
+    _result = nil,
+    _callback = fn,
+    _req_metatable = mt and mt.__name,
+  }
+  return setmetatable(o, Future)
+end
+
+-- асинхронный запрос
+function Client.call_async (self, req, callback)
+  local future = new_future(callback, getmetatable(req))
+  local future_cb = function (msg)
+    future:_set_result(msg)
+  end
+  future._req_id = self._client:send_request(req, future_cb)
+  return future
+end
+
+-- синхронный запрос
+function Client.call (self, req, timeout_sec)
+  local future = Client.call_async(self, req)
+  self._weak.node:wait(
+    function () return future._is_done end,
+    timeout_sec)
+  return future:result()
+end
+```
+
+## Action сервисы и клиенты
+
+Экшн сервисы отличаются от обычных продолжительностью действия: запрос клиента запускает процесс, за которым можно следить с помощью сообщений обратной связи. Этот процесс может завершиться успешно или не успешно, а также может быть прерван по инициативе клиента. Одно из ключевых особенностей реализации заключается в том, что нода должна иметь возможность запустить несколько action сервисов одновременно, т.е. они должны выполняться в параллельных потоках, в то время как весь прочий функционал ROS2 по умолчанию однопоточный.

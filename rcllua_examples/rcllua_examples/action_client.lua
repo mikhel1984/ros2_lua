@@ -21,8 +21,8 @@ local FibonacciActionClient = Node {
   -- node constructor
   init = function (self)
     self.action_client = ActionClient(
-      self, 
-      Fibonacci, 
+      self,
+      Fibonacci,
       'fibonacci')
   end,
 
@@ -32,7 +32,7 @@ local FibonacciActionClient = Node {
 
     local goal_msg = Fibonacci.Goal {order = order}
     local send_goal_future = self.action_client:send_goal_async(
-      goal_msg, 
+      goal_msg,
       self:bind 'feedback_cb')
     send_goal_future:add_done_callback(
       self:bind 'get_response_cb')
@@ -56,7 +56,7 @@ local FibonacciActionClient = Node {
   feedback_cb = function (self, msg)
     local sequence = msg.feedback.partial_sequence
     self:get_logger():info("Feedback: %s", list_to_string(sequence))
-  end, 
+  end,
 
   -- process result
   get_result_cb = function (self, future)
@@ -74,4 +74,3 @@ rcllua:init()
 local node = FibonacciActionClient()
 node:send_goal(10)
 rcllua:spin(node)
-

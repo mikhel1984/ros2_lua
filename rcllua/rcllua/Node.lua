@@ -122,9 +122,9 @@ end
 --  @param qos QoS profile (optional).
 --  @return service (userdata).
 function Node.create_service (self, srv, name, func, qos)
-  local srv = rclbind.new_service(self._node__object, srv, name, func, qos)
-  table.insert(self._service__list, srv)
-  return srv
+  local service = rclbind.new_service(self._node__object, srv, name, func, qos)
+  table.insert(self._service__list, service)
+  return service
 end
 
 --- Create client object.
@@ -361,7 +361,7 @@ function Node.wait (self, condition, timeout)
   elseif type(condition) ~= "function" then
     error "Wrong condition method"
   end
-  local time_fn = nil
+  local time_fn = function () return true end
   if timeout then
     if timeout > 0 then
       local clock = self._clock__object
@@ -406,8 +406,8 @@ end
 --  @return non-negative duration or infinity if the queue is empty.
 function Node.get_shortest_time (self)
   local lst = self._resume__time
-  if #lst == 0 then 
-    return math.huge 
+  if #lst == 0 then
+    return math.huge
   end
   local now, removed = self._clock__object:now(), nil
   while #lst > 0 do

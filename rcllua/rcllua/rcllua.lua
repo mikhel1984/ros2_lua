@@ -18,7 +18,7 @@ local rclbind = require("rcllua.rclbind")
 require("rcllua.Executor")
 
 
---- Library
+--- Library (global)
 rcllua = {}
 
 --- Default executor

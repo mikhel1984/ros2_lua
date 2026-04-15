@@ -87,7 +87,7 @@ function Parameter.from_parameter_value (value)
     for k in pairs(tmp) do  -- find table length
       t, n = k, n+1
     end
-    if n == 0 then 
+    if n == 0 then
       return Parameter.BYTE_ARRAY
     end
     if n ~= 1 then error('Not a list of one allowed type') end
@@ -193,8 +193,8 @@ function Parameter.__tostring (self)
   local s, v = nil, self._value
   if self._type == Parameter.BOOL_ARRAY then
     v = {}
-    for i = 1, #self._value do 
-      v[i] = self._value[i] and 'true' or 'false' 
+    for i = 1, #self._value do
+      v[i] = self._value[i] and 'true' or 'false'
     end
   end
   if type(v) == 'table' then
@@ -203,10 +203,10 @@ function Parameter.__tostring (self)
     s = tostring(v)
   end
   return string.format("%s = %s", self._name, s)
-end 
+end
 
 -- Make object as Parameter(...).
-setmetatable(Parameter, 
+setmetatable(Parameter,
 {
 --- Call parameter constructor.
 --  @param name Parameter name.
@@ -214,7 +214,7 @@ setmetatable(Parameter,
 --  @param type_ (=nil) Parameter type.
 --  @return Parameter object.
 __call = function (self, name, value, type_)
-  return Parameter.new_parameter(name, type_, value)  
+  return Parameter.new_parameter(name, type_, value)
 end
 })
 
@@ -230,9 +230,9 @@ function parameter_service.new_service (node)
   local qos_param = rclbind.new_qos('qos_profile_parameters')
 
   node:create_service(
-    param_srv.DescribeParameters, 
+    param_srv.DescribeParameters,
     prefix .. 'describe_parameters',
-    function (req, resp) parameter_service._describe_parameter_callback(node, req, resp) end, 
+    function (req, resp) parameter_service._describe_parameter_callback(node, req, resp) end,
     qos_param)
 
   node:create_service(
@@ -332,9 +332,9 @@ end
 --  @return prefix string.
 local function _max_prefix (name)
   local a, b = 1, 0
-  local pa, pb = a, b
+  local pa = a
   while a do
-    pa, pb = a, b
+    pa = a
     a, b = string.find(name, Parameter.PARAMETER_SEPARATOR_STRING, b+1, true)
   end
   return string.sub(name, 1, pa-1)

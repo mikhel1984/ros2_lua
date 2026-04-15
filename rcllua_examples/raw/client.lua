@@ -14,8 +14,8 @@ local wait_set = rclbind.new_wait_set(0, 0, 0, 1, 0, 0)  -- 4th is number of cli
 
 -- Client callback
 local function client_cb (resp)
-  rclbind.simp_log(rclbind.LogLevel.INFO, 
-    node:get_name(), 
+  rclbind.simp_log(rclbind.LogLevel.INFO,
+    node:get_name(),
     string.format('Status: %s', resp.message))
 end
 
@@ -37,8 +37,8 @@ if cli:service_is_available() then
     wait_set:add_client(cli)
 
     -- wait for response (wait_set:wait(-1))
-    if not pcall(wait_set.wait, wait_set, -1) then 
-      break 
+    if not pcall(wait_set.wait, wait_set, -1) then
+      break
     end
 
     -- collect ready clinets

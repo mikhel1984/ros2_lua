@@ -34,6 +34,17 @@ local function _cancel_goal_async (client, handle)
   return future
 end
 
+--- Add condition to weak up and wait for result.
+--  @param client ActionClient object.
+--  @param future Future object from request.
+--  @param timeout_sec (=nil) Time to wait.
+local function wait_response (client, future, timeout_sec)
+  client._weak.node:wait(
+    function () return future._is_done end,
+    timeout_sec)
+  return future:result()
+end
+
 --- Send cancel request and wait for result.
 --  @param client ActionClient object.
 --  @param handle ClientGoalHandle object.
@@ -181,17 +192,6 @@ function ActionClient.send_goal_async (self, goal, cb_feedback, uuid)
   return future
 end
 
---- Add condition to weak up and wait for result.
---  @param client ActionClient object.
---  @param future Future object from request.
---  @param timeout_sec (=nil) Time to wait.
-local function wait_response (client, future, timeout_sec)
-  client._weak.node:wait(
-    function () return future._is_done end,
-    timeout_sec)
-  return future:result()
-end
-
 --- Send new goal request to action server and wait for result.
 --  @param goal Goal message.
 --  @param cb_feedback (=nil) Function to process feedback messages (optional).
@@ -323,8 +323,8 @@ setmetatable(ActionClient,
 --  @return new ActionClient object.
 __call = function (self, node, action_type, action_name, qos)
   local client = rclbind.new_action_client(
-    node._node__object, 
-    action_type, action_name, 
+    node._node__object,
+    action_type, action_name,
     qos,
     action_srv.CancelGoal, action_msg.GoalStatusArray)
   local o = {

@@ -15,7 +15,7 @@ local MinimalService = Node {
   init = function (self)
     self.is_on = false
     self.service = self:create_service(std_srvs.Trigger, '/state_trigger', self:bind 'call_trigger')
-    self.timer = self:create_timer(1.0, 
+    self.timer = self:create_timer(1.0,
       function ()
         if self.is_on then self:get_logger():info("I'm working...'") end
       end
@@ -26,7 +26,7 @@ local MinimalService = Node {
 -- Main service function
 function MinimalService.call_trigger (self, req)
   self.is_on = not self.is_on
-  resp = std_srvs.Trigger.Response()
+  local resp = std_srvs.Trigger.Response()
   resp.success = true
   resp.message = self.is_on and 'Node is on' or 'Node is off'
   return resp

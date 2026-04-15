@@ -41,7 +41,7 @@ end
 local node = rclbind.new_node('raw_action_service')
 local clock = rclbind.new_clock()
 local act_srv = rclbind.new_action_server(
-  node, clock, Fibonacci, 'fibonacci', {}, 
+  node, clock, Fibonacci, 'fibonacci', {},
   action_exec, action_srv.CancelGoal)
 
 -- Change goal status
@@ -53,7 +53,7 @@ function update_state (ev, handle)
   end
 end
 
--- Stop execution, call yield 
+-- Stop execution, call yield
 function sleep (timeout)
   local co = coroutine.running()
   -- wake up time
@@ -75,25 +75,25 @@ local wait_set = rclbind.new_wait_set(sub_no, guard_no, timer_no, cli_no, srv_no
 local time_ns = math.floor(0.1 * 1E9)  -- wait time, nanoseconds
 
 -- Main loop
-while rclbind.context_ok() do  
+while rclbind.context_ok() do
   -- prepare
   wait_set:clear()
   act_srv:add_to_waitset(wait_set)
 
   wait_set:wait(time_ns)
-  
+
   -- check input
   local data = {}
   local is_goal, is_cancel, is_result, is_expired = act_srv:is_ready(wait_set)
   if is_goal    then data['goal'] = act_srv:take_goal_request() end
   if is_cancel  then data['cancel'] = act_srv:take_cancel_request() end
   if is_result  then data['result'] = act_srv:take_result_request() end
-  if is_expired then 
+  if is_expired then
     local n = 0   -- number of handles
     for _ in pairs(process) do n = n + 1 end
-    data['expired'] = act_srv:expire_goals(n) 
+    data['expired'] = act_srv:expire_goals(n)
   end
-  
+
   -- new goal
   if data['goal'] then
     local req, _, header = table.unpack(data["goal"])
@@ -112,7 +112,7 @@ while rclbind.context_ok() do
       proc.co = coroutine.create(act_srv:get_executable())
       update_state(rclbind.GoalEvent.EXECUTE, proc.handle)
       process[uuid_str] = proc
-      coroutine.resume(proc.co, 
+      coroutine.resume(proc.co,
                        req, act_srv, proc.handle)
     end
   end

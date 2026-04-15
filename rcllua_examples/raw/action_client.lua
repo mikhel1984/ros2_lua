@@ -12,7 +12,7 @@ rclbind.context_init(arg)
 -- Make objects
 local node = rclbind.new_node('raw_action_client')
 local act_cli = rclbind.new_action_client(
-  node, Fibonacci, 'fibonacci', nil, 
+  node, Fibonacci, 'fibonacci', nil,
   action_srv.CancelGoal, action_msg.GoalStatusArray)
 
 -- Put to mark callback
@@ -95,16 +95,16 @@ while rclbind.context_ok() do
       break
     end
   end
-  
+
   if data['cancel'] then
     -- local resp, fn, seq = table.unpack(data['cancel'])
     -- process
-    break 
+    break
   end
 
   if data['result'] then
     local resp, fn, seq = table.unpack(data['result'])
-    rclbind.simp_log(rclbind.LogLevel.INFO, node:get_name(), 
+    rclbind.simp_log(rclbind.LogLevel.INFO, node:get_name(),
      string.format('Result: %s', table.concat(resp.result.sequence, ' ')))
     break
   end

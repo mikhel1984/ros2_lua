@@ -22,7 +22,7 @@ timer:call()
 
 -- Main loop
 while rclbind.context_ok() do
-  -- prepare 
+  -- prepare
   wait_set:clear()
   wait_set:add_timer(timer)
 
@@ -37,7 +37,7 @@ while rclbind.context_ok() do
     -- get list {callback, timer_reference}
     local fn, ref = table.unpack(lst[i])
     -- execute
-    fn() 
+    fn()
     rclbind.timer_call(ref)
   end
 end

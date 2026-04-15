@@ -197,3 +197,104 @@ while rclbind.context_ok() do
   -- сообщения обратной связи и статус задачи
 end
 ```
+
+## Executor и spin
+
+Для удобства работы с Wait Set в клиентской библиотеке ROS2 вводится класс Executor. Он выполняет всю работу по регистрации событий, их ожиданию и последующей обработке. Данного класса нет в **rcl**, он реализуется на уровне целевого языка программирования.
+
+Объект Executor хранит ссылки на одну или несколько ROS2 нод. При вызове метода *spin* (или его вариаций *spin_once*, *spin_until_future_complete*) запускается цикл, на каждой итерации которого из всех нод собираются связанные с ними элементы (издатели, таймеры, сервисы и т.д.), добавляются в Wait Set, и после разблокировки выполняются соответствующие callback функции.
+```lua
+function _wait_for_ready_callbacks (executor, timeout_sec)
+
+  -- подготовка элементов для Wait Set
+  for _, node in ipairs(executor._nodes) do
+    -- извлечение списка подписчиков, таймеров, сервисов, клиентов, защитников, событий
+
+    -- дополнительно для action сервисов/клиентов
+    for _, act in ipairs(node._action__list) do
+      local sub_no, guard_no, timer_no, cli_no, srv_no = act:get_num_entities()
+      sub_cnt   = sub_cnt + sub_no
+      timer_cnt = timer_cnt + timer_no
+      cli_cnt   = cli_cnt + cli_no
+      srv_cnt   = srv_cnt + srv_no
+      guard_cnt = guard_cnt + guard_no
+    end
+  end
+
+  -- инициализация
+  executor._wait_set = rclbind.new_wait_set(
+    sub_cnt,
+    guard_cnt,
+    timer_cnt,
+    cli_cnt,
+    srv_cnt,
+    ev_cnt)
+
+  -- добавление событий
+  local wait_set = executor._wait_set
+  wait_set:clear()
+
+  for i = 1, #subscriptions do wait_set:add_subscription(subscriptions[i]) end
+  for i = 1, #timers do wait_set:add_timer(timers[i]) end
+  for i = 1, #clients do wait_set:add_client(clients[i]) end
+  for i = 1, #services do wait_set:add_service(services[i]) end
+
+  for i = 1, #actions do actions[i]:add_to_waitset(wait_set) end
+
+  -- ожидание
+  wait_set:wait(timeout_sec)
+  if not rclbind.context_ok() then return end
+
+  -- проверка событий
+  subscriptions = wait_set:ready_subscriptions()
+  timers = wait_set:ready_timers()
+  clients = wait_set:ready_clients()
+  services = wait_set:ready_services()
+
+  -- обработка
+  for _, act in ipairs(actions) do
+    -- извлечение сообщения для action сервера/клиента
+    -- возврат функции обработки
+  end
+
+  for i = 1, #subscriptions do
+    -- возврат callback функции подписчика
+  end
+
+  for i = 1, #timers do
+    -- возврат callback функции таймера
+    -- вызов метода call таймера
+  end
+
+  for i = 1, #services do
+    -- возврат функции сервиса
+    -- передача результата клиенту
+  end
+
+  for i = 1, #clients do
+    -- возврат callback функций клиентов
+  end
+end
+```
+Обычно данная функция заворачивается в корутину, которая для каждого из циклов *for* возвращает исполняемое значение. Это позволяет отследить промежуточные события, такие как нажатие пользователем *Ctrl+C* или прерывание текущего цикла обработки через вызов триггер объекта guard. Получается такая "матрешка":
+```lua
+-- однократное исполнение
+function Executor.spin_once (self, timeout_sec)
+  -- создание корутины (если требуется)
+  self._cb_iter = coroutine.create(_wait_for_ready_callbacks)
+  -- вызов
+  local ok, handle = coroutine.resume(self._cb_iter, self, timeout_sec)
+  -- обработка
+  if ok and handle then
+    handle()
+  end
+  -- прочая логика
+end
+
+-- непрерывное исполнение
+function Executor.spin (self)
+  while rclbind.context_ok() do
+    Executor.spin_once(self, -1)
+  end
+end
+```

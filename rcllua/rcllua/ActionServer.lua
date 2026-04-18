@@ -145,10 +145,10 @@ function ActionServer.take_data (self, wait_set)
   if is_goal    then data['goal'] = srv:take_goal_request() end
   if is_cancel  then data['cancel'] = srv:take_cancel_request() end
   if is_result  then data['result'] = srv:take_result_request() end
-  if is_expired then 
+  if is_expired then
     local n = 0   -- number of handles
     for _ in pairs(self._handles) do n = n + 1 end
-    data['expired'] = srv:expire_goals(n) 
+    data['expired'] = srv:expire_goals(n)
   end
   -- check any received elements
   if next(data) then
@@ -165,7 +165,7 @@ function ActionServer.execute (self, data)
   if tbl then
     local req, check, header = table.unpack(tbl)
     local uuid_str = to_str(req.goal_id.uuid)
-    
+
     -- send response
     local resp = srv:get_interface("SendGoal").Response()
     local accept = (self._handles[uuid_str] == nil) and check(req)
@@ -181,13 +181,13 @@ function ActionServer.execute (self, data)
       local goal_info = action_msg.GoalInfo {goal_id = req.goal_id}
       local handle = new_server_goal_handle(srv, goal_info, req.goal, srv:get_executable())
       self._handles[uuid_str] = handle
-      local fn = srv:get_handle_preprocessing() 
+      local fn = srv:get_handle_preprocessing()
       fn(handle)  -- call execution
     end
   end
 
   tbl = data["cancel"]
-  if tb then
+  if tbl then
     local req, check, header = table.unpack(tbl)
     local resp = srv:process_cancel_request(req)
 
@@ -239,7 +239,7 @@ function ActionServer.add_to_waitset (self, wait_set)
 end
 
 -- Allow to call ActionServer table.
-setmetatable(ActionServer, 
+setmetatable(ActionServer,
 {
 --- ActionServer constructor.
 --  @param node Source node object.
@@ -253,11 +253,11 @@ __call = function (self, node, action_type, action_name, exec, param)
   param.handle_accepted_callback =
     param.handle_accepted_callback or default_handle_accepted_callback
   local server = rclbind.new_action_server(
-    node._node__object, 
-    node._clock__object, 
-    action_type, action_name, 
-    param, 
-    exec, 
+    node._node__object,
+    node._clock__object,
+    action_type, action_name,
+    param,
+    exec,
     action_srv.CancelGoal)
   local o = {
     _server = server,

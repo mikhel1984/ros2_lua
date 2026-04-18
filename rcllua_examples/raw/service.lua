@@ -9,7 +9,7 @@ local is_on = false
 -- Service function
 local function call_trigger (req)
   is_on = not is_on
-  resp = std_srvs.Trigger.Response()
+  local resp = std_srvs.Trigger.Response()
   resp.success = true
   resp.message = is_on and 'Node is on' or 'Node is off'
   return resp

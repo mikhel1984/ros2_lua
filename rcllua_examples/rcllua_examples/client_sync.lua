@@ -38,4 +38,3 @@ local node = MinimalClient()
 node:wrap 'send_request' ()
 
 rcllua:spin(node)
-

@@ -238,7 +238,6 @@ end
 --  @param check_read_only True for read-only checks.
 --  @return SetParametersResult object.
 function node_param._apply_descriptors (self, params, descriptors, check_read_only)
-  local res = {}
   for i, p in ipairs(params) do
     local d = descriptors[p:name()]
     if d then
@@ -285,7 +284,7 @@ function node_param._set_parameters_atomically (self, params, descriptors, allow
       if descriptors then
         self._descriptor__list[nm] = descriptors[nm]
       elseif not self._descriptor__list[nm] then
-        descriptor = param_msg.ParameterDescriptor()
+        local descriptor = param_msg.ParameterDescriptor()
         descriptor.dynamic_typing = true
         self._descriptor__list[nm] = descriptor
       end
@@ -448,7 +447,7 @@ end
 --  @param node Node object.
 function node_param._add_event_publisher (node)
   node._parameter_event__publisher = node:create_publisher(
-    param_msg.ParameterEvent, 
+    param_msg.ParameterEvent,
     "/parameter_events",
     rclbind.new_qos('qos_profile_parameter_events'))
 end

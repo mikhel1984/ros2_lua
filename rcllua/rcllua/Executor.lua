@@ -227,8 +227,8 @@ end
 --  @param future Future object.
 --  @param timeout_sec Wait time (optional).
 function Executor.spin_until_future_complete (self, future, timeout_sec)
-  if not future._is_future then 
-    error 'Future expected' 
+  if not future._is_future then
+    error 'Future expected'
   end
   if not timeout_sec or timeout_sec < 0 then
     while rclbind.context_ok() and not future:done() do
@@ -236,7 +236,7 @@ function Executor.spin_until_future_complete (self, future, timeout_sec)
     end
   else
     local finish = self._clock:now() + rclbind.new_duration_sec(timeout_sec)
-    while rclbind.context_ok() 
+    while rclbind.context_ok()
       and timeout_sec > 0
       and not future:done()
     do

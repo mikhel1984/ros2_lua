@@ -88,4 +88,3 @@ return setmetatable(rut,
     table.insert(t._fn, v)  -- functions
   end,
 })
-

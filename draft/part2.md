@@ -12,16 +12,16 @@
 
 Генератор C кода формирует файлы нескольких типов. Непосредственно структура сообщений описана в файле *тип__struct.h*. В файлах *тип__functions* хранятся функции для инициализации, освобождения, копирования, проверки равенства. В *тип__description.c* содержится детальная информация о структуре сообщений, а в *тип__type_support* - функции генерации сообщений о событиях.
 
-Поля C структуры расположены в том же порядке, в каком они описаны в файле msg. Для элементарных типов (таких как uint8, float64, bool) используется соответствующий тип из C. Для объекта формируется отдельная структура, которая затем добавляется в сообщение. Если поле представляет собой статический массив, т.е. число элементов известно заранее, аналогичный массив закладывается b в C структуру сообщения. В случае динамического массива всё немного интереснее. Для объектов создается структура, содержащая ссылку на выделяемую память, текущее число элементов и размер выделенной памяти. Для примитивных типов и строк такие структуры заранее определены, поэтому генератор просто добавляет в хэдеры библиотеку *rosidl_runtime_c*.
+Поля C структуры расположены в том же порядке, в каком они описаны в файле msg. Для элементарных типов (таких как uint8, float64, bool) используется соответствующий тип из C. Для объекта формируется отдельная структура, которая затем добавляется в сообщение. Если поле представляет собой статический массив, т.е. число элементов известно заранее, аналогичный массив закладывается и в C структуру. Динамический массив описывается указателем на выделяемую память, текущим числом элементов и размером выделенной памяти. Для примитивных типов и строк такие структуры заранее определены, поэтому генератор просто добавляет в хэдеры библиотеку *rosidl_runtime_c*.
 
 
-## rosidl_generator_
+## rosidl_generator
 
 Генератор реализуется в виде отдельного ROS2 пакета на Python и включает в себя следующие элементы.
 
 ### Папка resource
 
-Здесь содержатся шаблоны для генерации функций сериализации и десериализации сообщений под конкретный язык программирования. Эти шаблоны имеют расширение em и синтаксически являются макросами над языком Python, позволяющими комбинироавть сырой текст с Python инструкциями. Я обнаружил 4 типа таких макросов: для управления генерацией кода, определения промежуточных переменных, подстановки значения в генерируемый текст и комментариев.
+Здесь содержатся шаблоны для функций сериализации и десериализации сообщений под конкретный язык программирования. Они имеют расширение *em* и синтаксически являются макросами над языком Python, позволяющими комбинироавть сырой текст с исполняемым кодом. Можно обнаружить 4 типа таких макросов: для управления генерацией кода (@[ ]), определения промежуточных переменных (@{ }), подстановки значения в генерируемый текст (@( )) и комментариев (@#).
 ```
 @# это строчный комментарий
 
@@ -40,7 +40,7 @@ var = 42
 продолжение программы, значение var равно @(var)
 ```
 
-Основная логика преобразования сообщений определена в файле msg.c.em (название может быть произвольным). Здесь можно реализовать все функции динамической библиотеки для работы с сообщениями, но основными являются методы для сериализации и десериализации. Они используют похожий шаблон, который выглядит следующим образом.
+Основная логика преобразования сообщений определена в файле msg.c.em (название может быть произвольным), который служит для генерации C кода. Здесь можно реализовать все необходимые функции для работы с сообщениями, но прежде всего необходимы методы для сериализации и десериализации. Они используют следующий шаблон.
 ```python
 @{
 from rosidl_generator_lua import NUMERIC_LUA_TYPES, sequence_metatable, make_prefix
@@ -73,54 +73,54 @@ if isinstance(type_, AbstractNestedType):
 
 @# комплексный тип данных
 @[  if isinstance(type_, NamespacedType)]@
-@# массив
+@#    массив
 @[    if isinstance(member.type, AbstractNestedType)]@
-@# динамический массив
+@#      динамический массив
 @[      if isinstance(member.type, AbstractSequence)]@
 
   // копирование данных в динамический массив
 
-@# статический массив
+@#      статический массив
 @[      else]@
 
   // копирование данных в массив
 
 @[      end if]@
-@# объект
+@#    объект
 @[    else]@
 
   // копирование объекта
 
 @[    end if]@
-@# последовательность примитивных типов
+@#  последовательность примитивных типов
 @[  elif isinstance(member.type, AbstractNestedType)]@
-@# динамический массив
+@#    динамический массив
 @[    if isinstance(member.type, AbstractSequence)]@
 
   // копирование данных в динамический массив
 
-@# статический массив
+@#    статический массив
 @[    else]@
 
   // копирование данных в массив
 
 @[    end if]@
-@# литерал
+@#  литерал
 @[  elif isinstance(member.type, BasicType) and member.type.typename == 'char']@
 
   // копирование одиночного символа
 
-@# логическая переменная
+@#  логическая переменная
 @[  elif isinstance(member.type, BasicType) and member.type.typename == 'boolean']@
 
   // копирование логической переменной
 
-@# число
+@#  число
 @[  elif isinstance(member.type, BasicType) and member.type.typename in NUMERIC_LUA_TYPES]@
 @{
 type_dict = NUMERIC_LUA_TYPES[member.type.typename]
 }@
-@#  проверка беззнакового числа
+@#    проверка беззнакового числа
 @[    if member.type.typename.startswith('u') ]@
 
   // проверка диапазона беззнаковых чисел
@@ -133,12 +133,12 @@ type_dict = NUMERIC_LUA_TYPES[member.type.typename]
 
    // копирование значения
 
-@# строка в 8-битной кодировке
+@#  строка в 8-битной кодировке
 @[  elif isinstance(member.type, AbstractString)]@
 
   // копирование строки
 
-@# строка в 16-битной кодировке
+@#  строка в 16-битной кодировке
 @[  elif isinstance(member.type, AbstractWString)]@
 
   // копирование строки
@@ -152,9 +152,9 @@ assert False, ("unknown type " + member.type.typename)
 }
 @[end for]@
 ```
-Список полей сообщения определен в переменной *message.structure.members*. Для каждого поля шаблон проверяет тип переменной, является ли она примитивом, объектом или массивом. В последнем случае дополнительно проверяется тип массива (статический или динамический), и какие элементы в нём содержатся (примитивы или объекты). Исходя из этого должна быть реализована логика преобразования в C и обратно.
+Список полей сообщения определен в переменной *message.structure.members*. Для каждого поля шаблон проверяет тип переменной, а также является ли она примитивом, объектом или массивом. В последнем случае дополнительно проверяется тип массива (статический или динамический), и какие элементы в нём содержатся (примитивы или объекты). Исходя из этого должна быть реализована логика преобразования в C и обратно.
 
-Генерацией файлов для заданного пакета управляет шаблон *idl.c.em*. Он включает в себя последовательность циклов, содержащую вызов функции *TEMPLATE* для каждого найденного сообщения.
+Генерацией файлов для заданного пакета управляет шаблон *idl.c.em*. Он итеративно вызывает функцию *TEMPLATE* для каждого найденного сообщения.
 ```python
 @{
 from rosidl_parser.definition import Message
@@ -169,14 +169,14 @@ TEMPLATE(
 }@
 @[end for]@
 ```
-Все интерфейсы ROS2 используют единый шаблон для генерации, но используют разные пространства имён, которые выражаются в названиях сообщений.  (пример!)
-В случае сервисов переменная *message* берет параметры из полей *request_message* и *response_message*, для интерфейса Action - *goal*, *result*, *feedback*, *send_goal_service.request_message*, *send_goal_message.response_message*, *get_result_service.request_message*, *get_result_service.response_message*, *action.feedback_message*.
+В случае сервисов генерируются 2 сообщения, соответствующие полям *request_message* и *response_message*. Для action сервисов число сообщений увеличивается до 8 (поля *goal*, *result*, *feedback*, *send_goal_service.request_message*, *send_goal_message.response_message*, *get_result_service.request_message*, *get_result_service.response_message*, *action.feedback_message*).
 
-Можно каждое сообщение генерировать в код для отдельной динамической библиотеки, либо объединять их. *rclpy* все сообщения пакета объединяет в единую библиотеку. В реализации для Lua я для каждого пакета генерирую 3 библиотеки: msg, srv, action для сообщений, сервисов и экшенов соответственно. Всвязи с этом в папке *resouce* лежат дополнительные шаблоны *msg_lib.c.em*, *srv_lib.c.em*, *action_lib.c.em* для объединения соответствующих типов сообщений.
+В папке *resource* можно найти и другие *em* файлы. Они служат для оборачивания сгенерированных сообщений в одну или несколько динамических библиотек.
 
-### Папка rosidl_generator_
 
-Скрипт *\_\_init.py\_\_* содержит функцию для запуска генерации сообщений, а также вспомогательный функционал, используемый внутри генератора.
+### Папка rosidl_generator
+
+Скрипт *\_\_init.py\_\_* определяет функцию для запуска генерации сообщений, а также вспомогательный функционал, используемый внутри генератора.
 ```python
 import os
 import pathlib
@@ -246,6 +246,7 @@ def generate_lua(generator_arguments_file, typesupport_impls):
         generated_file = os.path.join(
             args['output_dir'], msg_type, out_name)
         template = os.path.join(template_dir, template_file)
+        # развертывание шаблона
         expand_template(
             template, data, generated_file,
             minimum_timestamp=latest_target_timestamp)
@@ -268,26 +269,21 @@ def make_include_prefix(tp):
 ### Папка bin
 
 В данной папке находится Python скрипт, который вызывает написанную выше функцию, передавая ей аргументы командной строки: путь к файлу с агрументами генерации и список типов сообщений.
-Вызов написанной выше функции происходит из Python скрипта, расположенного в папке bin.
 
 ### Папка cmake
 
-Для того чтобы генерация была запущена на этапе сборки ROS2 окружения, нужно настроить CMake. Макрос *rosidl_generator_lua_extras* регистрирует текущий пакет и настраивает пути для сохранения файлов. Основную же работу выполняет скрипт *rosidl_generator_lua_generate_interfaces.cmake*.
+Для того чтобы генерация была запущена на этапе сборки ROS2 окружения, нужно настроить CMake. Основную работу выполняет скрипт *rosidl_generator_lua_generate_interfaces.cmake*.
 ```
 find_package(rmw REQUIRED)
 find_package(rosidl_runtime_c REQUIRED)
 find_package(rosidl_typesupport_c REQUIRED)
 find_package(rosidl_typesupport_interface REQUIRED)
-
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 # локальные переменные
 set(_output_path
   "${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_lua/${PROJECT_NAME}")
 set(_generated_c_files "")
-set(_msg_list "")
-set(_srv_list "")
-set(_action_list "")
 
 # список имен файлов
 foreach(_abs_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
@@ -301,10 +297,6 @@ foreach(_abs_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   # msg / srv / action в разные списки
   if(${_parent_folder} STREQUAL "msg")
     list(APPEND _msg_list ${_src_c})
-  elseif(${_parent_folder} STREQUAL "srv")
-    list(APPEND _srv_list ${_src_c})
-  else()
-    list(APPEND _action_list ${_src_c})
   endif()
 endforeach()
 
@@ -312,14 +304,6 @@ endforeach()
 if(NOT _msg_list STREQUAL "")
   list(INSERT _msg_list 0 "${_output_path}/msg/msg_lib.c")
   list(APPEND _generated_c_files "${_output_path}/msg/msg_lib.c")
-endif()
-if(NOT _srv_list STREQUAL "")
-  list(INSERT _srv_list 0 "${_output_path}/srv/srv_lib.c")
-  list(APPEND _generated_c_files "${_output_path}/srv/srv_lib.c")
-endif()
-if(NOT _action_list STREQUAL "")
-  list(INSERT _action_list 0 "${_output_path}/action/action_lib.c")
-  list(APPEND _generated_c_files "${_output_path}/action/action_lib.c")
 endif()
 
 file(MAKE_DIRECTORY "${_output_path}")
@@ -401,48 +385,16 @@ if(NOT _msg_list STREQUAL "")
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY ${_output_path}
   )
-  target_link_libraries(msg
-    ${c_typesupport_target}
-  )
-  ament_target_dependencies(msg
-    "rosidl_runtime_c"
-  )
+  target_link_libraries(msg ${c_typesupport_target})
+  ament_target_dependencies(msg "rosidl_runtime_c")
 endif()
 
-# Сборка сервисов
-if(NOT _srv_list STREQUAL "")
-  add_library(srv SHARED ${_srv_list})
-  set_target_properties(srv PROPERTIES
-    PREFIX ""
-    LIBRARY_OUTPUT_DIRECTORY ${_output_path}
-  )
-  target_link_libraries(srv
-    ${c_typesupport_target}
-  )
-  ament_target_dependencies(srv
-    "rosidl_runtime_c"
-  )
-endif()
-
-# Сборка экшенов
-if(NOT _action_list STREQUAL "")
-  add_library(action SHARED ${_action_list})
-  set_target_properties(action PROPERTIES
-    PREFIX ""
-    LIBRARY_OUTPUT_DIRECTORY ${_output_path}
-  )
-  target_link_libraries(action
-    ${c_typesupport_target}
-  )
-  ament_target_dependencies(action
-    "rosidl_runtime_c"
-  )
-endif()
+# аналогично для сервисов и экшенов
 ```
 
 ### Сборка
 
-Для сборки остается сделать ещё несколько шагов. Во первых, нужно создать в корне файл *rosidl_generator_lua-extras.cmake.in* с текстом
+Осталось сделать ещё несколько шагов, чтобы выполнить сборку. Во первых, нужно создать в корне файл *rosidl_generator_lua-extras.cmake.in* с текстом
 ```
 include("${CMAKE_CURRENT_LIST_DIR}/register_lua.cmake")
 rosidl_generator_lua_extras(
@@ -451,7 +403,7 @@ rosidl_generator_lua_extras(
   "${rosidl_generator_lua_DIR}/../resource"
 )
 ```
-Здесь прописаны пути к файлам и папкам, используемым для генерации. Во-вторых, в *package.xml* добавляем следующие зависимости:
+Здесь прописаны пути к файлам и папкам, используемым в процессе генерации. Во-вторых, в *package.xml* добавляем следующие зависимости:
 ```xml
   <buildtool_depend>ament_cmake_export_assemblies</buildtool_depend>
 
@@ -505,4 +457,6 @@ ament_package(
 
 Представленный выше код прекрасно справляется с генерацией сообщений, но есть нюанс. Он ориентирован на работу с кастомными сообщениями, т.е. описание которых лежит в вашем локальном рабочем окружении. Но ROS включает в себя множество стандартных типов, таких как std_msgs, nav_msgs, sensor_msgs и т.д. И нужно как-то обеспечить возможность работы с ними.
 
-Можно попытаться собрать нужные стандартные библиотеки в своём локальном рабочем окружении. В этом случае при попытке подключить глобальное окружение возникнет конфликт и ROS завершает работу. Я решил проблему следующим образом. Описания стандартных сообщений, т.е. msg и idl файлы, лежат в папке *ros_distro_name/share*. Я добавил отдельный пакет, который считывает эти описания, генерирует нужные динамические библиотеки и добавляет пути в *LUA_CPATH*. Это позволило иметь локальные версии библиотек не конфликтуя с глобальным окружением. Правда, пришлось использовать непубличные функции из *ament_cmake*, поэтому при изменении в них код придётся дорабатывать.
+Можно попытаться собрать нужные стандартные библиотеки в своём локальном рабочем окружении. Однако в этом случае возникнет конфликт с глобальным окружением и ROS завершит работу. Я решил проблему следующим образом. Описания стандартных сообщений, т.е. msg и idl файлы, лежат в папке *ros_distro_name/share*. Я добавил отдельный пакет, который считывает эти описания, генерирует нужные динамические библиотеки и добавляет пути в *LUA_CPATH*. Это позволило иметь локальные версии библиотек не конфликтуя с глобальным окружением. Правда, пришлось использовать непубличные функции из *ament_cmake*, поэтому при изменении в них код придётся дорабатывать.
+
+## Заключение

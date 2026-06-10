@@ -31,9 +31,12 @@ from rosidl_parser.parser import parse_idl_file
 
 
 NUMERIC_LUA_TYPES = {
-    'float': {'min': 'FLT_MIN', 'max': 'FLT_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber',
+    # FLT_MIN / DBL_MIN are the smallest positive normalized values, not the
+    # most-negative values. Using them as lower bounds incorrectly rejects 0.0
+    # and all negative floating-point numbers in generated Lua setters.
+    'float': {'min': '(-FLT_MAX)', 'max': 'FLT_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber',
               'ifn': 'lua_pushnumber', 'ctype': 'float'},
-    'double': {'min': 'DBL_MIN', 'max': 'DBL_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber',
+    'double': {'min': '(-DBL_MAX)', 'max': 'DBL_MAX', 'var': 'lua_Number', 'fn': 'luaL_checknumber',
                'ifn': 'lua_pushnumber', 'ctype': 'double'},
     'int8': {'min': 'INT8_MIN', 'max': 'INT8_MAX', 'var': 'lua_Integer', 'fn': 'luaL_checkinteger',
              'ifn': 'lua_pushinteger', 'ctype': 'int8_t'},
@@ -122,4 +125,3 @@ def make_include_prefix(tp):
     lst = tp.namespaced_type.namespaced_name()
     return '/'.join(
         [lst[0], lst[1], 'detail', convert_camel_case_to_lower_case_underscore(lst[2])])
-
